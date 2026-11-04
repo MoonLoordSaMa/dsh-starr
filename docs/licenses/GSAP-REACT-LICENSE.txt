@@ -1,0 +1,10 @@
+@gsap/react 2.1.2
+https://gsap.com
+
+Copyright 2025, GreenSock. All rights reserved.
+Subject to the terms at https://gsap.com/standard-license or for Club GSAP
+members, the agreement issued with that membership.
+
+The package declares: SEE LICENSE AT https://gsap.com/standard-license
+This notice reproduces the copyright and license reference in the distributed
+package header. It does not replace or relicense the GSAP Standard License.

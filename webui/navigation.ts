@@ -1,0 +1,259 @@
+import {
+  Home,
+  UserRound,
+  Orbit,
+  Activity,
+  MessagesSquare,
+  AudioLines,
+  Smile,
+  Wrench,
+  Settings2,
+  BookOpen,
+  ShieldCheck,
+  Palette,
+  Globe2,
+  Radio,
+  Music2,
+  Eye,
+  Headphones,
+  SlidersHorizontal,
+  Link2,
+  Clock3,
+  Sparkles,
+  Heart,
+} from "lucide-react";
+
+export const navigation = [
+  { id: "overview", name: "观星台", purpose: "全局概览", icon: Home },
+  {
+    id: "character",
+    name: "初见如故",
+    purpose: "人设与提示词",
+    icon: UserRound,
+  },
+  { id: "memory", name: "往事星海", purpose: "记忆与关系星图", icon: Orbit },
+  {
+    id: "memory-care",
+    name: "拾光成册",
+    purpose: "保存、日记与整理",
+    icon: Clock3,
+  },
+  {
+    id: "memory-sync",
+    name: "星河同源",
+    purpose: "Obsidian 与同步",
+    icon: Link2,
+  },
+  {
+    id: "state",
+    name: "心潮有声",
+    purpose: "情绪、身体与经历",
+    icon: Activity,
+  },
+  {
+    id: "intentions",
+    name: "心有所往",
+    purpose: "目的与主动节律",
+    icon: Heart,
+  },
+  {
+    id: "conversation",
+    name: "相逢有信",
+    purpose: "Starr-chat 会话",
+    icon: MessagesSquare,
+  },
+  {
+    id: "chat-context",
+    name: "言外之意",
+    purpose: "上下文注入",
+    icon: BookOpen,
+  },
+  {
+    id: "chat-rules",
+    name: "言有缓急",
+    purpose: "唤醒、回复与额度",
+    icon: SlidersHorizontal,
+  },
+  {
+    id: "chat-sharing",
+    name: "同一片星空",
+    purpose: "共享记忆与隐私",
+    icon: Link2,
+  },
+  {
+    id: "qq",
+    name: "尺素相知",
+    purpose: "QQ 接入与工具",
+    icon: MessagesSquare,
+  },
+  { id: "bili", name: "山海来信", purpose: "B站扫码与接入", icon: Globe2 },
+  {
+    id: "bili-activities",
+    name: "漫游拾趣",
+    purpose: "B站浏览、兴趣与分享",
+    icon: Eye,
+  },
+  {
+    id: "bili-publish",
+    name: "寄语人间",
+    purpose: "B站动态与操作",
+    icon: Radio,
+  },
+  { id: "bridge", name: "星桥传书", purpose: "跨平台分享与同步", icon: Link2 },
+  { id: "media", name: "清音入梦", purpose: "语音合成", icon: AudioLines },
+  { id: "hearing", name: "听风知意", purpose: "语音识别", icon: Headphones },
+  { id: "vision", name: "万象入眸", purpose: "视觉理解", icon: Eye },
+  {
+    id: "singing",
+    name: "弦歌不辍",
+    purpose: "唱歌、曲库与音色",
+    icon: Music2,
+  },
+  { id: "expressions", name: "眉目传情", purpose: "表情包库", icon: Smile },
+  {
+    id: "maintenance",
+    name: "守望星河",
+    purpose: "备份、诊断与维护",
+    icon: Wrench,
+  },
+  {
+    id: "permissions",
+    name: "行有所界",
+    purpose: "角色授权与权限",
+    icon: ShieldCheck,
+  },
+  {
+    id: "appearance",
+    name: "夜色入画",
+    purpose: "外观、动效与性能",
+    icon: Palette,
+  },
+  {
+    id: "settings",
+    name: "群星索引",
+    purpose: "功能与配置总览",
+    icon: Settings2,
+  },
+];
+export const workspaces = [
+  {
+    id: "home",
+    name: "观星台",
+    entry: "overview",
+    pages: ["overview"],
+    caption: "星河为序，万象在此相逢",
+  },
+  {
+    id: "identity",
+    name: "她的模样",
+    entry: "character",
+    pages: ["character"],
+    caption: "人设、说话方式与相处边界",
+  },
+  {
+    id: "memory",
+    name: "记忆星海",
+    entry: "memory",
+    pages: ["memory", "memory-care", "memory-sync"],
+    caption: "往事、日记、双链与同步",
+  },
+  {
+    id: "heart",
+    name: "心与愿",
+    entry: "state",
+    pages: ["state", "intentions"],
+    caption: "心潮有来处，愿望有归途",
+  },
+  {
+    id: "chat",
+    name: "会话回廊",
+    entry: "conversation",
+    pages: [
+      "conversation",
+      "chat-context",
+      "chat-rules",
+      "chat-sharing",
+      "qq",
+      "bili",
+      "bili-activities",
+      "bili-publish",
+      "bridge",
+    ],
+    caption: "接入、接续、表达与跨平台联动",
+  },
+  {
+    id: "senses",
+    name: "五感声色",
+    entry: "media",
+    pages: ["media", "hearing", "vision", "singing", "expressions"],
+    caption: "听、说、看、唱与眉目传情",
+  },
+  {
+    id: "manage",
+    name: "星务札记",
+    entry: "settings",
+    pages: ["settings", "maintenance", "permissions", "appearance"],
+    caption: "配置索引、授权与运行照料",
+  },
+];
+export const poems: Record<string, [string, string, string]> = {
+  character: ["有美一人", "清扬婉兮", "《诗经·郑风·野有蔓草》"],
+  memory: ["此情可待成追忆", "只是当时已惘然", "李商隐《锦瑟》"],
+  "memory-care": ["随风潜入夜", "润物细无声", "杜甫《春夜喜雨》"],
+  "memory-sync": ["海内存知己", "天涯若比邻", "王勃《送杜少府之任蜀州》"],
+  state: ["人有悲欢离合", "月有阴晴圆缺", "苏轼《水调歌头·明月几时有》"],
+  intentions: ["长风破浪会有时", "直挂云帆济沧海", "李白《行路难·其一》"],
+  conversation: ["何当共剪西窗烛", "却话巴山夜雨时", "李商隐《夜雨寄北》"],
+  "chat-context": [
+    "身无彩凤双飞翼",
+    "心有灵犀一点通",
+    "李商隐《无题·昨夜星辰昨夜风》",
+  ],
+  "chat-rules": ["大弦嘈嘈如急雨", "小弦切切如私语", "白居易《琵琶行》"],
+  "chat-sharing": ["但愿人长久", "千里共婵娟", "苏轼《水调歌头·明月几时有》"],
+  qq: ["桃花潭水深千尺", "不及汪伦送我情", "李白《赠汪伦》"],
+  bili: ["欲穷千里目", "更上一层楼", "王之涣《登鹳雀楼》"],
+  "bili-activities": ["等闲识得东风面", "万紫千红总是春", "朱熹《春日》"],
+  "bili-publish": ["江南无所有", "聊赠一枝春", "陆凯《赠范晔诗》"],
+  bridge: [
+    "我寄愁心与明月",
+    "随君直到夜郎西",
+    "李白《闻王昌龄左迁龙标遥有此寄》",
+  ],
+  media: ["此曲只应天上有", "人间能得几回闻", "杜甫《赠花卿》"],
+  hearing: ["空山不见人", "但闻人语响", "王维《鹿柴》"],
+  vision: ["行到水穷处", "坐看云起时", "王维《终南别业》"],
+  singing: ["嘈嘈切切错杂弹", "大珠小珠落玉盘", "白居易《琵琶行》"],
+  expressions: ["巧笑倩兮", "美目盼兮", "《诗经·卫风·硕人》"],
+  maintenance: ["明月松间照", "清泉石上流", "王维《山居秋暝》"],
+  permissions: ["从心所欲", "不逾矩", "《论语·为政》"],
+  appearance: ["星垂平野阔", "月涌大江流", "杜甫《旅夜书怀》"],
+  legacy: ["欲知大道", "必先为史", "龚自珍《古史钩沉论二》"],
+  settings: ["问渠那得清如许", "为有源头活水来", "朱熹《观书有感·其一》"],
+};
+export function fieldRoute(page: string) {
+  if (page === "qq") return "qq";
+  if (page === "chat-social") return "qq";
+  if (page === "appearance" || page === "permissions") return page;
+  if (
+    page === "memory" ||
+    page.startsWith("memory-job") ||
+    page.startsWith("jobs")
+  )
+    return "memory-care";
+  if (page === "state" || page === "agency") return "intentions";
+  if (page === "chat-context") return "chat-context";
+  if (page === "chat-memory") return "chat-sharing";
+  if (page.startsWith("bridge")) return "bridge";
+  if (page.startsWith("chat")) return "chat-rules";
+  if (page.startsWith("bili-dynamic") || page === "bili-actions")
+    return "bili-publish";
+  if (["bili-watch", "bili-preferences", "bili-share"].includes(page))
+    return "bili-activities";
+  if (page.startsWith("bili")) return "bili";
+  if (page.startsWith("sing")) return "singing";
+  if (page.startsWith("asr")) return "hearing";
+  if (page.startsWith("vision")) return "vision";
+  if (page.startsWith("tts") || page === "media") return "media";
+  return "settings";
+}

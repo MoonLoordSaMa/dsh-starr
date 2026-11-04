@@ -1,0 +1,75 @@
+{
+  "name": "dsh-starr",
+  "version": "0.1.8",
+  "license": "MIT",
+  "description": "以角色为中心的 DSH 记忆、状态与会话插件",
+  "type": "module",
+  "private": true,
+  "main": "src/host/plugin.mjs",
+  "exports": {
+    ".": "./src/host/plugin.mjs",
+    "./core": "./src/starrcore/store.mjs",
+    "./tools": "./src/host/tools.mjs",
+    "./client": "./src/host/client.js",
+    "./qq-session": "./src/host/qq-session.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
+  },
+  "files": [
+    "src",
+    "dist",
+    "migrations",
+    "presets",
+    "cordis.patch.yml",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "vite --host 127.0.0.1 --port 17842 --strictPort",
+    "dev:server": "node --watch src/server.mjs",
+    "build": "node scripts/build-runtime.mjs && tsc --noEmit && vite build",
+    "start": "node src/server.mjs",
+    "test": "node scripts/build-runtime.mjs --check && node --test tests/*.test.mjs",
+    "pack:plugin": "node scripts/package-plugin.mjs",
+    "pack:source": "node scripts/package-source.mjs",
+    "release:audit": "node scripts/release-audit.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "migrate:inspect": "node migrations/inspect.mjs"
+  },
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "gsap": "^3.15.0",
+    "lucide-react": "^0.468.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.180.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "prettier": "^3.9.10",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.0"
+  }
+}

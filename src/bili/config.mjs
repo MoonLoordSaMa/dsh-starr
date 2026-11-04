@@ -1,0 +1,160 @@
+const f = (key, label, type, value, help, extra = {}) => [
+  key,
+  label,
+  type,
+  value,
+  [
+    "bili.enabled",
+    "bili.provider",
+    "bili.model",
+    "bili.secretEnv",
+    "bili.allowedUsers",
+  ].includes(key)
+    ? "bili"
+    : key.startsWith("bili.live.")
+      ? "bili-live"
+      : key.startsWith("bili.dm.")
+        ? "bili-dm"
+        : key.startsWith("bili.comment.")
+          ? "bili-comment"
+          : "bili-limits",
+  help,
+  extra,
+];
+export const biliFields = [
+  f(
+    "bili.enabled",
+    "启用 B站角色会话",
+    "boolean",
+    false,
+    "使用插件自己的监听、收件和角色工具；不会让 DSH 临时编写插件。",
+  ),
+  f(
+    "bili.provider",
+    "B站聊天模型连接",
+    "text",
+    "",
+    "DSH 已登记的连接标识，与 QQ 可选同一连接。",
+  ),
+  f(
+    "bili.model",
+    "B站聊天模型",
+    "text",
+    "",
+    "填写连接中的模型标识；人格和共享记忆来自同一角色。",
+  ),
+  f(
+    "bili.secretEnv",
+    "登录凭据环境变量名",
+    "text",
+    "",
+    "也可在下方使用系统加密保存 Cookie；环境变量优先，网页不回显。",
+  ),
+  f(
+    "bili.pollSeconds",
+    "监听间隔（秒）",
+    "number",
+    60,
+    "分别拉取已开启通道；失败保留原因，风控后暂停请求。",
+    { min: 30, max: 3600, integer: true },
+  ),
+  f(
+    "bili.dm.enabled",
+    "监听私信",
+    "boolean",
+    false,
+    "只读取下列允许用户已发来的消息，不群发、不主动建立陌生会话。",
+  ),
+  f(
+    "bili.allowedUsers",
+    "允许互动的用户 mid",
+    "text",
+    "",
+    "逗号或换行分隔；留空不处理任何用户，不从昵称推断授权。",
+  ),
+  f(
+    "bili.comment.enabled",
+    "监听回复与提及",
+    "boolean",
+    false,
+    "拉取回复我的与提及我的通知后回读真实评论正文，不把通知标题当作消息。",
+  ),
+  f(
+    "bili.live.enabled",
+    "监听直播间",
+    "boolean",
+    false,
+    "轮询已指定直播间的历史弹幕；只处理允许用户的实际内容。",
+  ),
+  f(
+    "bili.live.rooms",
+    "允许的直播房间号",
+    "text",
+    "",
+    "逗号分隔，最多 5 个房间；每个房间在 Starr-chat 独立登记。",
+  ),
+  f(
+    "bili.live.maxChars",
+    "单条弹幕字数上限",
+    "number",
+    20,
+    "同时遵循直播平台当前等级和房间限制；被拒绝时不拆分刷屏。",
+    { min: 1, max: 100, integer: true },
+  ),
+  f(
+    "bili.catchUpMinutes",
+    "首次监听补看窗口（分钟）",
+    "number",
+    5,
+    "首次开启只登记窗口内的新消息；0 表示只从启动时开始。",
+    { min: 0, max: 1440, integer: true },
+  ),
+  f(
+    "bili.maxReplyChars",
+    "私信与评论最大字符数",
+    "number",
+    1000,
+    "超过上限明确拒绝，不截断、不自动连发。",
+    { min: 50, max: 4000, integer: true },
+  ),
+  f(
+    "bili.dailyReplies",
+    "每角色近24小时回复额度",
+    "number",
+    30,
+    "发送尝试也计数，结果不明不重复发送。",
+    { min: 1, max: 1000, integer: true },
+  ),
+  f(
+    "bili.globalGapSeconds",
+    "任意两次发言至少间隔（秒）",
+    "number",
+    30,
+    "私信、评论和弹幕共同计数。",
+    { min: 0, max: 86400, integer: true },
+  ),
+  f(
+    "bili.personGapMinutes",
+    "同一用户发言冷却（分钟）",
+    "number",
+    1,
+    "等待期间保留收件，不提前确认。",
+    { min: 0, max: 1440, integer: true },
+  ),
+  f(
+    "bili.threadGapMinutes",
+    "同一评论楼层冷却（分钟）",
+    "number",
+    5,
+    "避免同一楼层连续发送；对私信不额外限制。",
+    { min: 0, max: 1440, integer: true },
+  ),
+  f(
+    "bili.riskCooldownMinutes",
+    "平台风控后冷却（分钟）",
+    "number",
+    60,
+    "识别 -412、-352、-509、429 后暂停监听与外发；不会自动绕过。",
+    { min: 1, max: 1440, integer: true },
+  ),
+];

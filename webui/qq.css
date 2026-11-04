@@ -1,0 +1,43 @@
+.qq-connection > :first-child {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-width: 0;
+}
+.check-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 0;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.check-field input[type="checkbox"] {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 4px 0 0;
+  accent-color: var(--accent, #d9bb91);
+}
+.qq-recent .platform-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.qq-recent .platform-row p {
+  margin-top: 5px;
+}
+.qq-connection .backup-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 700px) {
+  .qq-connection .form-footer {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .qq-connection .form-footer > small {
+    flex-basis: 100%;
+  }
+}

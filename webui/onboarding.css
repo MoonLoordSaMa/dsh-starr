@@ -1,0 +1,324 @@
+.onboarding.onboarding-v2 {
+  display: block;
+  width: 100%;
+  max-width: none;
+  padding: 36px clamp(18px, 4vw, 72px);
+  min-height: 100dvh;
+}
+.guide-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 1180px;
+  margin: 0 auto 26px;
+}
+.guide-brand .brand-star {
+  width: 42px;
+  height: 42px;
+}
+.guide-brand strong {
+  display: block;
+  font-family: Georgia, serif;
+  font-size: 30px;
+  color: var(--gold);
+}
+.guide-brand span {
+  font-size: 12px;
+  color: var(--secondary);
+}
+.guide-brand button {
+  margin-left: auto;
+}
+.guide-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  align-items: start;
+  gap: 22px;
+  max-width: 1180px;
+  margin: auto;
+}
+.onboarding-v2 .guide-steps {
+  padding: 30px 26px;
+}
+.guide-steps > small,
+.guide-eyebrow {
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  font-size: 11px;
+}
+.guide-steps h1 {
+  font-size: 23px;
+  line-height: 1.5;
+  margin: 14px 0 10px;
+}
+.guide-steps p {
+  font-size: 12px;
+  color: var(--secondary);
+}
+.guide-steps ol {
+  padding: 0;
+  margin: 28px 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+.guide-steps li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  color: var(--muted);
+  transition:
+    background 220ms,
+    color 220ms;
+}
+.guide-steps li > span {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 11px;
+}
+.guide-steps li strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+}
+.guide-steps li small {
+  font-size: 10px;
+}
+.guide-steps li[aria-current] {
+  color: var(--ink);
+  background: rgba(237, 199, 141, 0.08);
+}
+.guide-steps li[aria-current] > span {
+  color: var(--gold);
+  border-color: rgba(237, 199, 141, 0.4);
+  box-shadow: 0 0 20px rgba(237, 199, 141, 0.08);
+}
+.guide-preset {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.guide-preset > span,
+.guide-preset > code {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 11px;
+}
+.guide-preset .guide-result {
+  padding: 12px;
+}
+.onboarding-v2 .guide-main {
+  padding: clamp(24px, 4vw, 48px);
+  min-width: 0;
+}
+.guide-eyebrow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.guide-stage {
+  min-height: 470px;
+  animation: guide-arrive 0.4s var(--ease) both;
+}
+.guide-stage h2 {
+  font-size: clamp(23px, 2.4vw, 31px);
+  line-height: 1.5;
+  margin: 0 0 14px;
+  font-weight: 500;
+}
+.guide-stage h3 {
+  margin-top: 24px;
+  font-size: 15px;
+}
+.guide-stage .intro {
+  margin: 0 0 26px;
+  line-height: 1.9;
+  color: var(--secondary);
+}
+.guide-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+.guide-choice button {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.025);
+  transition:
+    background 180ms,
+    border-color 180ms;
+}
+.guide-choice .selected {
+  border-color: rgba(237, 199, 141, 0.5);
+  background: rgba(237, 199, 141, 0.08);
+  color: var(--gold);
+}
+.guide-tutorial {
+  padding-left: 23px;
+  color: var(--secondary);
+  line-height: 1.9;
+  display: grid;
+  gap: 10px;
+  font-size: 13px;
+  margin: 24px 0;
+}
+.guide-result {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 16px 0;
+}
+.guide-result p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 8px 0 0;
+}
+.guide-result.good {
+  border-color: rgba(131, 205, 187, 0.25);
+}
+.guide-result code {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+}
+.guide-note {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  color: var(--secondary);
+  margin: 24px 0;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.guide-note svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--gold);
+}
+.guide-note p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.guide-summary {
+  display: grid;
+  gap: 0;
+}
+.guide-summary > span {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 14px;
+  border-bottom: 1px solid var(--line);
+  padding: 13px 0;
+  font-size: 12px;
+  color: var(--secondary);
+}
+.guide-summary strong {
+  font-weight: 400;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.guide-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.guide-footer small {
+  font-size: 11px;
+  color: var(--secondary);
+}
+.onboarding-v2 .field {
+  margin: 20px 0;
+}
+.onboarding-v2 .field input,
+.onboarding-v2 .field textarea {
+  width: 100%;
+}
+.guide-reminder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding: 14px 18px;
+  border: 1px solid rgba(237, 199, 141, 0.22);
+  border-radius: 12px;
+  background: rgba(237, 199, 141, 0.05);
+}
+.guide-reminder p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--secondary);
+}
+.breadcrumb .guide-reopen {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+@keyframes guide-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 800px) {
+  .guide-layout {
+    grid-template-columns: 1fr;
+  }
+  .onboarding-v2 .guide-steps {
+    padding: 20px;
+  }
+  .guide-steps h1 {
+    font-size: 20px;
+  }
+  .guide-steps ol {
+    display: flex;
+    overflow: auto;
+    margin: 16px 0;
+    gap: 6px;
+    padding-bottom: 10px;
+  }
+  .guide-steps li {
+    flex-shrink: 0;
+    gap: 7px;
+    padding: 8px;
+  }
+  .guide-steps li small {
+    display: none;
+  }
+  .guide-steps li strong {
+    font-size: 11px;
+  }
+  .guide-preset {
+    display: none;
+  }
+  .guide-stage {
+    min-height: 420px;
+  }
+  .guide-brand button {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onboarding.onboarding-v2,
+  .guide-stage {
+    animation: none;
+  }
+}

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.taste-skill/
+pnpm-lock.yaml
+webui/public/*.svg
+src/vendor/
