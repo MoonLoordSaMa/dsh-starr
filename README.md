@@ -167,10 +167,10 @@ pnpm dev
 ### 检查与打包
 
 ```powershell
-# 格式、测试、类型检查与正式构建
+# 格式、类型检查、正式构建与测试
 pnpm format:check
-pnpm test
 pnpm build
+pnpm test
 
 # 检查待发布源码
 pnpm release:audit
@@ -181,6 +181,8 @@ pnpm pack:plugin
 # 生成完整源码归档
 pnpm pack:source
 ```
+
+控制台集成测试会读取构建后的 `dist`。全新克隆或解压源码后，请先运行 `pnpm build`，再运行 `pnpm test`；`dist` 由构建生成，不随源码提交。
 
 打包产物默认写入 `release/`，该目录不会纳入源码版本控制。`pack:plugin` 会生成 `.tgz`、运行归档 ZIP、文件清单与校验信息；`pack:source` 生成独立源码 ZIP。发布流程见[GitHub 上传与发布检查](docs/GITHUB.md)。
 

@@ -19,5 +19,8 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: pnpm release:audit
       - run: pnpm format:check
-      - run: pnpm test
-      - run: pnpm build
+      # 控制台集成测试读取 dist，干净检出必须先构建。
+      - name: 构建网页与校验类型
+        run: pnpm build
+      - name: 运行完整测试
+        run: pnpm test

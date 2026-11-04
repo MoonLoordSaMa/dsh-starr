@@ -6,10 +6,12 @@ GitHub仓库存放源码、测试、文档、依赖锁文件与构建规则。�
 pnpm install --frozen-lockfile
 pnpm release:audit
 pnpm format:check
-pnpm test
 pnpm build
+pnpm test
 pnpm pack:source -- --out-dir '<仓库之外的交付目录>'
 ```
+
+控制台集成测试读取构建后的 `dist`。本地新检出与GitHub工作流均先构建、再测试；无需把`dist`上传到源码仓库。
 
 也可直接使用`node scripts/package-source.mjs --out-dir '<仓库之外的交付目录>'`。源码归档只读取Git的已跟踪及未忽略文件清单，不包含`.git`、`node_modules`和`dist`。脚本拒绝已跟踪进来的常见运行资料、凭据与模型，并检查常见服务密钥、私钥正文、会话凭据及个人机器路径；只报告文件名和原因，不回显匹配内容。这是有边界的静态检查，仍需在提交前阅读实际暂存差异。
 
