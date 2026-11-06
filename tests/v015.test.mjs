@@ -439,7 +439,7 @@ test("曲库移除保留回收音源与元数据，默认参考受保护，跨�
   );
   assert.equal(singing.clearCache(f.a).originalsPreserved, true);
 });
-test("全部有效配置均有实际功能路由，各页诗序与七个工作区完整覆盖", () => {
+test("全部有效配置均有实际功能路由，DSH会话独立且会话页与五个工作区完整覆盖", () => {
   for (const field of fields) {
     const route = fieldRoute(field.page);
     assert.notEqual(route, "settings", field.key);
@@ -448,7 +448,12 @@ test("全部有效配置均有实际功能路由，各页诗序与七个工作�
       field.key,
     );
   }
-  assert.equal(workspaces.length, 7);
+  assert.equal(workspaces.length, 5);
+  const hostWorkspace = workspaces.find((workspace) => workspace.id === "host");
+  const chatWorkspace = workspaces.find((workspace) => workspace.id === "chat");
+  assert.deepEqual(hostWorkspace?.pages, ["host-chat"]);
+  assert.ok(chatWorkspace?.pages.includes("conversation"));
+  assert.equal(chatWorkspace?.pages.includes("host-chat"), false);
   for (const item of navigation) {
     assert.equal(
       workspaces.filter((w) => w.pages.includes(item.id)).length,

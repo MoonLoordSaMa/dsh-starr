@@ -1,0 +1,629 @@
+/* 庭院穿行：导航布局固定，控件用细分隔和轻材质衔接场景。 */
+:root {
+  --journey-ink: #eae3db;
+}
+.world-brand {
+  min-height: 0;
+  height: 100%;
+  justify-content: flex-start;
+  padding: 0 7px;
+}
+.world-brand > span {
+  font-size: 30px;
+}
+.workspace-navigation {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: 100%;
+  align-self: stretch;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: visible;
+}
+.app-shell .workspace-navigation > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  translate: none;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  transition:
+    color 220ms ease,
+    background-color 260ms ease;
+}
+.workspace-navigation > button + button::before {
+  content: "";
+  position: absolute;
+  top: 25%;
+  bottom: 25%;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(208, 193, 175, 0.27),
+    transparent
+  );
+}
+.app-shell .workspace-navigation > button:is(:hover, [aria-current="page"]) {
+  border: 0;
+  transform: none;
+  translate: none;
+  box-shadow: none;
+  color: #f0d7b6;
+  background: linear-gradient(180deg, transparent, rgba(211, 185, 151, 0.055));
+}
+.app-shell .workspace-navigation > button:focus-visible {
+  outline: 1px solid #d8c2a0;
+  outline-offset: -8px;
+}
+.workspace-navigation > button i {
+  left: 22%;
+  right: 22%;
+  bottom: 13px;
+  box-shadow: none;
+  opacity: 0.8;
+}
+.breadcrumb {
+  display: flex;
+  width: 246px;
+  height: 100%;
+  min-width: 0;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.home-character-switch {
+  width: 151px;
+  min-width: 0;
+}
+.home-character-switch .custom-select {
+  min-width: 0;
+  flex: 1;
+}
+.home-character-switch .select-trigger {
+  width: 100%;
+  max-width: 120px;
+  min-width: 0;
+  padding-inline: 7px;
+  font-size: 10px;
+}
+.home-character-switch .select-trigger > svg {
+  flex-shrink: 0;
+}
+.home-character-switch .icon-button {
+  flex-shrink: 0;
+  width: 28px;
+  min-width: 28px;
+  height: 29px;
+  min-height: 29px;
+  border: 0;
+}
+.app-shell .breadcrumb .guide-reopen {
+  min-height: 30px;
+  padding: 6px 7px;
+  border: 0;
+  background: transparent;
+  font-size: 9px;
+  color: #b7adb0;
+}
+.app-shell .breadcrumb .guide-reopen:hover {
+  background: rgba(213, 187, 150, 0.06);
+}
+.breadcrumb > .mobile-menu {
+  flex-shrink: 0;
+}
+.sidebar .character-switch {
+  margin-bottom: 17px;
+  padding-block: 10px;
+  background: transparent;
+}
+.app-shell .sidebar nav > button {
+  position: relative;
+  border: 0;
+  padding: 12px 10px;
+  min-height: 57px;
+  margin: 0;
+  transition:
+    color 180ms ease,
+    background-color 220ms ease;
+}
+.app-shell .sidebar nav > button + button::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(196, 188, 189, 0.14),
+    transparent
+  );
+}
+.app-shell .sidebar nav > button:is(:hover, .active) {
+  padding: 12px 10px;
+  border: 0;
+  box-shadow: none;
+  transform: none;
+  translate: none;
+}
+.app-shell .sidebar nav > button.active {
+  background: linear-gradient(90deg, rgba(220, 188, 148, 0.12), transparent);
+  color: #f0ddc5;
+}
+.app-shell .sidebar nav > button.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 22%;
+  height: 56%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, #dcc19a, transparent);
+}
+.app-shell .sidebar nav > button:focus-visible {
+  outline: 1px solid #dac5a4;
+  outline-offset: -3px;
+}
+.app-shell .sidebar nav > button small {
+  font-size: 9px;
+  line-height: 1.8;
+}
+
+/* 面板保持轻薄，内层行按横向细线分隔，不用选中大色块。 */
+.app-shell :is(.panel, .observatory-map, .observatory-aside) {
+  background: linear-gradient(
+    125deg,
+    rgba(23, 29, 43, 0.23),
+    rgba(12, 17, 30, 0.34)
+  );
+}
+.app-shell .configuration-inspector {
+  padding: 22px 23px;
+  border: 0;
+  background: linear-gradient(
+    115deg,
+    rgba(182, 176, 178, 0.07),
+    rgba(12, 17, 30, 0.21)
+  );
+  backdrop-filter: blur(var(--glass-panel));
+  -webkit-backdrop-filter: blur(var(--glass-panel));
+}
+.configuration-layout {
+  grid-template-columns: minmax(0, 1.3fr) minmax(230px, 0.7fr);
+  gap: 28px;
+}
+.app-shell .configuration-fields .config-row {
+  position: relative;
+  padding: 19px 14px;
+  gap: 16px;
+  min-height: 75px;
+  border: 0;
+  background: transparent;
+  align-items: center;
+}
+.app-shell .configuration-fields .config-row::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(205, 195, 188, 0.02),
+    rgba(205, 195, 188, 0.16) 45%,
+    transparent
+  );
+}
+.app-shell .configuration-fields .config-row.inspected {
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(226, 193, 151, 0.055),
+    transparent 75%
+  );
+}
+.app-shell .configuration-fields .config-row.inspected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 22%;
+  bottom: 22%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, #d1b28c, transparent);
+}
+.app-shell .config-row label {
+  align-self: center;
+  line-height: 1.75;
+  min-width: 0;
+}
+.app-shell .config-row strong {
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.app-shell .switch-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.app-shell .switch-row .config-control {
+  width: auto;
+  justify-self: end;
+}
+.app-shell .toggle {
+  width: 40px;
+  min-width: 40px;
+  height: 21px;
+  min-height: 21px;
+  padding: 3px;
+  border: 0;
+  background: rgba(172, 181, 202, 0.13);
+  box-shadow: inset 0 1px rgba(223, 226, 238, 0.06);
+}
+.app-shell .toggle > i {
+  width: 13px;
+  height: 13px;
+  top: 4px;
+  left: 4px;
+  border-radius: 0;
+  background: #8f9aac;
+  box-shadow: none;
+  transform: none;
+  transition:
+    translate 220ms ease,
+    background-color 220ms ease;
+}
+.app-shell .toggle[aria-checked="true"] {
+  background: rgba(225, 191, 147, 0.19);
+  border: 0;
+}
+.app-shell .toggle[aria-checked="true"] > i {
+  translate: 19px 0;
+  transform: none;
+  background: #dfc39f;
+}
+.app-shell .toggle:focus-visible {
+  outline: 1px solid #e5c797;
+  outline-offset: 4px;
+}
+.app-shell :is(.tabs, .interaction-routes, .context-routes) {
+  gap: 0;
+  padding: 0;
+}
+.app-shell :is(.tabs, .interaction-routes, .context-routes) > button {
+  position: relative;
+  min-height: 42px;
+  padding: 10px 18px;
+}
+.app-shell
+  :is(.tabs, .interaction-routes, .context-routes)
+  > button
+  + button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(205, 194, 181, 0.2),
+    transparent
+  );
+}
+.app-shell .select-trigger {
+  min-height: 37px;
+  border: 0;
+  background: rgba(16, 22, 36, 0.36);
+}
+.app-shell .badge {
+  padding: 5px 8px;
+  min-height: 22px;
+  line-height: 1.5;
+  background: linear-gradient(110deg, rgba(185, 191, 210, 0.06), transparent);
+}
+.app-shell .panel-heading {
+  padding-bottom: 15px;
+}
+.app-shell .panel-heading h2 {
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+.app-shell .function-groups > section {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: linear-gradient(135deg, rgba(188, 190, 204, 0.035), transparent);
+}
+.function-groups > section > button + button {
+  position: relative;
+}
+.function-groups > section > button + button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(205, 194, 181, 0.13),
+    transparent
+  );
+}
+
+.observatory-passage {
+  position: relative;
+  pointer-events: none;
+}
+.journey-stop {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 76dvh;
+  padding: 10dvh clamp(28px, 7.5vw, 140px);
+}
+.journey-stop > * {
+  width: fit-content;
+  max-width: 420px;
+  pointer-events: auto;
+}
+.journey-stop-right {
+  align-items: flex-end;
+}
+.journey-number {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: #c8aa88;
+}
+.journey-stop h2 {
+  margin-top: 25px;
+  font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+  font-size: clamp(29px, 3.2vw, 49px);
+  font-weight: 400;
+  line-height: 1.75;
+  color: #e4dbd0;
+  text-shadow: 0 3px 25px #0a0d1988;
+}
+.journey-stop > p {
+  margin-top: 16px;
+  font-size: 10px;
+  color: #aba6b0;
+  letter-spacing: 0.12em;
+}
+.journey-footnote {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  margin-top: 45px;
+  font-size: 11px;
+  color: #b9b2b4;
+}
+.journey-footnote > button {
+  display: inline-flex;
+  gap: 18px;
+  justify-content: space-between;
+  align-items: center;
+  width: fit-content;
+  min-width: 130px;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  color: #e4c9a7;
+}
+.observatory-content {
+  padding-top: 100px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(10, 14, 26, 0.12) 15%,
+    rgba(10, 14, 26, 0.25)
+  );
+}
+.app-shell[data-workspace="home"] .observatory-content {
+  min-height: 130dvh;
+}
+
+.page-continuation {
+  --continue-progress: 0;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  min-height: 220px;
+  position: relative;
+  padding: 45px 12px 65px;
+  margin-top: 30px;
+}
+.continuation-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(209, 191, 170, 0.25),
+    transparent
+  );
+}
+.continuation-rule::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: scaleX(var(--continue-progress));
+  transform-origin: left;
+  background: linear-gradient(90deg, transparent, #e9c999, transparent);
+}
+.page-continuation > div {
+  flex: 1;
+}
+.page-continuation > div > span {
+  color: #c0a585;
+  font-size: 10px;
+  letter-spacing: 0.17em;
+}
+.page-continuation h2 {
+  color: #e1d5c5;
+  font-size: 24px;
+  font-weight: 400;
+  margin: 12px 0;
+}
+.page-continuation p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #aaa6b1;
+}
+.page-continuation > button {
+  border: 0;
+  background: rgba(213, 185, 151, 0.05);
+  width: 58px;
+  height: 58px;
+  color: #dfc8a9;
+}
+.page-continuation > button:hover {
+  background: rgba(213, 185, 151, 0.12);
+}
+.continuation-down {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  color: #b9a28c;
+}
+
+@media (min-width: 981px) and (max-width: 1200px) {
+  .topbar,
+  .app-shell[data-workspace="home"] .topbar {
+    grid-template-columns: 147px minmax(0, 1fr) 224px;
+    padding-inline: 14px;
+  }
+  .breadcrumb {
+    width: 224px;
+    gap: 3px;
+  }
+  .home-character-switch {
+    width: 142px;
+  }
+  .app-shell .workspace-navigation > button {
+    padding-inline: 5px;
+    font-size: 11px;
+  }
+  .configuration-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-shell .configuration-inspector {
+    position: relative;
+    top: auto;
+    min-height: 0;
+  }
+}
+@media (max-width: 980px) {
+  .topbar,
+  .app-shell[data-workspace="home"] .topbar {
+    grid-template-columns: 46px minmax(0, 1fr);
+    grid-template-rows: 50px 54px;
+    padding: 0 13px;
+    gap: 0;
+  }
+  .breadcrumb {
+    width: 100%;
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .home-character-switch {
+    width: 150px;
+  }
+  .workspace-navigation {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    height: 54px;
+    gap: 0;
+    overflow: visible;
+  }
+  .app-shell .workspace-navigation > button {
+    flex: 1;
+    font-size: 10px;
+    padding-inline: 4px;
+  }
+  .workspace-navigation > button i {
+    bottom: 8px;
+  }
+  .world-brand {
+    height: 50px;
+  }
+  .app-shell .sidebar {
+    top: var(--topbar-height);
+  }
+  .configuration-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-shell .configuration-inspector {
+    position: relative;
+    top: auto;
+  }
+  .journey-stop {
+    min-height: 70dvh;
+  }
+}
+@media (max-width: 540px) {
+  .topbar,
+  .app-shell[data-workspace="home"] .topbar {
+    padding-inline: 10px;
+  }
+  .app-shell .workspace-navigation > button {
+    font-size: 9px;
+    letter-spacing: 0;
+    padding: 0 3px;
+  }
+  .breadcrumb {
+    gap: 6px;
+  }
+  .home-character-switch {
+    width: 139px;
+  }
+  .journey-stop {
+    padding: 65px 26px;
+    min-height: 75dvh;
+  }
+  .journey-stop h2 {
+    font-size: 28px;
+  }
+  .journey-stop-right {
+    align-items: flex-start;
+  }
+  .journey-footnote {
+    margin-top: 28px;
+  }
+  .app-shell .configuration-fields .config-row {
+    min-height: 75px;
+    padding-inline: 9px;
+  }
+  .app-shell .config-row strong {
+    font-size: 11px;
+  }
+  .page-continuation {
+    min-height: 200px;
+    gap: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar,
+  .app-shell[data-workspace="home"] .topbar {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+}

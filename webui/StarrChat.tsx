@@ -45,27 +45,32 @@ type Context = {
   };
 };
 const purposeNames: Record<string, string> = {
-  chat: "日常交流",
-  memory: "记忆整理",
-  task: "任务协作",
-  management: "系统管理",
+  chat: "西窗闲语",
+  memory: "拾光成册",
+  task: "同行一程",
+  management: "星务执掌",
 };
 const platformNames: Record<string, string> = {
   qq: "QQ",
   bili: "B站",
-  web: "网页角色会话",
+  web: "DSH 宿主",
 };
 const typeNames: Record<string, string> = {
-  group: "群聊",
-  private: "私聊",
-  dm: "私信",
-  comment: "评论楼层",
-  live: "直播间",
-  watch: "资料阅读",
-  dynamic: "动态创作",
-  web: "角色会话",
+  group: "四海同席",
+  private: "尺素私语",
+  dm: "尺素来信",
+  comment: "人间回声",
+  live: "流光同席",
+  watch: "展卷山海",
+  dynamic: "寄语人间",
+  web: "灯下相逢",
 };
-export function StarrChat(props: PageProps & { view?: string }) {
+export function StarrChat(
+  props: PageProps & {
+    view?: string;
+    channel?: "all" | "external" | "host" | "private" | "group";
+  },
+) {
   const { character, notify } = props,
     base = `/api/characters/${character.id}`;
   const [tab, setTab] = useState(props.view || "sessions"),
@@ -73,7 +78,13 @@ export function StarrChat(props: PageProps & { view?: string }) {
     [selected, setSelected] = useState(""),
     [detail, setDetail] = useState<Session | null>(null),
     [preview, setPreview] = useState<Context | null>(null);
-  const [platform, setPlatform] = useState("all"),
+  const [platform, setPlatform] = useState(
+      props.channel === "host"
+        ? "web"
+        : props.channel && !["all", "external"].includes(props.channel)
+          ? "qq"
+          : "all",
+    ),
     [purpose, setPurpose] = useState("all"),
     [query, setQuery] = useState(""),
     [error, setError] = useState(""),
@@ -171,27 +182,52 @@ export function StarrChat(props: PageProps & { view?: string }) {
   };
   const filtered = sessions.filter(
     (session) =>
+      (!props.channel ||
+        props.channel === "all" ||
+        (props.channel === "external"
+          ? ["qq", "bili"].includes(session.platform)
+          : props.channel === "host"
+            ? session.platform === "web" &&
+              !session.session_id.startsWith("session-starr-job-")
+            : session.platform === "qq" && session.type === props.channel)) &&
       (platform === "all" || session.platform === platform) &&
       (purpose === "all" || session.purpose === purpose) &&
       `${session.title} ${session.target}`.includes(query),
   );
+  useEffect(() => {
+    if (!filtered.some((s) => s.session_id === selected)) {
+      setSelected(filtered[0]?.session_id || "");
+      setDetail(null);
+      setPreview(null);
+    }
+  }, [props.channel, sessions, platform, purpose, query]);
   return (
     <div className="starr-chat">
       <div className="chat-intro">
-        <p>按平台与用途整理接续，账号和对话对象各有边界</p>
-        <Badge>{sessions.length} 段角色会话</Badge>
+        <p>
+          {props.channel === "host"
+            ? "在 DSH 中选择 Starr-chat 预设，或显式绑定角色会话；在这里查看接续与实际注入。"
+            : props.channel === "group"
+              ? "每个 QQ 群独立保存接续，群成员与 @ 操作只作用于当前群。"
+              : props.channel === "private"
+                ? "每位 QQ 好友独立保存接续，群聊记录不在此处混排。"
+                : props.channel === "external"
+                  ? "QQ 与 B站会话都在 Starr-chat 中整理；每个对象的接续与共享记忆仍按授权隔离。"
+                  : "按平台与用途整理接续，账号和对话对象各有边界"}
+        </p>
+        <Badge>{filtered.length} 段会话</Badge>
       </div>
       {!props.view && (
         <Tabs
           value={tab}
           onChange={setTab}
           items={[
-            { id: "sessions", name: "会话" },
-            { id: "context", name: "上下文注入" },
-            { id: "rules", name: "规则与节奏" },
-            { id: "memory", name: "共享记忆" },
-            { id: "qq", name: "QQ 接入" },
-            { id: "bili", name: "B站接入" },
+            { id: "sessions", name: "西窗" },
+            { id: "context", name: "言外星笺" },
+            { id: "rules", name: "缓急有章" },
+            { id: "memory", name: "共望星河" },
+            { id: "qq", name: "鹊桥结契" },
+            { id: "bili", name: "山海结缘" },
           ]}
         />
       )}
@@ -203,24 +239,26 @@ export function StarrChat(props: PageProps & { view?: string }) {
       {tab === "sessions" && (
         <>
           <div className="chat-filters">
+            {(!props.channel || props.channel === "all") && (
+              <Select
+                label="渡口门类"
+                value={platform}
+                onChange={setPlatform}
+                options={[
+                  { value: "all", label: "四海来信" },
+                  ...Object.entries(platformNames).map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
+                ]}
+              />
+            )}
             <Select
-              label="平台分类"
-              value={platform}
-              onChange={setPlatform}
-              options={[
-                { value: "all", label: "全部平台" },
-                ...Object.entries(platformNames).map(([value, label]) => ({
-                  value,
-                  label,
-                })),
-              ]}
-            />
-            <Select
-              label="用途分类"
+              label="笺意门类"
               value={purpose}
               onChange={setPurpose}
               options={[
-                { value: "all", label: "全部用途" },
+                { value: "all", label: "笺意万千" },
                 ...Object.entries(purposeNames).map(([value, label]) => ({
                   value,
                   label,
@@ -238,7 +276,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
             </label>
             <button className="ghost" disabled={busy} onClick={() => run(load)}>
               <RefreshCw size={15} />
-              刷新
+              重观星象
             </button>
           </div>
           <div className="chat-columns">
@@ -259,7 +297,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
                           {platformNames[session.platform]} ·{" "}
                           {session.session_id.startsWith("session-starr-job-")
                             ? "记忆任务"
-                            : typeNames[session.type] || "角色会话"}{" "}
+                            : typeNames[session.type] || "灯下相逢"}{" "}
                           · {purposeNames[session.purpose]}
                         </small>
                         <small>
@@ -273,7 +311,17 @@ export function StarrChat(props: PageProps & { view?: string }) {
               ) : (
                 <Empty
                   title="这里还没有会话"
-                  description="QQ 收到允许范围内的消息，或在 DSH 打开角色预设后，会自动登记在这里。B站实际接入后也使用同一套登记与记忆服务。"
+                  description={
+                    props.channel === "host"
+                      ? "从 DSH 中以 Starr-chat 预设发起的角色会话会登记在这里；QQ 与 B站会话请到 Starr-chat 工作区查看。"
+                      : props.channel === "external"
+                        ? "收到允许范围内的 QQ 或 B站会话后，会自动登记在这里；各平台共用角色记忆服务，同时保持对象权限隔离。"
+                        : props.channel === "group"
+                          ? "允许名单中的群聊消息会按群独立登记；群内回复、成员工具和分段发送只在当前群聊生效。"
+                          : props.channel === "private"
+                            ? "允许名单中的好友消息会按 QQ 账号和好友分别登记；私聊与群聊接续互不混用。"
+                            : "收到允许范围内的 QQ 或 B站会话后，会自动登记在这里；各平台共用角色记忆服务，同时保持对象权限隔离。"
+                  }
                 />
               )}
             </Panel>
@@ -293,18 +341,18 @@ export function StarrChat(props: PageProps & { view?: string }) {
                             }
                             onChange={(mode) => setDetail({ ...detail, mode })}
                             options={[
-                              { value: "default", label: "跟随角色默认状态" },
-                              { value: "awake", label: "清醒 · 接续交流" },
-                              { value: "observe", label: "观察 · 等待叫到" },
+                              { value: "default", label: "随她醒梦" },
+                              { value: "awake", label: "星醒 · 续语" },
+                              { value: "observe", label: "静观 · 候唤" },
                               {
                                 value: "sleep",
-                                label: "沉睡 · 只回应直接呼唤",
+                                label: "眠星 · 呼名方应",
                               },
                             ]}
                           />
                           {!!detail.behavior?.wake_after && (
                             <p className="footnote">
-                              等待至{" "}
+                              候至{" "}
                               {date(
                                 new Date(
                                   detail.behavior.wake_after,
@@ -316,7 +364,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
                         </>
                       )}
                     <label className="field">
-                      会话标题
+                      笺名
                       <input
                         value={detail.title}
                         onChange={(e) =>
@@ -325,7 +373,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
                       />
                     </label>
                     <Select
-                      label="会话用途"
+                      label="笺意"
                       value={detail.purpose}
                       onChange={(value) =>
                         setDetail({ ...detail, purpose: value })
@@ -335,7 +383,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
                       )}
                     />
                     <label className="field">
-                      接续摘要
+                      续话余韵
                       <textarea
                         rows={4}
                         value={detail.summary || ""}
@@ -416,12 +464,12 @@ export function StarrChat(props: PageProps & { view?: string }) {
                         }
                       >
                         <Save size={14} />
-                        保存会话
+                        落笺续语
                       </button>
                     </div>
                   </Panel>
                   {preview && (
-                    <Panel title="下一轮会带上什么">
+                    <Panel title="下回星笺">
                       <div className="protocol-facts">
                         <span>
                           {preview.chars} / {preview.budget} 字符
@@ -462,7 +510,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
             <Panel title="这一次，真正带上了什么">
               <div className="injection-check">
                 <Select
-                  label="核验会话"
+                  label="照见此笺"
                   value={selected}
                   onChange={setSelected}
                   options={sessions.map((session) => ({
@@ -476,7 +524,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
                   onClick={() => run(load)}
                 >
                   <RefreshCw size={14} />
-                  刷新核验
+                  重照信契
                 </button>
                 {preview ? (
                   <>
@@ -531,7 +579,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
                 )}
               </div>
             </Panel>
-            <Panel title="角色核心与动态资料">
+            <Panel title="星魂与流光">
               <p>
                 当前人设决定说话方式；摘要、心理状态与相关往事随请求更新。资料应自然融入相处，完整记忆需要时再按编号读取
               </p>
@@ -550,22 +598,22 @@ export function StarrChat(props: PageProps & { view?: string }) {
             QQ；用量闸门作用于当前角色的 Starr-chat
             模型请求。平台凭据和允许对象分别在接入页配置
           </p>
-          <Disclosure title="唤醒、观察与额度">
+          <Disclosure title="醒梦有度">
             <ConfigForm {...props} pages={["chat-wake"]} />
           </Disclosure>
-          <Disclosure title="回复、分条、等待与收尾">
+          <Disclosure title="起承与余韵">
             <ConfigForm {...props} pages={["chat-reply"]} />
           </Disclosure>
-          <Disclosure title="拒收与连续刷屏保护">
+          <Disclosure title="静水息澜">
             <ConfigForm {...props} pages={["chat-access"]} />
           </Disclosure>
-          <Disclosure title="会话工具开关">
+          <Disclosure title="言间百器">
             <ConfigForm {...props} pages={["chat-tools"]} />
           </Disclosure>
-          <Disclosure title="图片、语音、表情与补看历史">
+          <Disclosure title="声影旧笺">
             <ConfigForm {...props} pages={["chat-media"]} />
           </Disclosure>
-          <Disclosure title="模型用量与估算费用">
+          <Disclosure title="星筹簿">
             <UsageBudget {...props} />
             <ConfigForm {...props} pages={["chat-budget"]} />
           </Disclosure>
@@ -582,7 +630,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
             </p>
             <ConfigForm {...props} pages={["chat-memory"]} />
           </Panel>
-          <Panel title="确认记忆的共享范围">
+          <Panel title="共览定界">
             <p>
               一键共享后，当前角色的
               QQ、B站和网页角色会话都能读取这些记忆。请先确认其中没有希望保留在单独私聊里的内容
@@ -608,7 +656,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
                   })
                 }
               >
-                一键共享全部记忆
+                共览满天星
               </button>
               {shareBatch && (
                 <button
@@ -626,11 +674,11 @@ export function StarrChat(props: PageProps & { view?: string }) {
                     })
                   }
                 >
-                  撤销本次共享
+                  收回共览
                 </button>
               )}
             </div>
-            <Disclosure title="逐条查看或调整范围">
+            <Disclosure title="逐星定界">
               <p className="footnote">
                 下方列出最近 500
                 条记忆；这是管理员操作。设为共享后，当前角色各平台会话都可能召回
@@ -644,7 +692,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
                         {memory.visibility === "shared"
                           ? "角色共享"
                           : memory.visibility === "conversation"
-                            ? "仅来源会话"
+                            ? "一窗独望"
                             : "待确认范围"}
                       </small>
                     </span>
@@ -682,9 +730,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
                         })
                       }
                     >
-                      {memory.visibility === "shared"
-                        ? "取消共享"
-                        : "设为角色共享"}
+                      {memory.visibility === "shared" ? "收回共望" : "许她共望"}
                     </button>
                   </div>
                 ))}
@@ -696,7 +742,7 @@ export function StarrChat(props: PageProps & { view?: string }) {
       {tab === "qq" && (
         <>
           <QQConnection {...props} />
-          <Panel title="群成员、拍一拍与问题反馈">
+          <Panel title="同席与回响">
             <ConfigForm {...props} pages={["chat-social"]} />
           </Panel>
         </>

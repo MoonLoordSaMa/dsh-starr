@@ -320,6 +320,8 @@ export function createQQCapabilities({
             type: "image",
             data: {
               file: `base64://${fs.readFileSync(file.file).toString("base64")}`,
+              sub_type: 1,
+              summary: "[表情]",
             },
           },
         ],

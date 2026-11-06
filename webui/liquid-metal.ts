@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { scatterButtonStars } from "./button-stars";
 
 // 共享一份 GPU 程序；只为当前交互的控件绘制，不为每个按钮建立 WebGL 上下文。
 const vertex = `attribute vec2 position;void main(){gl_Position=vec4(position,0.,1.);}`;
@@ -35,7 +36,7 @@ export function useLiquidMetal(mode: string) {
     const selector =
       "button:not(.toggle):not(.world-brand):not([role=switch]),a.button";
     const plain =
-      ".memory-row,.chat-session,.disclosure-trigger,.select-trigger,.select-options>button,.chapter-navigation>button,.relation-row,.expression-preview,.hero-scroll,.function-result,.function-groups button,.related-routes button,.prelude-continue";
+      ".workspace-navigation>button,.sidebar nav>button,.page-continuation button,.memory-row,.chat-session,.disclosure-trigger,.select-trigger,.select-options>button,.chapter-navigation>button,.relation-row,.expression-preview,.hero-scroll,.function-result,.function-groups button,.related-routes button,.prelude-continue,.observatory-metrics button,.observatory-scroll";
     const markButton = (button: HTMLElement) => {
       if (button.closest(".sr-only") || button.matches(plain))
         button.removeAttribute("data-liquid");
@@ -69,10 +70,12 @@ export function useLiquidMetal(mode: string) {
         });
     let target: HTMLElement | null = null,
       surface: HTMLCanvasElement | null = null;
+    let clearStars: (() => void) | undefined;
     let frame = 0,
       last = 0,
       start = 0,
       metalStrength = 0.3,
+      borderRadius = 0,
       pressed = -10,
       x = 0.5,
       y = 0.5,
@@ -120,6 +123,8 @@ export function useLiquidMetal(mode: string) {
       }
     }
     function clear() {
+      clearStars?.();
+      clearStars = undefined;
       cancelAnimationFrame(frame);
       frame = 0;
       if (surface) {
@@ -191,13 +196,9 @@ export function useLiquidMetal(mode: string) {
           uniforms.press,
           reduced ? 0 : Math.max(0, 1 - (now - pressed) / 850),
         );
-        const radius = parseFloat(getComputedStyle(target).borderTopLeftRadius);
         gl.uniform1f(
           uniforms.rounded,
-          Math.min(
-            height / 2,
-            Number.isFinite(radius) ? Math.max(0, radius * ratio) : height / 2,
-          ),
+          Math.min(height / 2, borderRadius * ratio),
         );
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -218,11 +219,22 @@ export function useLiquidMetal(mode: string) {
       )
         return;
       target = element;
+      const appearance = getComputedStyle(element);
       metalStrength =
-        parseFloat(
-          getComputedStyle(element).getPropertyValue("--metal-strength"),
-        ) || 0.3;
+        parseFloat(appearance.getPropertyValue("--metal-strength")) || 0.3;
+      borderRadius = Math.max(
+        0,
+        parseFloat(appearance.borderTopLeftRadius) || 0,
+      );
+      px = py = 0.5;
       target.dataset.liquidActive = "";
+      if (
+        !reduced &&
+        element.matches(
+          ".primary:not(.danger),.hero-write,.journey-footnote>button",
+        )
+      )
+        clearStars = scatterButtonStars(element);
       if (!reduced && gl && program) {
         surface = document.createElement("canvas");
         surface.dataset.liquidFx = "";
@@ -254,17 +266,23 @@ export function useLiquidMetal(mode: string) {
       target.style.setProperty("--metal-y", `${y * 100}%`);
     };
     const press = (event: PointerEvent) => {
-      activate(identify(event));
+      if (event.pointerType !== "mouse") return;
+      const button = identify(event);
+      if (!button) return;
+      activate(button);
+      if (!target) return;
       pressed = performance.now();
+      const box = target.getBoundingClientRect();
+      x = (event.clientX - box.left) / box.width;
+      y = (event.clientY - box.top) / box.height;
     };
-    const focus = (event: FocusEvent) => {
-      if (identify(event)?.matches(":focus-visible")) {
-        x = y = 0.5;
-        activate(identify(event));
-      }
-    };
-    const blur = (event: FocusEvent) => {
-      if (event.target === target) clear();
+    const leave = (event: PointerEvent) => {
+      if (
+        target &&
+        (!(event.relatedTarget instanceof Node) ||
+          !target.contains(event.relatedTarget))
+      )
+        clear();
     };
     const visibility = () => {
       visible = !document.hidden;
@@ -272,19 +290,23 @@ export function useLiquidMetal(mode: string) {
     };
     document.addEventListener("pointermove", move, { passive: true });
     document.addEventListener("pointerdown", press, { passive: true });
-    document.addEventListener("focusin", focus);
-    document.addEventListener("focusout", blur);
+
+    document.addEventListener("pointerout", leave);
+    document.addEventListener("scroll", clear, true);
     document.addEventListener("visibilitychange", visibility);
     addEventListener("blur", clear);
+    addEventListener("resize", clear);
     return () => {
       observer.disconnect();
       clear();
       document.removeEventListener("pointermove", move);
       document.removeEventListener("pointerdown", press);
-      document.removeEventListener("focusin", focus);
-      document.removeEventListener("focusout", blur);
+
+      document.removeEventListener("pointerout", leave);
+      document.removeEventListener("scroll", clear, true);
       document.removeEventListener("visibilitychange", visibility);
       removeEventListener("blur", clear);
+      removeEventListener("resize", clear);
       if (gl) {
         if (buffer) gl.deleteBuffer(buffer);
         if (program) gl.deleteProgram(program);

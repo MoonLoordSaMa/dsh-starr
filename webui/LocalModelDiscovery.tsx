@@ -107,7 +107,7 @@ export function LocalModelDiscovery({
         </p>
       </Disclosure>
       <label className="field">
-        引擎安装目录
+        灵枢安放处
         <input
           value={directory}
           onChange={(e) => setDirectory(e.target.value)}
@@ -117,9 +117,9 @@ export function LocalModelDiscovery({
           不必分别查找每个模型文件。留空则检查已有配置与常见用户模型目录
         </small>
       </label>
-      <Disclosure title="高级扫描选项 · 端口与额外目录">
+      <Disclosure title="寻径别笺">
         <label className="field">
-          要检查的本机端口
+          近处待验渡口
           <input
             value={ports}
             onChange={(e) => setPorts(e.target.value)}
@@ -128,7 +128,7 @@ export function LocalModelDiscovery({
           <small>最多 12 个，仅检查 127.0.0.1 的模型目录接口</small>
         </label>
         <label className="field">
-          模型目录，每行一个
+          灵枢栖处，每行一所
           <textarea
             rows={4}
             value={directories}
@@ -176,7 +176,7 @@ export function LocalModelDiscovery({
         }}
       >
         {busy ? <RefreshCw size={15} className="spin" /> : <Radar size={15} />}{" "}
-        {busy ? "正在发现本地模型…" : "发现本地模型"}
+        {busy ? "正在寻访灵枢…" : "寻访近处灵枢"}
       </button>
       {result && (
         <div aria-live="polite">
@@ -227,7 +227,7 @@ export function LocalModelDiscovery({
                     }
                   }}
                 >
-                  确认并填入配置
+                  落定此笺
                 </button>
               </div>
             ))}
@@ -279,7 +279,7 @@ export function LocalModelDiscovery({
               <p>所选范围内未发现支持的模型文件；可以补充实际模型目录后重试</p>
             )}
           </Disclosure>
-          <Disclosure title="目录扫描结果">
+          <Disclosure title="寻径所得">
             {result.directories.map((dir) => (
               <p key={dir.directory}>
                 <code>{dir.directory}</code> ·{" "}

@@ -10,6 +10,7 @@ import { socialCapabilities } from "./social.mjs";
 import { isProcessRunning } from "../runtime/lease.mjs";
 import { setTimeout as pause } from "node:timers/promises";
 import { replyDelay } from "../conversation/behavior.mjs";
+import { waitForMessages } from "./wait-message.mjs";
 import {
   OneBotConnection,
   onebotAction,
@@ -77,6 +78,21 @@ function validate(value) {
 }
 
 export function normalizeQQEvent(event, settings, selfId) {
+  selfId = String(selfId);
+  const poke =
+    event.post_type === "notice" &&
+    event.notice_type === "notify" &&
+    event.sub_type === "poke";
+  if (poke) {
+    if (String(event.target_id) !== selfId || !event.time) return null;
+    event = {
+      ...event,
+      post_type: "message",
+      message_type: event.group_id ? "group" : "private",
+      message_id: `poke:${event.group_id || "private"}:${event.user_id}:${event.target_id}:${event.time}:${event.raw_info?.seq || ""}`,
+      message: [{ type: "text", data: { text: "[对方拍了拍你]" } }],
+    };
+  }
   if (
     event.post_type !== "message" ||
     !["private", "group"].includes(event.message_type) ||
@@ -94,19 +110,54 @@ export function normalizeQQEvent(event, settings, selfId) {
     ).includes(target)
   )
     return null;
-  const segments = Array.isArray(event.message) ? event.message : [];
+  const decode = (text) =>
+    text
+      .replace(/&#91;/g, "[")
+      .replace(/&#93;/g, "]")
+      .replace(/&#44;/g, ",")
+      .replace(/&amp;/g, "&");
+  const segments = Array.isArray(event.message)
+    ? event.message
+    : typeof event.message === "string"
+      ? Array.from(
+          event.message.matchAll(
+            /\[CQ:([^,\]]+)((?:,[^\]]*)?)\]|([^[]+|\[(?!CQ:))/g,
+          ),
+          (match) =>
+            match[1]
+              ? {
+                  type: match[1],
+                  data: Object.fromEntries(
+                    match[2]
+                      .slice(1)
+                      .split(",")
+                      .filter(Boolean)
+                      .map((pair) => {
+                        const at = pair.indexOf("=");
+                        return [pair.slice(0, at), decode(pair.slice(at + 1))];
+                      }),
+                  ),
+                }
+              : { type: "text", data: { text: decode(match[3]) } },
+        )
+      : [];
   const raw =
     typeof event.message === "string"
       ? event.message
       : typeof event.raw_message === "string"
         ? event.raw_message
         : "";
+  const replyToId = String(
+    segments.find((segment) => segment.type === "reply")?.data?.id || "",
+  ).slice(0, 64);
   const mentioned =
+    poke ||
     segments.some(
       (segment) => segment.type === "at" && String(segment.data?.qq) === selfId,
-    ) || raw.includes(`[CQ:at,qq=${selfId}]`);
+    ) ||
+    raw.includes(`[CQ:at,qq=${selfId}]`);
   if (type === "group" && settings.requireMention && !mentioned) return null;
-  const text = (
+  const bodyText = (
     segments.length
       ? segments
           .map((segment) =>
@@ -114,16 +165,22 @@ export function normalizeQQEvent(event, settings, selfId) {
               ? String(segment.data?.text || "")
               : segment.type === "at"
                 ? ""
-                : segment.type === "image"
-                  ? "[图片，尚未提供图片内容]"
-                  : segment.type === "record"
-                    ? "[语音，尚未转写]"
-                    : segment.type === "forward"
-                      ? "[合并转发，可按消息编号展开]"
-                      : "",
+                : segment.type === "reply"
+                  ? ""
+                  : segment.type === "image"
+                    ? "[图片，尚未提供图片内容]"
+                    : segment.type === "record"
+                      ? "[语音，尚未转写]"
+                      : segment.type === "forward"
+                        ? "[合并转发，可按消息编号展开]"
+                        : "",
           )
           .join("")
       : raw.replace(/\[CQ:[^\]]*\]/g, "")
+  ).trim();
+  const text = (
+    bodyText ||
+    (mentioned ? "[对方 @ 了你]" : replyToId ? "[对方引用了一条消息]" : "")
   )
     .trim()
     .slice(0, 12000);
@@ -139,6 +196,8 @@ export function normalizeQQEvent(event, settings, selfId) {
       event.sender?.card || event.sender?.nickname || "",
     ).slice(0, 80),
     mentioned,
+    eventType: poke ? "poke" : "message",
+    replyToId,
     attachments: segments
       .filter((segment) => ["image", "record"].includes(segment.type))
       .slice(0, 10)
@@ -190,6 +249,7 @@ export class QQService {
       CREATE TABLE IF NOT EXISTS qq_inbox(seq INTEGER PRIMARY KEY AUTOINCREMENT,event_key TEXT NOT NULL UNIQUE,thread_key TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',attempts INTEGER NOT NULL DEFAULT 0,next_at INTEGER NOT NULL DEFAULT 0,error TEXT,created INTEGER NOT NULL,batch_id TEXT);
       CREATE TABLE IF NOT EXISTS qq_sends(batch_id TEXT PRIMARY KEY,thread_key TEXT NOT NULL,text TEXT,status TEXT NOT NULL,message_id TEXT,created INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS qq_send_parts(id TEXT PRIMARY KEY,batch_id TEXT NOT NULL,position INTEGER NOT NULL,status TEXT NOT NULL,message_id TEXT,created INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS qq_outbox_messages(message_id TEXT NOT NULL,thread_key TEXT NOT NULL,text TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(thread_key,message_id));
     `);
   }
   settings() {
@@ -668,7 +728,7 @@ export class QQService {
     const generation = this.generation;
     const current = () => !this.closed && generation === this.generation;
     const db = this.store.db;
-    const batchId =
+    let batchId =
       rows[0].batch_id || hash(rows.map((row) => row.event_key).join(":"));
     const mark = (status, error = null, nextAt = 0) => {
       if (!current()) return;
@@ -713,15 +773,29 @@ export class QQService {
     }
     const signal = AbortSignal.any([
       this.abort.signal,
-      AbortSignal.timeout(120000),
+      AbortSignal.timeout(300000),
     ]);
     let settled = false,
       sending = false,
       sendFailure;
-    const sendTexts = async (texts, quoteId, mediaSegments) => {
+    const sendTexts = async (texts, quoteId, mediaSegments, mentionUserId) => {
       if (settled || sending)
         throw fail("本批回复已发送或正在发送，不可重复提交", 409);
       const c = this.policy.config(thread.character_id);
+      const speakers = rows.map((row) => JSON.parse(row.payload));
+      if (
+        mentionUserId &&
+        (thread.type !== "group" ||
+          !speakers.some((m) => m.userId === String(mentionUserId)))
+      )
+        throw fail("只能 @ 本批群聊真实发言者", 403);
+      const mention =
+        !mediaSegments && thread.type === "group"
+          ? mentionUserId ||
+            (c["chat.reply.mention"]
+              ? speakers.findLast((m) => m.mentioned)?.userId
+              : undefined)
+          : undefined;
       const pokeCount = db
         .prepare(
           "SELECT count(*) AS n FROM qq_social_log WHERE (id=? OR json_extract(data,'$.batchId')=?) AND status IN ('sending','accepted','uncertain')",
@@ -736,7 +810,9 @@ export class QQService {
         !Array.isArray(texts) ||
         !texts.length ||
         texts.length > c["chat.reply.burstMax"] ||
-        (texts.length > 1 && !c["chat.reply.burstEnabled"])
+        (texts.length > 1 &&
+          thread.type !== "group" &&
+          !c["chat.reply.burstEnabled"])
       )
         throw fail("分条回复未开启或条数超过限制", 403);
       if (
@@ -752,9 +828,9 @@ export class QQService {
         quoteId &&
         !db
           .prepare(
-            "SELECT seq FROM qq_inbox WHERE thread_key=? AND json_extract(payload,'$.messageId')=?",
+            "SELECT 1 FROM qq_inbox WHERE thread_key=? AND json_extract(payload,'$.messageId')=? UNION ALL SELECT 1 FROM qq_outbox_messages WHERE thread_key=? AND message_id=? LIMIT 1",
           )
-          .get(thread.key, String(quoteId))
+          .get(thread.key, String(quoteId), thread.key, String(quoteId))
       )
         throw fail("不能引用当前会话之外的消息", 403);
       signal.throwIfAborted();
@@ -815,8 +891,11 @@ export class QQService {
                 [thread.type === "private" ? "user_id" : "group_id"]:
                   thread.target,
                 message: [
-                  ...(quoteId
+                  ...(position === 0 && quoteId
                     ? [{ type: "reply", data: { id: String(quoteId) } }]
+                    : []),
+                  ...(position === 0 && mention
+                    ? [{ type: "at", data: { qq: String(mention) } }]
                     : []),
                   ...(mediaSegments || [{ type: "text", data: { text } }]),
                 ],
@@ -833,6 +912,9 @@ export class QQService {
           db.prepare(
             "UPDATE qq_send_parts SET status='sent',message_id=? WHERE id=?",
           ).run(String(result.message_id), partId);
+          db.prepare(
+            "INSERT OR REPLACE INTO qq_outbox_messages VALUES(?,?,?,?)",
+          ).run(String(result.message_id), thread.key, text, Date.now());
           messageIds.push(String(result.message_id));
         }
         if (!current()) return { status: "uncertain" };
@@ -840,6 +922,7 @@ export class QQService {
           "UPDATE qq_sends SET status='sent',message_id=? WHERE batch_id=?",
         ).run(messageIds.join(","), batchId);
         settled = true;
+        sending = false;
         return { status: "sent", messageId: messageIds[0], messageIds };
       } catch (error) {
         sendFailure = error;
@@ -851,7 +934,8 @@ export class QQService {
         throw error;
       }
     };
-    const reply = (text, quoteId) => sendTexts([text], quoteId);
+    const reply = (text, quoteId, mentionUserId) =>
+      sendTexts([text], quoteId, undefined, mentionUserId);
     const lookup = (messageId) => {
       const row = db
         .prepare(
@@ -861,14 +945,52 @@ export class QQService {
       if (!row) throw fail("本会话未接收过该消息", 404);
       return JSON.parse(row.payload);
     };
-    const publicMessage = (message) => ({
-      ...message,
-      attachments: (message.attachments || []).map((item, index) => ({
-        type: item.type,
-        index,
-      })),
-      forwardId: undefined,
-    });
+    const publicMessage = (message) => {
+      const quoted = message.replyToId
+        ? db
+            .prepare(
+              "SELECT payload FROM qq_inbox WHERE thread_key=? AND json_extract(payload,'$.messageId')=?",
+            )
+            .get(thread.key, message.replyToId)
+        : null;
+      const quotedMessage = quoted ? JSON.parse(quoted.payload) : null;
+      const quotedSent =
+        message.replyToId && !quotedMessage
+          ? db
+              .prepare(
+                "SELECT text FROM qq_outbox_messages WHERE thread_key=? AND message_id=?",
+              )
+              .get(thread.key, message.replyToId)
+          : null;
+      return {
+        ...message,
+        replyTo: message.replyToId
+          ? {
+              messageId: message.replyToId,
+              available: Boolean(quotedMessage || quotedSent),
+              ...(quotedMessage
+                ? {
+                    senderName: quotedMessage.senderName,
+                    userId: quotedMessage.userId,
+                    text: quotedMessage.text,
+                  }
+                : quotedSent
+                  ? {
+                      senderName: this.store.character(thread.character_id)
+                        .name,
+                      userId: message.selfId,
+                      text: quotedSent.text,
+                    }
+                  : {}),
+            }
+          : undefined,
+        attachments: (message.attachments || []).map((item, index) => ({
+          type: item.type,
+          index,
+        })),
+        forwardId: undefined,
+      };
+    };
     const capabilities = createQQCapabilities({
       store: this.store,
       characterId: thread.character_id,
@@ -888,8 +1010,7 @@ export class QQService {
         ),
       send: (segments, label) => sendTexts([label], undefined, segments),
     });
-    Object.assign(
-      capabilities,
+    const social = () =>
       socialCapabilities({
         store: this.store,
         characterId: thread.character_id,
@@ -920,8 +1041,9 @@ export class QQService {
             throw fail("QQ 连接已变化", 409);
           return this.action({ ...settings, token, signal }, name, params);
         },
-      }),
-    );
+      });
+    for (const name of Object.keys(social()))
+      capabilities[name] = (...args) => social()[name](...args);
     const silence = (reason) => {
       signal.throwIfAborted();
       if (settled || sending) throw fail("本批已经完成回复，不能再次结束", 409);
@@ -935,6 +1057,104 @@ export class QQService {
       );
       settled = true;
       return { status: "silent" };
+    };
+    let waited = false,
+      waiting = false;
+    const waitMessage = async ({ seconds = 45 } = {}) => {
+      signal.throwIfAborted();
+      const c = this.policy.config(thread.character_id);
+      if (!c["chat.wait.afterReply"]) throw fail("管理员已关闭回复后等待", 403);
+      if (
+        !settled ||
+        db.prepare("SELECT status FROM qq_sends WHERE batch_id=?").get(batchId)
+          ?.status !== "sent"
+      )
+        throw fail("请先成功回复本批消息，再等待下一句", 409);
+      if (!Number.isInteger(seconds) || seconds < 30 || seconds > 60)
+        throw fail("等待应为 30–60 秒");
+      if (waiting || waited) throw fail("本轮已等待过下一句，请自然结束", 409);
+      waiting = true;
+      waited = true;
+      mark("done");
+      try {
+        let nextBatchId = "";
+        const next = await waitForMessages({
+          milliseconds: seconds * 1000,
+          signal,
+          read: () => {
+            const latest = this.policy.config(thread.character_id);
+            if (
+              !latest["chat.wait.afterReply"] ||
+              this.store.conversations.get(thread.session_id).paused
+            )
+              throw fail("当前会话已暂停或等待授权已撤销", 403);
+            const pending = db
+              .prepare(
+                "SELECT * FROM qq_inbox WHERE thread_key=? AND status='pending' AND batch_id IS NULL AND next_at<=? ORDER BY seq LIMIT ?",
+              )
+              .all(thread.key, Date.now(), latest["chat.context.batchMessages"])
+              .filter((row) =>
+                this.policy.accepts(JSON.parse(row.payload), latest),
+              );
+            if (
+              !pending.length ||
+              Date.now() - pending.at(-1).created < config.mergeMs
+            )
+              return [];
+            const delay = this.policy.delay(thread, pending);
+            if (delay?.nextAt) {
+              for (const row of pending)
+                db.prepare(
+                  "UPDATE qq_inbox SET next_at=?,error=? WHERE seq=? AND status='pending'",
+                ).run(delay.nextAt, delay.reason, row.seq);
+              return [];
+            }
+            nextBatchId = hash(pending.map((row) => row.event_key).join(":"));
+            db.exec("BEGIN IMMEDIATE");
+            try {
+              const changed = pending.reduce(
+                (count, row) =>
+                  count +
+                  db
+                    .prepare(
+                      "UPDATE qq_inbox SET status='processing',attempts=attempts+1,batch_id=? WHERE seq=? AND status='pending'",
+                    )
+                    .run(nextBatchId, row.seq).changes,
+                0,
+              );
+              if (changed !== pending.length) {
+                db.exec("ROLLBACK");
+                return [];
+              }
+              db.exec("COMMIT");
+            } catch (error) {
+              db.exec("ROLLBACK");
+              throw error;
+            }
+            return pending;
+          },
+        });
+        if (!next.length) return { status: "timeout", messages: [] };
+        rows = next;
+        batchId = nextBatchId;
+        settled = false;
+        sendFailure = undefined;
+        const messages = rows.map((row) =>
+          publicMessage(JSON.parse(row.payload)),
+        );
+        this.store.conversations.query(
+          thread.session_id,
+          messages.map((m) => m.text).join("\n"),
+        );
+        return {
+          status: "received",
+          batchId,
+          watermark: rows.at(-1).seq,
+          messages,
+        };
+      } finally {
+        waiting = false;
+      }
     };
     try {
       let remaining = this.policy.config(thread.character_id)[
@@ -967,8 +1187,10 @@ export class QQService {
           messages: initialMessages,
         },
         reply,
+        waitMessage,
         capabilities,
-        burst: (texts) => sendTexts(texts),
+        burst: (texts, quoteId, mentionUserId) =>
+          sendTexts(texts, quoteId, undefined, mentionUserId),
         history: ({ limit = 30, messageId } = {}) => {
           const c = this.policy.config(thread.character_id);
           if (!c["chat.tools.history"]) throw fail("管理员未允许历史读取", 403);

@@ -1,3 +1,4 @@
+import { poeticField, poeticName } from "./poetic-names";
 import {
   Suspense,
   useCallback,
@@ -102,6 +103,9 @@ export function ConfigForm({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const latest = useRef(character);
+  const [selectedKey, setSelectedKey] = useState(fields[0]?.key || "");
+  const selectedField =
+    fields.find((field) => field.key === selectedKey) || fields[0];
   const [modelCatalog, setModelCatalog] = useState<
     { id: string; name: string; models: { id: string; name: string }[] }[]
   >([]);
@@ -143,6 +147,7 @@ export function ConfigForm({
   return (
     <form
       className="config-form"
+      data-dirty={changed.length > 0}
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
@@ -167,151 +172,188 @@ export function ConfigForm({
       }}
     >
       {title && <h3>{title}</h3>}
-      {fields.map((f) => (
-        <div
-          className={`config-row ${f.type === "boolean" ? "switch-row" : ""}`}
-          key={f.key}
-        >
-          <label htmlFor={f.key}>
-            <strong>{f.label}</strong>
-            <small id={`${f.key}-help`}>{f.help}</small>
-            {f.bot && (
-              <span className="field-note">授权后允许 bot 小幅调整</span>
-            )}
-          </label>
-          <div className="config-control">
-            {f.type === "boolean" ? (
-              <button
-                id={f.key}
-                type="button"
-                role="switch"
-                aria-checked={!!draft[f.key]}
-                aria-label={f.label}
-                aria-describedby={`${f.key}-help`}
-                className="toggle"
-                onClick={() => setDraft({ ...draft, [f.key]: !draft[f.key] })}
-              >
-                <i />
-              </button>
-            ) : modelCatalog.length &&
-              [
-                "jobs.provider",
-                "jobs.model",
-                "bili.provider",
-                "bili.model",
-              ].includes(f.key) ? (
-              <Select
-                label={f.label}
-                value={String(draft[f.key] || "")}
-                options={[
-                  {
-                    value: "",
-                    label: f.key.endsWith(".provider")
-                      ? "选择已登记的 DSH 连接"
-                      : "选择模型",
-                  },
-                  ...(draft[f.key]
-                    ? [
-                        {
-                          value: String(draft[f.key]),
-                          label: String(draft[f.key]),
-                        },
-                      ]
-                    : []),
-                  ...(f.key.endsWith(".provider")
-                    ? modelCatalog
-                    : modelCatalog.find(
-                        (p) =>
-                          p.id === draft[`${f.key.split(".")[0]}.provider`],
-                      )?.models || []
-                  )
-                    .filter((item) => item.id !== draft[f.key])
-                    .map((item) => ({
-                      value: item.id,
-                      label: item.name || item.id,
-                    })),
-                ]}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    [f.key]: value,
-                    ...(f.key.endsWith(".provider")
-                      ? { [`${f.key.split(".")[0]}.model`]: "" }
-                      : {}),
-                  }))
-                }
-              />
-            ) : f.options ? (
-              <Select
-                label={f.label}
-                value={String(draft[f.key])}
-                options={f.options.map((value) => ({
-                  value,
-                  label:
-                    f.key === "memory.defaultVisibility"
-                      ? value === "shared"
-                        ? "角色各平台共享"
-                        : "仅来源会话"
-                      : ({
-                          auto: "自动选择",
-                          self: "仅自己可见",
-                          friends: "好友可见",
-                          public: "公开可见",
-                          vivid: "强动效",
-                          default: "平衡",
-                          light: "轻量",
-                          reduced: "减少动态",
-                          shared: "共用连接",
-                          conversation: "仅来源会话",
-                          custom: "独立连接",
-                          host: "使用DSH视觉模型",
-                          disabled: "停用",
-                          "breeze-local": "本地 Breeze（插件管理）",
-                          "free-local": "免费本地 Whisper",
-                          "soulx-managed": "本地 SoulX（插件管理）",
-                          "soulx-existing": "已有本地 SoulX 服务",
-                          "soulx-bytes": "远程音频字节节点",
-                          awake: "清醒",
-                          observe: "观察",
-                          sleep: "沉睡",
-                          cuda: "NVIDIA 显卡（CUDA）",
-                          cpu: "处理器（CPU）",
-                          mps: "Apple 图形处理器（MPS）",
-                        }[value] ?? value),
-                }))}
-                onChange={(v) => setDraft({ ...draft, [f.key]: v })}
-              />
-            ) : (
-              <input
-                id={f.key}
-                aria-describedby={`${f.key}-help`}
-                type={
-                  f.type === "number"
-                    ? "number"
-                    : f.type === "time"
-                      ? "time"
-                      : "text"
-                }
-                min={f.min}
-                max={f.max}
-                step={f.type === "number" ? "any" : undefined}
-                value={String(draft[f.key] ?? "")}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    [f.key]:
+      <div className="configuration-layout">
+        <div className="configuration-fields">
+          {fields.map((f) => (
+            <div
+              className={`config-row ${f.type === "boolean" ? "switch-row" : ""} ${selectedField?.key === f.key ? "inspected" : ""}`}
+              key={f.key}
+              onFocusCapture={() => setSelectedKey(f.key)}
+              onClick={() => setSelectedKey(f.key)}
+            >
+              <label htmlFor={f.key}>
+                <strong title={f.label}>{poeticField(f)}</strong>
+                <small className="sr-only" id={`${f.key}-help`}>
+                  {f.help}
+                </small>
+              </label>
+              <div className="config-control">
+                {f.type === "boolean" ? (
+                  <button
+                    id={f.key}
+                    type="button"
+                    role="switch"
+                    aria-checked={!!draft[f.key]}
+                    aria-label={f.label}
+                    aria-describedby={`${f.key}-help`}
+                    className="toggle"
+                    onClick={() =>
+                      setDraft({ ...draft, [f.key]: !draft[f.key] })
+                    }
+                  >
+                    <i />
+                  </button>
+                ) : modelCatalog.length &&
+                  [
+                    "jobs.provider",
+                    "jobs.model",
+                    "bili.provider",
+                    "bili.model",
+                  ].includes(f.key) ? (
+                  <Select
+                    label={f.label}
+                    value={String(draft[f.key] || "")}
+                    options={[
+                      {
+                        value: "",
+                        label: f.key.endsWith(".provider")
+                          ? "选择已登记的 DSH 连接"
+                          : "选择模型",
+                      },
+                      ...(draft[f.key]
+                        ? [
+                            {
+                              value: String(draft[f.key]),
+                              label: String(draft[f.key]),
+                            },
+                          ]
+                        : []),
+                      ...(f.key.endsWith(".provider")
+                        ? modelCatalog
+                        : modelCatalog.find(
+                            (p) =>
+                              p.id === draft[`${f.key.split(".")[0]}.provider`],
+                          )?.models || []
+                      )
+                        .filter((item) => item.id !== draft[f.key])
+                        .map((item) => ({
+                          value: item.id,
+                          label: item.name || item.id,
+                        })),
+                    ]}
+                    onChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        [f.key]: value,
+                        ...(f.key.endsWith(".provider")
+                          ? { [`${f.key.split(".")[0]}.model`]: "" }
+                          : {}),
+                      }))
+                    }
+                  />
+                ) : f.options ? (
+                  <Select
+                    label={f.label}
+                    value={String(draft[f.key])}
+                    options={f.options.map((value) => ({
+                      value,
+                      label: poeticName(
+                        f.key === "memory.defaultVisibility"
+                          ? value === "shared"
+                            ? "角色各平台共享"
+                            : "仅来源会话"
+                          : ({
+                              auto: "自动选择",
+                              self: "仅自己可见",
+                              friends: "好友可见",
+                              public: "公开可见",
+                              vivid: "强动效",
+                              default: "平衡",
+                              light: "轻量",
+                              reduced: "减少动态",
+                              shared: "共用连接",
+                              conversation: "仅来源会话",
+                              custom: "独立连接",
+                              host: "使用DSH视觉模型",
+                              disabled: "停用",
+                              "breeze-local": "本地 Breeze（插件管理）",
+                              "free-local": "免费本地 Whisper",
+                              "soulx-managed": "本地 SoulX（插件管理）",
+                              "soulx-existing": "已有本地 SoulX 服务",
+                              "soulx-bytes": "远程音频字节节点",
+                              awake: "清醒",
+                              observe: "观察",
+                              sleep: "沉睡",
+                              cuda: "NVIDIA 显卡（CUDA）",
+                              cpu: "处理器（CPU）",
+                              mps: "Apple 图形处理器（MPS）",
+                            }[value] ?? value),
+                      ),
+                    }))}
+                    onChange={(v) => setDraft({ ...draft, [f.key]: v })}
+                  />
+                ) : (
+                  <input
+                    id={f.key}
+                    aria-describedby={`${f.key}-help`}
+                    type={
                       f.type === "number"
-                        ? e.target.value === ""
-                          ? ""
-                          : Number(e.target.value)
-                        : e.target.value,
-                  })
-                }
-              />
-            )}
-          </div>
+                        ? "number"
+                        : f.type === "time"
+                          ? "time"
+                          : "text"
+                    }
+                    min={f.min}
+                    max={f.max}
+                    step={f.type === "number" ? "any" : undefined}
+                    value={String(draft[f.key] ?? "")}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        [f.key]:
+                          f.type === "number"
+                            ? e.target.value === ""
+                              ? ""
+                              : Number(e.target.value)
+                            : e.target.value,
+                      })
+                    }
+                  />
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+        {selectedField && (
+          <aside
+            className="configuration-inspector"
+            aria-label="所选配置说明"
+            aria-live="polite"
+          >
+            <span className="eyebrow">星枢笺注</span>
+            <h3 title={selectedField.label}>{poeticField(selectedField)}</h3>
+            <p>{selectedField.help}</p>
+            <dl>
+              <dt>信契裁度</dt>
+              <dd>
+                {selectedField.bot
+                  ? "管理员授权后，角色可按范围自行调整"
+                  : "由管理员设置"}
+              </dd>
+              {selectedField.type === "number" && (
+                <>
+                  <dt>信契所及</dt>
+                  <dd>
+                    {selectedField.min} — {selectedField.max}
+                  </dd>
+                </>
+              )}
+              <dt>落笺之法</dt>
+              <dd>修改后点击保存，应用到当前角色。</dd>
+            </dl>
+          </aside>
+        )}
+      </div>
       {error && (
         <p className="inline-error" role="alert">
           {error}
@@ -325,7 +367,7 @@ export function ConfigForm({
         </small>
         <button className="primary" disabled={!changed.length || busy}>
           <Save size={14} />
-          {busy ? "保存中…" : "保存更改"}
+          {busy ? "落笔未歇…" : "落笔成笺"}
         </button>
       </div>
     </form>
@@ -375,7 +417,7 @@ export function MemoryPage(props: PageProps) {
         onChange={setView}
         items={[
           { id: "map", name: "记忆星图" },
-          { id: "timeline", name: "时间线" },
+          { id: "timeline", name: "流年卷" },
         ]}
       />
       {view === "settings" ? (
@@ -385,10 +427,7 @@ export function MemoryPage(props: PageProps) {
               重要内容立即提交；笔记与双链通过可重试队列同步。普通记忆的新鲜度变化，只影响检索顺序
             </p>
             <ConfigForm {...props} pages={["memory"]} />
-            <Disclosure
-              title="关于整理、向量与外部编辑"
-              description="查看当前实现边界"
-            >
+            <Disclosure title="拾忆笺注" description="查看当前实现边界">
               <p>
                 已实现即时保存、重要度与半衰期排序、关键词检索、真实关系边、笔记投影、外部笔记修订预览导入与定时模型整理。向量索引仍待接入。
               </p>
@@ -523,7 +562,7 @@ export function MemoryPage(props: PageProps) {
                   </div>
                   <h2>{current.title}</h2>
                   <section className="memory-reading" aria-label="记忆完整正文">
-                    <span className="detail-content-label">完整正文</span>
+                    <span className="detail-content-label">星笺全卷</span>
                     <div className="memory-body">{current.content}</div>
                   </section>
                   <div className="detail-facts">
@@ -531,22 +570,22 @@ export function MemoryPage(props: PageProps) {
                       记录于<strong>{date(current.created)}</strong>
                     </span>
                     <span>
-                      来源<strong>{current.source}</strong>
+                      星之来处<strong>{current.source}</strong>
                     </span>
                     <span>
-                      重要度<strong>{current.importance} / 100</strong>
+                      星光分量<strong>{current.importance} / 100</strong>
                     </span>
                     <span>
-                      事实置信度<strong>{current.confidence} / 100</strong>
+                      笺中可信<strong>{current.confidence} / 100</strong>
                     </span>
                     <span>
-                      当前召回权重<strong>{current.score}</strong>
+                      此刻星重<strong>{current.score}</strong>
                     </span>
-                    {!!current.anchor && <Badge tone="good">长期锚点</Badge>}
+                    {!!current.anchor && <Badge tone="good">长明之星</Badge>}
                   </div>
                   <h3 className="detail-subtitle">
                     <Link2 size={15} />
-                    相关记忆
+                    同光旧笺
                   </h3>
                   {data?.links
                     .filter(
@@ -566,7 +605,7 @@ export function MemoryPage(props: PageProps) {
                         >
                           <span>{other.title}</span>
                           <small>
-                            {l.kind === "explicit" ? "明确关联" : "建议关联"}
+                            {l.kind === "explicit" ? "已牵星线" : "候牵星线"}
                           </small>
                         </button>
                       ) : null;
@@ -609,7 +648,7 @@ export function MemoryPage(props: PageProps) {
                       }}
                     >
                       <Plus size={14} />
-                      建立关联
+                      牵起星线
                     </button>
                   </div>
                 </>
@@ -689,8 +728,9 @@ export function CharacterPage(props: PageProps) {
   }, [character.id]);
   return (
     <div className="content-with-rail">
-      <Panel title="人格与相处方式">
+      <Panel title="星魂小传">
         <form
+          data-dirty={persona !== character.persona || name !== character.name}
           onSubmit={async (e) => {
             e.preventDefault();
             setBusy(true);
@@ -753,7 +793,7 @@ export function CharacterPage(props: PageProps) {
                   setBaseRevision(character.revision);
                 }}
               >
-                重新载入已保存资料
+                重拾旧笺
               </TextLink>
             </p>
           )}
@@ -771,13 +811,13 @@ export function CharacterPage(props: PageProps) {
               }
             >
               <Save size={14} />
-              {busy ? "正在保存…" : "保存角色"}
+              {busy ? "落笔未歇…" : "落定星魂"}
             </button>
           </div>
         </form>
       </Panel>
       <div className="rail">
-        <Panel title="她的档案">
+        <Panel title="卿之小传">
           <div className="profile-portrait">
             <OrbitIllustration />
             <span>{name}</span>
@@ -787,10 +827,10 @@ export function CharacterPage(props: PageProps) {
               创建于<strong>{date(character.created)}</strong>
             </span>
             <span>
-              身份编号<code>{character.id.slice(0, 8)}</code>
+              星之印<code>{character.id.slice(0, 8)}</code>
             </span>
             <span>
-              资料修订<strong>{character.revision}</strong>
+              笺卷修次<strong>{character.revision}</strong>
             </span>
           </div>
           <p className="footnote">
@@ -888,10 +928,10 @@ export function MediaPage(props: PageProps & { view?: string }) {
           value={tab}
           onChange={setTab}
           items={[
-            { id: "tts", name: "说话" },
-            { id: "sing", name: "唱歌" },
-            { id: "asr", name: "听见" },
-            { id: "vision", name: "看见" },
+            { id: "tts", name: "清音" },
+            { id: "sing", name: "弦歌" },
+            { id: "asr", name: "听风" },
+            { id: "vision", name: "观澜" },
           ]}
         />
       )}
@@ -956,7 +996,7 @@ export function MediaPage(props: PageProps & { view?: string }) {
                     }
                   >
                     <Headphones size={15} />
-                    {busy ? "正在生成…" : "生成试听"}
+                    {busy ? "星笺初成…" : "清音初试"}
                   </button>
                 </div>
                 {audio && (
@@ -1040,7 +1080,7 @@ export function MediaPage(props: PageProps & { view?: string }) {
                     }
                   >
                     <Eye size={15} />
-                    {busy ? "正在看图…" : "理解这张图"}
+                    {busy ? "观澜未歇…" : "观画知意"}
                   </button>
                 </div>
               </>
@@ -1051,7 +1091,7 @@ export function MediaPage(props: PageProps & { view?: string }) {
                 </p>
                 <label className="upload-button">
                   <Upload size={20} />
-                  <strong>{busy ? "正在听写…" : "选择一段音频"}</strong>
+                  <strong>{busy ? "听风未歇…" : "择一声笺"}</strong>
                   <span>WAV、MP3、M4A、WebM、Ogg，最多 15MB</span>
                   <input
                     type="file"
@@ -1099,11 +1139,11 @@ export function MediaPage(props: PageProps & { view?: string }) {
                     : "视觉的配置"
               }
             >
-              <Disclosure title="高级连接与能力配置">
+              <Disclosure title="清音通幽">
                 <ConfigForm {...props} pages={[tab]} />
               </Disclosure>
               {tab === "tts" && (
-                <Disclosure title="查看已配置音色">
+                <Disclosure title="翻阅声笺">
                   <p>
                     本地列出音色文件；云端只显示已配置名称，清单不代表已完成合成验证
                   </p>
@@ -1123,12 +1163,12 @@ export function MediaPage(props: PageProps & { view?: string }) {
                       }
                     }}
                   >
-                    读取音色清单
+                    展读声谱
                   </button>
                 </Disclosure>
               )}
               {tab === "tts" && (
-                <Disclosure title="本地 Breeze 程序与模型">
+                <Disclosure title="风吟栖处">
                   <p>
                     连接方式选择 breeze-local
                     时，首次生成按下面路径启动已安装的服务。这里只管理插件自己启动的进程
@@ -1148,7 +1188,7 @@ export function MediaPage(props: PageProps & { view?: string }) {
                       }
                     }}
                   >
-                    停止本地语音进程
+                    清音暂歇
                   </button>
                 </Disclosure>
               )}
@@ -1156,16 +1196,16 @@ export function MediaPage(props: PageProps & { view?: string }) {
           )}
         </div>
         <div className="rail">
-          <Panel title="共用连接，按需独立">
+          <Panel title="同源分流">
             <Cloud size={22} className="section-icon" />
             <p className="section-intro">
               视觉可直接沿用DSH模型，无需在此填写。多种能力使用同一云端兼容服务时只需配置一次；各功能也能选择独立连接、本地托管或停用
             </p>
-            <Disclosure title="高级共用连接配置">
+            <Disclosure title="源流细笺">
               <ConfigForm {...props} pages={["media"]} />
             </Disclosure>
           </Panel>
-          <Panel title="本地与宿主能力">
+          <Panel title="近灯远帆">
             <p>
               说话与唱歌使用插件托管的Breeze、SoulX，听写可使用免费Whisper。它们共用本地模型许可，闲置5分钟下线。视觉可直接沿用DSH已有视觉模型，也可单独配置远程服务；每项能力都需真实输入验证
             </p>
@@ -1231,14 +1271,14 @@ export function ExpressionsPage(props: PageProps) {
             className={!favorite ? "selected" : ""}
             onClick={() => setFavorite(false)}
           >
-            全部表情 <span>{data?.length ?? 0}</span>
+            眉目百态 <span>{data?.length ?? 0}</span>
           </button>
           <button
             className={favorite ? "selected" : ""}
             onClick={() => setFavorite(true)}
           >
             <StarIcon size={13} />
-            收藏
+            藏星
           </button>
         </div>
         <label className="search-box">
@@ -1252,7 +1292,7 @@ export function ExpressionsPage(props: PageProps) {
         </label>
         <label className="button primary file-action">
           <Plus size={14} />
-          {busy ? "导入中…" : "导入表情"}
+          {busy ? "纳卷途中…" : "纳眉目入卷"}
           <input
             hidden
             type="file"
@@ -1328,7 +1368,7 @@ export function ExpressionsPage(props: PageProps) {
                       type="button"
                       className="icon-button danger"
                       aria-label={`删除表情 ${item.name}`}
-                      title="删除表情"
+                      title="散去此影"
                       disabled={busy}
                       onClick={() => setDeleting(item)}
                     >
@@ -1348,7 +1388,7 @@ export function ExpressionsPage(props: PageProps) {
             description="导入 PNG、JPEG、GIF 或 WebP。收藏、备注与图片按角色独立保存，文件缺失不会清空记录"
             action={
               <label className="button ghost">
-                导入第一组表情
+                初藏眉目
                 <input
                   hidden
                   type="file"
@@ -1372,7 +1412,7 @@ export function ExpressionsPage(props: PageProps) {
             alt={selected.name}
           />
           <label className="field">
-            情绪与关键词
+            心绪题词
             <input
               maxLength={500}
               value={tags}
@@ -1391,7 +1431,7 @@ export function ExpressionsPage(props: PageProps) {
               }}
             >
               <Trash2 size={14} />
-              删除表情
+              散去此影
             </button>
             <button
               className="primary"
@@ -1413,7 +1453,7 @@ export function ExpressionsPage(props: PageProps) {
                 }
               }}
             >
-              保存关键词
+              留存唤词
             </button>
           </div>
         </Modal>
@@ -1450,43 +1490,45 @@ export function ExpressionsPage(props: PageProps) {
 export function SettingsPage(props: PageProps) {
   return (
     <div className="settings-stack">
-      <Panel title="星光与质感">
+      <Panel title="星光设色">
         <p className="section-intro">
           动效强度随设备调整，背景持续存在，页面切换时不重新搭建星空
         </p>
         <ConfigForm {...props} pages={["appearance"]} />
       </Panel>
-      <Panel title="角色能调整多少日常习惯">
+      <Panel title="随心有界">
         <p className="section-intro">
           由你授权，再由服务端检查字段和改动幅度。不能修改凭据、路径、执行程序或扩大自己的权限
         </p>
         <ConfigForm {...props} pages={["permissions"]} />
-        <Disclosure title="当前允许的调整项">
+        <Disclosure title="信契所许">
           <ul>
             {props.bootstrap.fields
               .filter((f) => f.bot)
               .map((f) => (
-                <li key={f.key}>{f.label}</li>
+                <li key={f.key} title={f.label}>
+                  {poeticField(f)}
+                </li>
               ))}
           </ul>
           <p>每次改动写入审计记录，权限仅作用于这个角色。</p>
         </Disclosure>
       </Panel>
-      <Panel title="运行与数据目录">
+      <Panel title="星河栖处">
         <div className="detail-facts">
           <span>
-            记忆主目录<code>{props.bootstrap.installation?.memoryRoot}</code>
+            星海归处<code>{props.bootstrap.installation?.memoryRoot}</code>
           </span>
           <span>
-            备份目录<code>{props.bootstrap.installation?.backupRoot}</code>
+            藏星之所<code>{props.bootstrap.installation?.backupRoot}</code>
           </span>
         </div>
         <p className="footnote">
           目录在首次向导确认。跨机器迁移时先备份、导入，再重新配置连接与凭据
         </p>
-        <TextLink onClick={() => props.go("maintenance")}>备份与诊断</TextLink>
+        <TextLink onClick={() => props.go("maintenance")}>藏星问脉</TextLink>
       </Panel>
-      <Panel title="旧版功能对照">
+      <Panel title="旧卷寻踪">
         <LegacyConfiguration go={props.go} />
       </Panel>
     </div>
@@ -1522,7 +1564,7 @@ export function MaintenancePage(props: PageProps) {
     [result, setResult] = useState("");
   return (
     <div className="settings-stack">
-      <Panel title="会话留下的反馈">
+      <Panel title="言后余响">
         <p>
           角色通过反馈工具提交的问题保存在本机，供管理员排查。此处最多展示最近
           100 项
@@ -1542,11 +1584,11 @@ export function MaintenancePage(props: PageProps) {
         )}
       </Panel>
       <Panel
-        title="每个环节，都看得到状态"
+        title="星途问脉"
         aside={
           <button className="ghost" onClick={refresh}>
             <RefreshCw size={14} />
-            重新检查
+            再观星象
           </button>
         }
       >
@@ -1554,7 +1596,7 @@ export function MaintenancePage(props: PageProps) {
         <div className="health-row">
           <span>
             <Database size={18} />
-            角色数据库
+            星魂藏卷
           </span>
           <Badge tone={data?.database === "ok" ? "good" : "quiet"}>
             {data?.database === "ok" ? "完整性正常" : "检查中"}
@@ -1626,7 +1668,7 @@ export function MaintenancePage(props: PageProps) {
               }
             }}
           >
-            重试同步
+            重渡星桥
           </button>
         )}
       </Panel>
@@ -1637,7 +1679,7 @@ export function MaintenancePage(props: PageProps) {
         <div className="backup-location">
           <HardDrive size={22} />
           <div>
-            <strong>当前备份目录</strong>
+            <strong>藏星之所</strong>
             <code>{props.bootstrap.installation?.backupRoot}</code>
           </div>
         </div>
@@ -1663,7 +1705,7 @@ export function MaintenancePage(props: PageProps) {
             }}
           >
             <Save size={14} />
-            {busy ? "正在处理…" : "创建角色备份"}
+            {busy ? "星事未歇…" : "藏星入阁"}
           </button>
         </div>
         {result && (
@@ -1672,14 +1714,14 @@ export function MaintenancePage(props: PageProps) {
           </p>
         )}
       </Panel>
-      <Panel title="从旧版本走过来">
+      <Panel title="旧梦渡新河">
         <p>
           旧数据先做只读预检，检查来源、重复项和角色归属后再导入新目录。当前提供命令行预检，网页导入向导与全量格式转换仍待完成
         </p>
         <code className="command">
           pnpm migrate:inspect -- &lt;备份目录&gt;
         </code>
-        <Disclosure title="初版与开源发布的距离">
+        <Disclosure title="星程未央">
           <p>
             已接入 Starr-chat、QQ 与
             B站收发、模型发现、本地媒体管理和自动整理。真实平台账号、实际模型生成与远程机器仍需在你的环境中验证；尚未接入的旧能力可在“旧版功能对照”中查阅。

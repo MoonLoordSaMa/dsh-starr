@@ -1,13 +1,4 @@
 /* Kage 的场景叙事与分层视差参考；场景几何、纹理与工作区结构为 starr 原生实现。 */
-:root {
-  --ground: #0c101b;
-  --surface: #151a27db;
-  --ink: #ede8e2;
-  --secondary: #beb7ba;
-  --muted: #a5a4b6;
-  --gold: #e1b78f;
-  --line: #d2bfaf1d;
-}
 .world-scene {
   position: fixed;
   inset: 0;
@@ -54,21 +45,6 @@
   height: 100%;
   margin: 0;
 }
-.topbar {
-  margin: 0;
-  min-height: 84px;
-  height: 84px;
-  display: grid;
-  grid-template-columns: 160px 1fr auto auto;
-  gap: 22px;
-  padding: 0 38px;
-  border: 0;
-  border-radius: 0;
-  background: #10141d40;
-  box-shadow: none;
-  border-bottom: 1px solid #e4d0bf16;
-  backdrop-filter: blur(calc(var(--blur) * 0.55));
-}
 .world-brand {
   display: flex;
   align-items: center;
@@ -85,37 +61,6 @@
   font-size: 35px;
   font-weight: 400;
   letter-spacing: -0.065em;
-}
-.workspace-navigation {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  align-items: center;
-}
-.workspace-navigation > button {
-  position: relative;
-  min-height: 58px;
-  color: #bcb5b7;
-  font-size: 13px;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  transition: color 0.25s;
-}
-.workspace-navigation > button:hover,
-.workspace-navigation > button[aria-current="page"] {
-  color: #f5e9da;
-}
-.workspace-navigation > button i {
-  position: absolute;
-  left: 50%;
-  bottom: 6px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #e9bd90;
-  transform: translateX(-50%) scale(0);
-  transition: transform 0.3s;
-  box-shadow: 0 0 9px #eec29080;
 }
 .workspace-navigation > button[aria-current="page"] i {
   transform: translateX(-50%) scale(1);
@@ -143,12 +88,7 @@
   left: 24px;
   top: 110px;
   bottom: 24px;
-  width: 205px;
   padding: 25px 13px 18px;
-  border: 1px solid #c5b9b01c;
-  border-radius: 14px;
-  background: linear-gradient(165deg, #4a3d3a19, transparent 50%), #111725c9;
-  box-shadow: 0 12px 40px #00000020;
 }
 .workspace-heading {
   padding: 0 10px 23px;
@@ -169,21 +109,11 @@
   color: #9797ac;
   line-height: 1.8;
 }
-.character-switch {
-  padding: 8px 4px;
-  margin-bottom: 20px;
-  border: 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  background: transparent;
-  gap: 5px;
-}
 .character-switch .avatar {
   width: 25px;
   height: 29px;
   font-size: 11px;
-  border-radius: 6px;
+  border-radius: var(--radius-control);
 }
 .character-switch .select-trigger {
   font-size: 11px;
@@ -200,7 +130,7 @@
   margin: 7px 0;
   min-height: 49px;
   font-size: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
 }
 .sidebar-bottom {
   font-size: 10px;
@@ -235,18 +165,6 @@ main[data-page="overview"] > .page-title {
 main[data-page="overview"] > .page-title * {
   white-space: nowrap;
 }
-.page-title {
-  margin-bottom: 30px;
-}
-.page-title h1 {
-  font-weight: 350;
-  font-size: 33px;
-  letter-spacing: -0.04em;
-}
-.page-title p {
-  font-size: 12px;
-  color: #aaa5b2;
-}
 .page-eyebrow {
   font-size: 10px;
   color: #ba9f88;
@@ -254,7 +172,7 @@ main[data-page="overview"] > .page-title * {
 }
 .landing-hero {
   position: relative;
-  min-height: calc(100dvh - 84px);
+  min-height: calc(100dvh - var(--topbar-height));
   isolation: isolate;
 }
 .hero-intro {
@@ -331,21 +249,6 @@ main[data-page="overview"] > .page-title * {
   display: flex;
   align-items: center;
   gap: 25px;
-}
-.primary {
-  background: linear-gradient(135deg, #e2bc98, #bd9575);
-  color: #221b1b;
-  border: 1px solid #e9c4a08c;
-  border-radius: 7px;
-  box-shadow:
-    inset 0 1px #fff4db5c,
-    0 5px 20px #00000020;
-}
-.primary:hover {
-  background: linear-gradient(135deg, #efd0ae, #c59d7c);
-  box-shadow:
-    inset 0 1px #fff4db80,
-    0 8px 22px #ca9b711f;
 }
 .hero-enter {
   min-height: 51px;
@@ -500,18 +403,6 @@ main[data-page="overview"] > .page-title * {
 .overview-rail:has(.overview-memory-detail) {
   display: block;
 }
-.panel {
-  border: 1px solid #c4b4a41c;
-  border-radius: 13px;
-  background: linear-gradient(155deg, #b29e8b06, transparent 55%), #141b2bd9;
-  box-shadow:
-    inset 0 1px #e7ddc905,
-    0 14px 40px #00000013;
-}
-.panel-heading h2 {
-  font-weight: 400;
-  font-size: 15px;
-}
 .universe-panel {
   padding: 24px 24px 0;
   background:
@@ -544,36 +435,11 @@ main[data-page="overview"] > .page-footer {
   padding: 25px 5.5%;
   background: #101624f5;
 }
-.tabs {
-  width: max-content;
-  max-width: 100%;
-  background: #0e1523bd;
-  border: 1px solid #c5b9ac21;
-  border-radius: 8px;
-  padding: 4px;
-  gap: 3px;
-}
-.tabs button {
-  font-size: 12px;
-  padding: 10px 18px;
-  min-height: 41px;
-  border-radius: 5px;
-  color: #aaa4b3;
-}
-.tabs-active-mark {
-  border-radius: 5px;
-  background: linear-gradient(120deg, #d5bba62e, #b3a48f1d);
-  border: 1px solid #d4bfaa35;
-  box-shadow: inset 0 1px #e5dbcd14;
-}
-.tabs button[aria-selected="true"] {
-  color: #f0e0ce;
-}
 .filters {
   gap: 6px;
 }
 .filters button {
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   background: #0d1523a3;
   border-color: #baa99822;
   font-size: 11px;
@@ -593,26 +459,7 @@ main[data-page="overview"] > .page-footer {
 .ghost,
 .badge,
 .search-box {
-  border-radius: 7px;
-}
-.select-trigger {
-  background: #0e1727a6;
-  border-color: #cbb9a425;
-}
-.select-options {
-  background: #121b2cec;
-  border-color: #cbb9a43c;
-  box-shadow: 0 14px 40px #0007;
-}
-.select-options button[aria-selected="true"] {
-  background: #d7b59119;
-  color: #f0d6b7;
-}
-.badge {
-  padding: 4px 8px;
-  font-size: 10px;
-  background: #c4b19d0a;
-  border-color: #c4b19d26;
+  border-radius: var(--radius-control);
 }
 .memory-workspace {
   grid-template-columns: minmax(0, 1fr) minmax(330px, 37%);
@@ -671,12 +518,6 @@ main[data-page="overview"] > .page-footer {
     background 0.25s,
     border-color 0.25s;
 }
-.memory-row:hover {
-  background: #c4ae950b;
-}
-.memory-row.is-selected {
-  background: #c4ae9513;
-}
 .route-curtain {
   position: fixed;
   inset: -10%;
@@ -734,11 +575,11 @@ main[data-page="overview"] > .page-footer {
   }
   .sidebar {
     left: 0;
-    top: 84px;
+    top: var(--topbar-height);
     bottom: 0;
-    width: 236px;
+    width: 212px;
     transform: translateX(-102%);
-    border-radius: 0 14px 14px 0;
+    border-radius: var(--radius-control);
     transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .menu-open .sidebar {
@@ -748,7 +589,7 @@ main[data-page="overview"] > .page-footer {
     display: flex;
   }
   .nav-shade {
-    inset: 84px 0 0;
+    inset: var(--topbar-height) 0 0;
   }
   .hero-intro {
     left: 6%;

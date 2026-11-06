@@ -59,7 +59,7 @@ export function PlatformBridge(props: PageProps) {
             }
           }}
         >
-          检查平台与记忆互通
+          试渡星桥
         </button>
         {message && <p role="status">{message}</p>}
       </Panel>

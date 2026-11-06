@@ -81,7 +81,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
               })
             }
           >
-            重建全文索引
+            重织星图
           </button>
           <button
             disabled={busy}
@@ -96,7 +96,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
               })
             }
           >
-            补漏并检查笔记冲突
+            补笺校卷
           </button>
           {!props.sync && (
             <button
@@ -114,7 +114,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                 })
               }
             >
-              寻找主题关联
+              循意牵星
             </button>
           )}
         </div>
@@ -134,11 +134,11 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                 <p>{item.warning}</p>
                 <div className="merge-comparison">
                   <label className="field">
-                    库内原文
+                    阁中原笺
                     <textarea readOnly rows={8} value={item.before.content} />
                   </label>
                   <label className="field">
-                    Obsidian 当前正文
+                    双笺此卷
                     <textarea readOnly rows={8} value={item.content} />
                   </label>
                 </div>
@@ -162,7 +162,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                     })
                   }
                 >
-                  确认采用外部正文
+                  择此笺文
                 </button>
               </>
             )}
@@ -202,7 +202,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                 })
               }
             >
-              建立关联
+              牵起星线
             </button>
           </div>
         ))}
@@ -225,7 +225,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
             ]}
           />
           <label className="field">
-            归档理由
+            藏星缘由
             <input
               value={reason}
               maxLength={500}
@@ -252,7 +252,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
               })
             }
           >
-            归档所选记忆
+            暂藏此星
           </button>
           <Disclosure title={`归档中的记忆 · ${data?.archived.length ?? 0}`}>
             {data?.archived.map((item) => (
@@ -278,7 +278,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                     })
                   }
                 >
-                  恢复记忆
+                  星光归来
                 </button>
               </div>
             ))}

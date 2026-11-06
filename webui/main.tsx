@@ -74,6 +74,15 @@ import "./kage-theme.css";
 import "./organism.css";
 import "./liquid-metal.css";
 import "./v015.css";
+import "./v019.css";
+import "./v019-redesign.css";
+import "./v019-surfaces.css";
+import "./v019-journey.css";
+import "./foundation.css";
+import "./v019-glass.css";
+import { PageContinuation } from "./PageContinuation";
+import { CompanionOverview } from "./CompanionOverview";
+import { ObservatoryOverview } from "./ObservatoryOverview";
 import { navigation, workspaces } from "./navigation";
 import { PagePrelude, RelatedRoutes, WorkspacePage } from "./WorkspacePages";
 import { Today } from "./Today";
@@ -120,7 +129,7 @@ class Boundary extends Component<{ children: ReactNode }, { error: boolean }> {
         <Star />
         <h1>页面暂时没能展开</h1>
         <p>数据仍在本地保存，重新载入后继续</p>
-        <button onClick={() => location.reload()}>重新载入</button>
+        <button onClick={() => location.reload()}>重启星卷</button>
       </div>
     ) : (
       this.props.children
@@ -153,19 +162,18 @@ function Overview({
       <section className="landing-hero" aria-label="星际观测站">
         <div className="hero-intro">
           <h2>
-            <span>醉后不知天在水</span>
-            <span>满船清梦压星河</span>
+            <span>{character.name}</span>
           </h2>
           <p>
-            唐温如《题龙阳县青草湖》
+            {s.emotion || "正在经历自己的每一天"}
             <br />
-            往事有回声，心事有归处
+            留下经历，也慢慢靠近心愿
           </p>
         </div>
         <div className="hero-coordinate" aria-hidden="true">
-          <span>星光庭院</span>
+          <span>此刻与她</span>
           <i />
-          <span>在此相遇 · 在此停留</span>
+          <span>只属于这个角色</span>
         </div>
         <div className="hero-footer">
           <div className="hero-actions">
@@ -174,7 +182,7 @@ function Overview({
             </button>
             <button className="hero-write" onClick={onMemory}>
               <Plus size={16} />
-              记录记忆
+              落笺拾忆
             </button>
           </div>
           <div className="hero-status">
@@ -203,6 +211,15 @@ function Overview({
         </button>
       </section>
       <div className="overview-chapters">
+        <CompanionOverview
+          overview={overview}
+          character={character}
+          bootstrap={bootstrap}
+          version={version}
+          refresh={refresh}
+          notify={notify}
+          go={go}
+        />
         <Today
           overview={overview}
           character={character}
@@ -311,7 +328,7 @@ function Overview({
                 </div>
                 <h2>{selectedMemory.title}</h2>
                 <section className="memory-reading" aria-label="记忆完整正文">
-                  <span className="detail-content-label">完整正文</span>
+                  <span className="detail-content-label">星笺全卷</span>
                   <div className="memory-body">{selectedMemory.content}</div>
                 </section>
                 <div className="detail-facts">
@@ -319,19 +336,19 @@ function Overview({
                     记录于<strong>{date(selectedMemory.created)}</strong>
                   </span>
                   <span>
-                    来源<strong>{selectedMemory.source}</strong>
+                    星之来处<strong>{selectedMemory.source}</strong>
                   </span>
                   <span>
-                    重要度<strong>{selectedMemory.importance} / 100</strong>
+                    星光分量<strong>{selectedMemory.importance} / 100</strong>
                   </span>
                   <span>
-                    事实置信度<strong>{selectedMemory.confidence} / 100</strong>
+                    笺中可信<strong>{selectedMemory.confidence} / 100</strong>
                   </span>
                   <span>
-                    当前召回权重<strong>{selectedMemory.score}</strong>
+                    此刻星重<strong>{selectedMemory.score}</strong>
                   </span>
                 </div>
-                <h3 className="detail-subtitle">相关记忆</h3>
+                <h3 className="detail-subtitle">同光旧笺</h3>
                 {graph?.links
                   .filter(
                     (edge) =>
@@ -397,7 +414,7 @@ function Overview({
                 ))}
               </div>
             </Panel>
-            <Panel title="连接与准备">
+            <Panel title="渡口启程">
               <div className="connection-row">
                 <span>
                   <i className="live-dot" />
@@ -412,8 +429,8 @@ function Overview({
                 </span>
               </div>
               <div className="connection-row">
-                <span>模型与平台</span>
-                <TextLink onClick={() => go("media")}>配置能力</TextLink>
+                <span>灵枢与渡口</span>
+                <TextLink onClick={() => go("media")}>百器入枢</TextLink>
               </div>
               <p className="footnote">
                 {bootstrap.host?.connected
@@ -426,7 +443,7 @@ function Overview({
         <div className="bottom-grid">
           <Panel
             title="最近留在心里的事"
-            aside={<TextLink onClick={() => go("memory")}>全部记忆</TextLink>}
+            aside={<TextLink onClick={() => go("memory")}>满卷星光</TextLink>}
           >
             {overview.memories.length ? (
               <div className="memory-list">
@@ -460,7 +477,7 @@ function Overview({
                 description="值得记住的事，可以从一句话开始"
                 action={
                   <button className="ghost" onClick={onMemory}>
-                    写下第一条记忆
+                    拾取初星
                   </button>
                 }
               />
@@ -471,7 +488,7 @@ function Overview({
             aside={
               <button className="text-link" onClick={onGoal}>
                 <Plus size={14} />
-                添加目的
+                添一心愿
               </button>
             }
           >
@@ -493,7 +510,7 @@ function Overview({
                 description="主动来自值得做的事，不必为了开口而开口"
               />
             )}
-            <TextLink onClick={() => go("state")}>管理目的与行动条件</TextLink>
+            <TextLink onClick={() => go("state")}>心愿有章</TextLink>
           </Panel>
         </div>
       </div>
@@ -555,7 +572,7 @@ export function MemoryModal({
         <div className="field">
           <label>它属于</label>
           <Select
-            label="记忆类型"
+            label="星笺门类"
             value={form.kind}
             onChange={(kind) => setForm({ ...form, kind })}
             options={Object.entries(kindNames).map(([value, label]) => ({
@@ -576,7 +593,7 @@ export function MemoryModal({
         </label>
         <div className="form-columns">
           <label className="field">
-            重要度 <span>{form.importance}</span>
+            星光分量 <span>{form.importance}</span>
             <input
               type="range"
               min={0}
@@ -589,7 +606,7 @@ export function MemoryModal({
             <small>影响检索顺序，不会删除原文</small>
           </label>
           <label className="field">
-            事实置信度 <span>{form.confidence}</span>
+            笺中可信 <span>{form.confidence}</span>
             <input
               type="range"
               min={0}
@@ -618,7 +635,7 @@ export function MemoryModal({
         <div className="form-footer">
           <small>提交后立即保存，再输出笔记</small>
           <button className="primary" disabled={busy}>
-            {busy ? "保存中…" : "保存记忆"}
+            {busy ? "落笔未歇…" : "落笺拾忆"}
             <Check size={15} />
           </button>
         </div>
@@ -696,7 +713,7 @@ export function GoalModal({
         <div className="form-footer">
           <span />
           <button className="primary" disabled={busy}>
-            {busy ? "正在记录…" : "记下这个目的"}
+            {busy ? "正在记录…" : "留下一愿"}
           </button>
         </div>
       </form>
@@ -714,7 +731,7 @@ function NewCharacter({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   return (
-    <Modal title="认识一个新角色" onClose={onClose}>
+    <Modal title="再逢一星" onClose={onClose}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -734,7 +751,7 @@ function NewCharacter({
         }}
       >
         <label className="field">
-          角色名称
+          星之名
           <input
             required
             maxLength={40}
@@ -751,7 +768,7 @@ function NewCharacter({
         <div className="form-footer">
           <span />
           <button className="primary" disabled={busy}>
-            创建角色
+            点亮新星
             <Plus size={15} />
           </button>
         </div>
@@ -780,7 +797,7 @@ function App() {
     ),
     [menu, setMenu] = useState(false),
     [compact, setCompact] = useState(
-      () => matchMedia("(max-width: 1100px)").matches,
+      () => matchMedia("(max-width: 980px)").matches,
     ),
     [modal, setModal] = useState(""),
     [toast, setToast] = useState("");
@@ -801,7 +818,7 @@ function App() {
   }, []);
   useEffect(load, [load]);
   useEffect(() => {
-    const media = matchMedia("(max-width: 1100px)");
+    const media = matchMedia("(max-width: 980px)");
     const change = () => setCompact(media.matches);
     media.addEventListener("change", change);
     return () => media.removeEventListener("change", change);
@@ -896,7 +913,7 @@ function App() {
           <Star />
           <h1>{bootError ? "暂时无法连接 starr" : "正在接住星光"}</h1>
           <p>{bootError || "连接独立角色核心…"}</p>
-          {bootError && <button onClick={load}>重试连接</button>}
+          {bootError && <button onClick={load}>再结星桥</button>}
         </div>
       </>
     );
@@ -949,75 +966,73 @@ function App() {
           aria-label="关闭导航"
           onClick={() => setMenu(false)}
         />
-        {section.id !== "home" && (
-          <aside className="sidebar" inert={compact && !menu}>
-            <div className="workspace-heading">
-              <span>私人星际观测站</span>
-              <h2>{section.name}</h2>
-              <p>{section.caption}</p>
-            </div>
-            <div className="character-switch">
-              <span className="avatar">{props?.character.name[0] ?? "✧"}</span>
-              <Select
-                label="切换观察角色"
-                value={id}
-                onChange={(next) => {
-                  setId(next);
-                  setModal("");
-                  setMenu(false);
-                }}
-                options={bootstrap.characters.map((c) => ({
-                  value: c.id,
-                  label: c.name,
-                }))}
-              />
-              <button
-                type="button"
-                className="icon-button"
-                aria-label="添加角色"
-                onClick={() => setModal("character")}
-              >
-                <Plus size={15} />
-              </button>
-            </div>
-            <nav aria-label="主要导航">
-              {navigation
-                .filter((n) => section.pages.includes(n.id))
-                .map((n) => (
-                  <React.Fragment key={n.id}>
-                    <button
-                      aria-current={page === n.id ? "page" : undefined}
-                      className={page === n.id ? "active" : ""}
-                      onClick={() => go(n.id)}
-                    >
-                      <n.icon size={17} strokeWidth={1.6} />
-                      <span>
-                        <strong>{n.name}</strong>
-                        <small>{n.purpose}</small>
+        <aside className="sidebar" inert={compact && !menu}>
+          <div className="workspace-heading">
+            <span>私人星际观测站</span>
+            <h2>{section.name}</h2>
+            <p>{section.caption}</p>
+          </div>
+          <div className="character-switch">
+            <span className="avatar">{props?.character.name[0] ?? "✧"}</span>
+            <Select
+              label="切换观察角色"
+              value={id}
+              onChange={(next) => {
+                setId(next);
+                setModal("");
+                setMenu(false);
+              }}
+              options={bootstrap.characters.map((c) => ({
+                value: c.id,
+                label: c.name,
+              }))}
+            />
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="添加角色"
+              onClick={() => setModal("character")}
+            >
+              <Plus size={15} />
+            </button>
+          </div>
+          <nav aria-label="主要导航">
+            {section.primary
+              .flatMap((id) => navigation.filter((n) => n.id === id))
+              .map((n) => (
+                <React.Fragment key={n.id}>
+                  <button
+                    aria-current={page === n.id ? "page" : undefined}
+                    className={page === n.id ? "active" : ""}
+                    onClick={() => go(n.id)}
+                  >
+                    <n.icon size={17} strokeWidth={1.6} />
+                    <span>
+                      <strong>{n.name}</strong>
+                      <small>{n.purpose}</small>
+                    </span>
+                    {page === n.id && (
+                      <span className="nav-active-star" aria-hidden="true">
+                        ✦
                       </span>
-                      {page === n.id && (
-                        <span className="nav-active-star" aria-hidden="true">
-                          ✦
-                        </span>
-                      )}
-                    </button>
-                  </React.Fragment>
-                ))}
-            </nav>
-            <div className="sidebar-bottom">
+                    )}
+                  </button>
+                </React.Fragment>
+              ))}
+          </nav>
+          <div className="sidebar-bottom">
+            <span>
+              <i className="live-dot" />
+              独立核心运行中
+            </span>
+            <small>
+              v{bootstrap.version}
               <span>
-                <i className="live-dot" />
-                独立核心运行中
+                {bootstrap.host?.connected ? "DSH 已连接" : "独立预览"}
               </span>
-              <small>
-                v{bootstrap.version}
-                <span>
-                  {bootstrap.host?.connected ? "DSH 已连接" : "独立预览"}
-                </span>
-              </small>
-            </div>
-          </aside>
-        )}
+            </small>
+          </div>
+        </aside>
         <div className="workspace" inert={compact && menu}>
           <header className="topbar">
             <button
@@ -1057,9 +1072,32 @@ function App() {
                   load();
                 }}
               >
-                新手调试
+                初逢引星
               </button>
-              <span>{props?.character.name ?? "角色"}</span>
+              {
+                <div className="home-character-switch">
+                  <Select
+                    label="切换观察角色"
+                    value={id}
+                    onChange={(next) => {
+                      setId(next);
+                      setModal("");
+                    }}
+                    options={bootstrap.characters.map((c) => ({
+                      value: c.id,
+                      label: c.name,
+                    }))}
+                  />
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label="添加角色"
+                    onClick={() => setModal("character")}
+                  >
+                    <Plus size={15} />
+                  </button>
+                </div>
+              }
               <ChevronRight size={13} />
               <span>{nav.name}</span>
             </div>
@@ -1069,7 +1107,7 @@ function App() {
               </span>
               <span className="saved-indicator">
                 <CheckCheck size={14} />
-                本地持久化
+                星笺长存
               </span>
               <button
                 className="icon-button"
@@ -1093,11 +1131,12 @@ function App() {
                     load();
                   }}
                 >
-                  继续新手调试
+                  重续初逢
                 </button>
               </div>
             )}
-            {page !== "overview" && <PagePrelude page={page} />}
+
+            {activeProps && page !== "overview" && <PagePrelude page={page} />}
             <div className="page-title">
               <div>
                 <h1>
@@ -1123,14 +1162,14 @@ function App() {
               {page === "memory" ? (
                 <button className="primary" onClick={() => setModal("memory")}>
                   <Plus size={15} />
-                  记录记忆
+                  落笺拾忆
                 </button>
               ) : null}
             </div>
             {error && (
               <div className="inline-error" role="alert">
                 {error}
-                <button onClick={refresh}>重试</button>
+                <button onClick={refresh}>再循星途</button>
               </div>
             )}
             {!props && !error && (
@@ -1140,7 +1179,7 @@ function App() {
               <div className="page-content" key={`${id}:${page}`}>
                 <Boundary>
                   {page === "overview" ? (
-                    <Overview
+                    <ObservatoryOverview
                       {...activeProps}
                       onMemory={() => setModal("memory")}
                       onGoal={() => setModal("goal")}
@@ -1165,6 +1204,9 @@ function App() {
                 {bootstrap.host?.connected ? "DSH 控制台" : "独立预览"}
               </span>
             </footer>
+            {activeProps && (
+              <PageContinuation key={page} page={page} main={main} go={go} />
+            )}
           </main>
         </div>
       </div>
@@ -1209,7 +1251,12 @@ function App() {
     </>
   );
 }
-createRoot(document.getElementById("root")!).render(
+// 开发热更新会重新执行入口；复用挂载点上的根，避免同时出现多份页面和画布。
+const rootElement = document.getElementById("root")! as HTMLElement & {
+  starrReactRoot?: ReturnType<typeof createRoot>;
+};
+const appRoot = (rootElement.starrReactRoot ??= createRoot(rootElement));
+appRoot.render(
   <Boundary>
     <App />
   </Boundary>,

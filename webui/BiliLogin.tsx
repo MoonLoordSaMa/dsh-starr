@@ -133,7 +133,7 @@ export function BiliLogin({
             }}
           >
             {login ? <RefreshCw size={15} /> : <QrCode size={15} />}{" "}
-            {busy ? "正在生成…" : login ? "重新生成二维码" : "生成登录二维码"}
+            {busy ? "星笺初成…" : login ? "重绘星契" : "绘契相逢"}
           </button>
         )}
         {error && (
@@ -158,7 +158,7 @@ export function BiliLogin({
                 : "等待扫码 · 三分钟内有效"}
           </p>
           <button className="text-link" onClick={cancel}>
-            <X size={12} /> 取消扫码
+            <X size={12} /> 暂收信契
           </button>
         </div>
       )}

@@ -30,3 +30,6 @@ artifacts/
 *.ogg
 *.tgz
 *.zip
+
+# 本机前端依赖入口可能是 Windows 重解析文件
+/webui/node_modules

@@ -1,6 +1,6 @@
 import dns from "node:dns/promises";
-import net from "node:net";
 import { fail } from "../starrcore/store.mjs";
+import { hasOnlyPublicAddresses } from "../runtime/network.mjs";
 
 const songId = (value) => {
   const id = String(value ?? "");
@@ -192,14 +192,7 @@ export async function downloadNeteaseMedia(
   const url = validateMediaUrl(value);
   signal?.throwIfAborted();
   const addresses = await lookup(url.hostname, { all: true });
-  if (
-    !addresses.length ||
-    addresses.some(
-      ({ address }) =>
-        net.isIP(address) !== 4 ||
-        /^(0|10|127|169\.254|192\.168|172\.(1[6-9]|2\d|3[01]))\./.test(address),
-    )
-  )
+  if (!hasOnlyPublicAddresses(addresses))
     throw fail("网易云音源解析到不可用网络", 403);
   const response = await request(url, {
     redirect: "error",

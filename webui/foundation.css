@@ -1,0 +1,1702 @@
+/*
+ * foundation.css — 唯一的设计真源（tokens / reset / 排版 / 控件）。
+ *
+ * 导入顺序：本文件在 main.tsx 中最后导入。同权重时靠后即胜出，
+ * 因此这里不需要 !important。旧文件中与本文件同名的规则已在各自
+ * 文件内删除，仍被保留的旧规则只负责本文件未覆盖的页面专属皮肤。
+ *
+ * 层级（z）：topbar 40 / 侧栏 30 / 页面 1 / 下拉 60 / 弹窗 100 / toast 150。
+ *
+ * 模糊上限：普通面板 ≤3px，内标签与输入 ≤1.5px，下拉与弹窗 ≤7px，
+ * 顶栏滚动后 ≤6px。模糊只作用于控件自身覆盖范围，嵌套容器不再采样。
+ */
+
+/* ------------------------------------------------------------------ */
+/* 0. 可注册的自定义属性                                              */
+/* ------------------------------------------------------------------ */
+
+/* 注册后浏览器才知道它是数字，滚动时能重新求值并做插值。
+   未注册的自定义属性在 min()/max() 里不会随来源变量变化。 */
+@property --topbar-glass {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.22;
+}
+
+@property --topbar-scroll {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 1. tokens                                                          */
+/* ------------------------------------------------------------------ */
+
+:root {
+  /* 调色：夜蓝 / 月灰 / 暖杏金 */
+  --ground: #0b1116;
+  --ground-deep: #070d11;
+  --surface: rgba(14, 22, 28, 0.86);
+  --surface-inner: rgba(179, 196, 187, 0.055);
+  --surface-raised: rgba(20, 28, 34, 0.88);
+  --surface-sunken: rgba(8, 13, 17, 0.55);
+
+  --ink: #e9e9e2;
+  --secondary: #b5c0bd;
+  --muted: #909e9d;
+  --faint: rgba(181, 192, 189, 0.55);
+
+  --gold: #e0bd91;
+  --gold-strong: #f0d8b9;
+  --gold-dim: rgba(224, 189, 145, 0.45);
+  --gold-wash: rgba(224, 189, 145, 0.07);
+  --accent: #93b9ff;
+  --iris: #b5a3f2;
+  --danger: #e3b5aa;
+  --success: #a8c7a0;
+
+  --line: rgba(194, 207, 198, 0.16);
+  --line-soft: rgba(194, 207, 198, 0.09);
+  --line-strong: rgba(203, 216, 207, 0.27);
+
+  /* 圆角：全局直角，不设例外 */
+  --radius: 0px;
+  --control-radius: 0px;
+  --radius-panel: 0px;
+  --radius-control: 0px;
+  --radius-menu: 0px;
+  --radius-pill: 0px;
+
+  /* 间距（4 基数，22/23/28 沿用既有栅格） */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 11px;
+  --space-5: 14px;
+  --space-6: 18px;
+  --space-7: 23px;
+  --space-8: 28px;
+  --space-9: 36px;
+  --gutter: 22px;
+
+  /* 字阶 */
+  --text-2xs: 9px;
+  --text-xs: 10px;
+  --text-sm: 11px;
+  --text-base: 12px;
+  --text-md: 13px;
+  --text-lg: 15px;
+  --text-xl: 18px;
+  --text-2xl: 23px;
+  --text-3xl: 30px;
+  --weight-body: 400;
+  --weight-medium: 500;
+  --weight-strong: 600;
+  --leading-tight: 1.45;
+  --leading-body: 1.65;
+  --leading-prose: 1.9;
+  --tracking-caps: 0.12em;
+
+  /* 模糊层级。--blur 由 UI 设置写入（默认 8px），三档均由它派生并封顶 */
+  --blur: 8px;
+  --blur-panel: min(16px, calc(var(--blur) * 1.5));
+  --blur-control: min(8px, calc(var(--blur) * 0.75));
+  --blur-menu: min(20px, calc(var(--blur) * 2));
+  /* 兼容旧名，新代码用上面三个 */
+  --glass-panel: var(--blur-panel);
+  --glass-control: var(--blur-control);
+  --glass-menu: var(--blur-menu);
+
+  /* 阴影：只用于浮层，普通面板不用外阴影 */
+  --shadow-panel: none;
+  --shadow-menu: 0 14px 40px rgba(3, 7, 14, 0.45);
+  --shadow-modal: 0 24px 100px rgba(2, 5, 10, 0.55);
+  --shadow-toast: 0 12px 34px rgba(2, 5, 10, 0.42);
+  --shadow-inset: inset 0 1px rgba(255, 255, 255, 0.03);
+
+  /* 动效 */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration: 260ms;
+  --duration-fast: 160ms;
+  --duration-slow: 420ms;
+
+  /* 结构 */
+  --sidebar-width: 212px;
+  --topbar-height: 84px;
+
+  /* 顶栏初始玻璃度；滚动时 motion.ts 在 .topbar 上写 --topbar-glass。
+     派生值（--topbar-scroll / --topbar-blur）必须声明在同一个元素上，
+     否则会在 :root 处就完成替换，失去依赖。 */
+  --topbar-glass: 0.22;
+  --topbar-shadow: 0;
+
+  --world-overlay-opacity: 0.16;
+
+  /* 焦点环：始终可见，不受直角规则影响 */
+  --focus-ring: #d8c2a0;
+  --focus-ring-width: 1px;
+  --focus-ring-offset: 2px;
+
+  font-family:
+    "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei",
+    sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: var(--leading-body);
+  font-synthesis: none;
+  color: var(--ink);
+  /* 背景画布位于 z-index:-1，html/body 必须透明，否则整片场景会被底色盖住。 */
+  background: transparent;
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ */
+/* 2. reset / base                                                    */
+/* ------------------------------------------------------------------ */
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 134, 137, 0.35) transparent;
+}
+
+body {
+  margin: 0;
+  /* 兜底底色放在伪元素上，避免覆盖 z-index:-1 的场景画布。 */
+  background: transparent;
+  color: var(--ink);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+a {
+  color: inherit;
+}
+
+svg {
+  flex-shrink: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure {
+  margin: 0;
+}
+
+ol,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+hr {
+  height: 1px;
+  margin: var(--space-6) 0;
+  border: 0;
+  background: var(--line);
+}
+
+::selection {
+  background: rgba(224, 189, 145, 0.22);
+  color: var(--ink);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(157, 167, 190, 0.18);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 167, 190, 0.38);
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. 排版                                                            */
+/* ------------------------------------------------------------------ */
+
+h1 {
+  font-size: var(--text-3xl);
+  font-weight: 550;
+  line-height: 1.5;
+  letter-spacing: -0.03em;
+}
+
+h2 {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-strong);
+  line-height: 1.6;
+}
+
+h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  line-height: 1.6;
+}
+
+h4 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-strong);
+  line-height: 1.5;
+  letter-spacing: 0.015em;
+}
+
+p {
+  line-height: var(--leading-prose);
+  color: var(--secondary);
+}
+
+small {
+  font-size: var(--text-base);
+  color: var(--muted);
+}
+
+code,
+kbd,
+pre {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: var(--text-base);
+  color: #bbc2d2;
+  overflow-wrap: anywhere;
+}
+
+strong,
+b {
+  font-weight: var(--weight-strong);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 页头：标题 + 副标题 + 右侧操作 */
+.page-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: var(--space-7);
+}
+
+.page-title h1 {
+  font-size: var(--text-2xl);
+  font-weight: 550;
+  letter-spacing: -0.01em;
+}
+
+.page-title p {
+  margin-top: var(--space-1);
+  font-size: var(--text-base);
+  color: var(--muted);
+}
+
+.eyebrow {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* ------------------------------------------------------------------ */
+/* 4. 焦点环                                                          */
+/* ------------------------------------------------------------------ */
+
+/* 不用 :where()：需要压过旧文件里 button:not(:disabled):focus-visible 的 2px 环，
+   但又不加 !important。元素 + 伪类本身已达到 0,1,1。 */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* 聚焦主体：键盘操作时不给旧 2px 环复现的机会 */
+button:not(:disabled):focus-visible,
+a:focus-visible {
+  outline-width: var(--focus-ring-width);
+  outline-color: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* 在透明底或场景上更亮一档，保证可见 */
+.app-shell .topbar button:focus-visible,
+.app-shell .topbar a:focus-visible,
+.sidebar button:focus-visible,
+.sidebar a:focus-visible,
+.world-scene button:focus-visible,
+.world-scene a:focus-visible {
+  outline-color: #f0dcbe;
+}
+
+button.danger:focus-visible {
+  outline-color: var(--danger);
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. 面板：无外框，靠渐变与间距分层                                   */
+/* ------------------------------------------------------------------ */
+
+.panel {
+  position: relative;
+  min-width: 0;
+  padding: var(--space-7);
+  border: 0;
+  border-radius: var(--radius-panel);
+  background: linear-gradient(
+    145deg,
+    rgba(17, 27, 39, 0.68),
+    rgba(9, 18, 30, 0.78)
+  );
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(var(--blur-panel));
+  backdrop-filter: blur(var(--blur-panel));
+}
+
+/* 内层容器共用外层采样，不再叠加模糊 */
+.panel :is(.panel, .disclosure, .config-row, .detail-facts, .memory-reading),
+.observatory-aside .panel,
+.observatory-map :is(.starmap-wrap, .empty-state, .observatory-map-state) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.panel > * {
+  position: relative;
+}
+
+.panel:has(.select-options) {
+  z-index: 30;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-5);
+  align-items: center;
+  min-height: 24px;
+  margin-bottom: var(--space-6);
+}
+
+.panel-heading h2 {
+  letter-spacing: 0.015em;
+}
+
+.panel-heading .text-link {
+  font-size: var(--text-sm);
+}
+
+/* ------------------------------------------------------------------ */
+/* 6. 按钮：default / primary / ghost / icon                          */
+/* ------------------------------------------------------------------ */
+
+.primary,
+.ghost,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 35px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--radius-control);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease);
+}
+
+/* 默认按钮：轻底、无描边 */
+.button {
+  background: rgba(176, 185, 209, 0.055);
+  color: var(--secondary);
+}
+
+.button:hover:not(:disabled) {
+  background: rgba(176, 185, 209, 0.1);
+  color: var(--ink);
+}
+
+/* 主操作：暖杏金 */
+.primary {
+  background: linear-gradient(180deg, #f8e8cc, #e8cea2 47%, #d8bc8f);
+  color: #302b26;
+  border: 1px solid rgba(240, 223, 191, 0.44);
+  box-shadow:
+    inset 0 1px rgba(255, 246, 233, 0.64),
+    inset 0 -1px rgba(148, 113, 72, 0.25);
+}
+
+.primary:hover:not(:disabled) {
+  filter: brightness(1.04);
+  box-shadow:
+    inset 0 1px rgba(255, 246, 233, 0.72),
+    inset 0 -1px rgba(148, 113, 72, 0.3);
+}
+
+.primary:active:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+/* 次要操作：半透明底 + 细边 */
+.ghost {
+  border: 1px solid var(--line-soft);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.019),
+    rgba(255, 255, 255, 0.004)
+  );
+  color: var(--secondary);
+}
+
+.ghost:hover:not(:disabled) {
+  border-color: var(--gold-dim);
+  color: var(--gold-strong);
+  background: var(--gold-wash);
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+/* 图标按钮 */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-control);
+  color: var(--secondary);
+  flex: none;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.icon-button:hover:not(:disabled) {
+  background: rgba(189, 197, 215, 0.07);
+  color: var(--ink);
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--gold);
+  font-size: var(--text-base);
+  text-decoration: none;
+}
+
+.text-link:hover {
+  color: var(--gold-strong);
+}
+
+/* 操作分组与页脚 */
+.button-row,
+.form-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.form-footer > small {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  max-width: 100%;
+}
+
+/* ------------------------------------------------------------------ */
+/* 7. 输入 / 文本域 / 下拉 / 复选框 / 滑块                            */
+/* ------------------------------------------------------------------ */
+
+:where(
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(
+      [type="file"]
+    ),
+  textarea
+) {
+  width: 100%;
+  min-height: 35px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: rgba(11, 17, 26, 0.62);
+  color: var(--ink);
+  font-size: var(--text-md);
+  outline: none;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease);
+  -webkit-backdrop-filter: blur(var(--blur-control));
+  backdrop-filter: blur(var(--blur-control));
+}
+
+:where(
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(
+      [type="file"]
+    ),
+  textarea
+):hover {
+  border-color: var(--line-strong);
+}
+
+:where(
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(
+      [type="file"]
+    ),
+  textarea
+):focus {
+  border-color: var(--gold-dim);
+  background: rgba(13, 20, 30, 0.82);
+}
+
+:where(input, textarea)::placeholder {
+  color: var(--faint);
+}
+
+textarea {
+  resize: vertical;
+  line-height: var(--leading-prose);
+}
+
+.field {
+  display: block;
+  font-size: var(--text-base);
+}
+
+.field > span {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--secondary);
+}
+
+.field small {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.input,
+.select-trigger {
+  min-height: 39px;
+  font-size: var(--text-md);
+}
+
+/* 下拉触发器 */
+.select {
+  position: relative;
+  min-width: 0;
+}
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: rgba(17, 23, 37, 0.38);
+  color: var(--ink);
+  font-size: var(--text-md);
+  text-align: left;
+  -webkit-backdrop-filter: blur(var(--blur-control));
+  backdrop-filter: blur(var(--blur-control));
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease);
+}
+
+.select-trigger:hover {
+  border-color: var(--gold-dim);
+}
+
+.select-trigger > svg {
+  transition: transform 200ms var(--ease);
+}
+
+.select-trigger .rotated {
+  transform: rotate(180deg);
+}
+
+/* 下拉菜单允许到 7px */
+.select-options {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  min-width: 140px;
+  max-height: 260px;
+  overflow: auto;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-menu);
+  background: rgba(16, 21, 35, 0.92);
+  box-shadow: var(--shadow-menu);
+  -webkit-backdrop-filter: blur(var(--blur-menu));
+  backdrop-filter: blur(var(--blur-menu));
+}
+
+.select-options > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--secondary);
+  font-size: var(--text-md);
+  text-align: left;
+}
+
+.select-options > button:is(:hover, :focus, [aria-selected="true"], .chosen) {
+  background: rgba(225, 183, 143, 0.1);
+  color: var(--gold-strong);
+}
+
+/* 复选框与单选框 */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  accent-color: var(--gold);
+}
+
+.checkbox-row,
+.check-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+  font-size: var(--text-sm);
+  color: var(--secondary);
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+/* 滑块：轨道与手柄保持直角 */
+input[type="range"] {
+  width: 100%;
+  height: 4px;
+  margin: var(--space-4) 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: rgba(161, 172, 196, 0.14);
+  accent-color: var(--gold);
+  appearance: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--gold);
+  border-radius: 0;
+  background: var(--gold);
+  box-shadow: 0 0 0 3px rgba(224, 189, 145, 0.08);
+  appearance: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--gold);
+  border-radius: 0;
+  background: var(--gold);
+}
+
+.state-slider {
+  display: flex;
+  flex-direction: column;
+}
+
+.state-slider > span {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-base);
+  color: var(--secondary);
+}
+
+.state-slider b {
+  font-size: var(--text-base);
+  font-weight: var(--weight-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.state-slider small {
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
+/* ------------------------------------------------------------------ */
+/* 8. 标签 / 徽标                                                     */
+/* ------------------------------------------------------------------ */
+
+.badge,
+.tag,
+.tag-row > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 26px;
+  max-width: 100%;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: rgba(176, 185, 209, 0.045);
+  color: var(--secondary);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  white-space: nowrap;
+  flex: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(var(--blur-control));
+  backdrop-filter: blur(var(--blur-control));
+}
+
+.badge.good {
+  color: var(--success);
+  background: rgba(168, 199, 160, 0.1);
+}
+
+.badge.warn {
+  color: var(--danger);
+  background: rgba(227, 181, 170, 0.1);
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 9. 标签页（tab）                                                   */
+/* ------------------------------------------------------------------ */
+
+.tabs {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 0 var(--space-7);
+  padding: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs > button {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  min-height: 37px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: var(--text-md);
+  white-space: nowrap;
+  transition:
+    color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease);
+}
+
+.tabs > button:hover {
+  color: var(--secondary);
+}
+
+.tabs > button:is([aria-selected="true"], .active) {
+  color: var(--gold-strong);
+  background: var(--gold-wash);
+  box-shadow: inset 0 -1px rgba(225, 183, 143, 0.5);
+}
+
+.tabs-active-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 10. 行 / 列表面                                                    */
+/* ------------------------------------------------------------------ */
+
+.memory-row,
+.chat-session,
+.config-row,
+.relation-row,
+.platform-row,
+.health-row,
+.history-row {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.memory-row,
+.chat-session {
+  padding: 12px 14px;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease);
+}
+
+.memory-row:hover,
+.chat-session:hover {
+  background: rgba(175, 184, 204, 0.05);
+}
+
+.memory-row.is-selected,
+.chat-session.selected {
+  background: var(--gold-wash);
+  box-shadow: inset 1px 0 var(--gold-dim);
+}
+
+/* 配置行：横向细线分隔，不用选中的大色块 */
+.config-row {
+  padding: 19px 14px;
+  gap: var(--space-5);
+  min-height: 75px;
+  align-items: center;
+}
+
+.config-row + .config-row::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(205, 195, 188, 0.02),
+    rgba(205, 195, 188, 0.16) 45%,
+    transparent
+  );
+}
+
+.config-row.inspected {
+  background: linear-gradient(
+    90deg,
+    rgba(226, 193, 151, 0.055),
+    transparent 75%
+  );
+}
+
+.config-row label {
+  min-width: 0;
+  align-self: center;
+  line-height: 1.75;
+}
+
+.config-row strong {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.config-control input {
+  min-height: 35px;
+  padding: 8px 11px;
+  font-size: var(--text-base);
+}
+
+.switch-row {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.switch-row .config-control {
+  width: auto;
+  justify-self: end;
+}
+
+/* 开关：直角轨道与直角手柄 */
+.toggle {
+  position: relative;
+  width: 40px;
+  min-width: 40px;
+  height: 21px;
+  min-height: 21px;
+  padding: 3px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(172, 181, 202, 0.13);
+  box-shadow: inset 0 1px rgba(223, 226, 238, 0.06);
+}
+
+.toggle > i {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 0;
+  background: #8f9aac;
+  box-shadow: none;
+  transition:
+    translate 220ms var(--ease),
+    background-color 220ms var(--ease);
+}
+
+.toggle[aria-checked="true"] {
+  border: 0;
+  background: rgba(225, 191, 147, 0.19);
+}
+
+.toggle[aria-checked="true"] > i {
+  background: var(--gold);
+  translate: 19px 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 11. 浮层：弹窗 / toast                                            */
+/* ------------------------------------------------------------------ */
+
+.modal-shade {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 25px;
+  overflow-y: auto;
+  background: linear-gradient(
+    145deg,
+    rgba(5, 9, 19, 0.18),
+    rgba(5, 9, 19, 0.38)
+  );
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.modal,
+.modal-card {
+  width: 570px;
+  max-width: 100%;
+  max-height: calc(100dvh - 50px);
+  overflow-y: auto;
+  padding: var(--space-8);
+  border: 0;
+  border-radius: var(--radius-menu);
+  background: linear-gradient(
+    145deg,
+    rgba(22, 27, 42, 0.84),
+    rgba(12, 17, 29, 0.9)
+  );
+  box-shadow: var(--shadow-modal);
+  -webkit-backdrop-filter: blur(var(--blur-menu));
+  backdrop-filter: blur(var(--blur-menu));
+}
+
+.modal.wide {
+  width: 760px;
+}
+
+.modal-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+}
+
+.modal-heading h2 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-body);
+}
+
+.toast {
+  position: fixed;
+  z-index: 150;
+  bottom: 27px;
+  left: calc(50% + 80px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: min(85vw, 650px);
+  padding: 13px 15px;
+  border: 0;
+  border-radius: var(--radius-menu);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-size: var(--text-base);
+  box-shadow: var(--shadow-toast);
+  -webkit-backdrop-filter: blur(var(--blur-menu));
+  backdrop-filter: blur(var(--blur-menu));
+}
+
+.toast > button {
+  display: flex;
+  padding: 2px;
+  margin-left: var(--space-3);
+  color: var(--muted);
+}
+
+/* 内联提示：无外框，用左侧细线与底色表示语义 */
+.inline-error,
+.job-error {
+  padding: 12px 14px;
+  border: 0;
+  border-left: 1px solid rgba(227, 181, 170, 0.5);
+  border-radius: 0;
+  background: rgba(227, 181, 170, 0.06);
+  color: var(--danger);
+  font-size: var(--text-base);
+}
+
+.callout,
+.empty-state {
+  padding: var(--space-6);
+  border: 0;
+  border-radius: var(--radius-panel);
+  background: var(--surface-inner);
+}
+
+/* ------------------------------------------------------------------ */
+/* 12. 顶栏 / 侧栏：结构恒定，切页不跳动                              */
+/* ------------------------------------------------------------------ */
+
+.topbar,
+.app-shell[data-workspace="home"] .topbar {
+  --topbar-scroll: min(1, max(0, (var(--topbar-glass) - 0.22) / 0.46));
+  --topbar-blur: calc(2px + 4px * var(--topbar-scroll));
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 182px minmax(0, 1fr) 246px;
+  grid-template-rows: 1fr;
+  align-items: center;
+  gap: 0;
+  height: var(--topbar-height);
+  min-height: var(--topbar-height);
+  margin: 0;
+  padding: 0 var(--gutter);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 16, 28, 0.94),
+    rgba(14, 18, 31, calc(var(--topbar-glass) * 0.72))
+  );
+  box-shadow: 0 1px 24px rgba(0, 0, 0, var(--topbar-shadow));
+  -webkit-backdrop-filter: blur(var(--topbar-blur));
+  backdrop-filter: blur(var(--topbar-blur));
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease);
+}
+
+.workspace {
+  padding-top: var(--topbar-height);
+}
+
+.app-shell main {
+  height: calc(100dvh - var(--topbar-height));
+  scrollbar-gutter: stable;
+}
+
+.sidebar,
+.app-shell[data-workspace="home"] .sidebar {
+  top: var(--topbar-height);
+  width: var(--sidebar-width);
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 17, 30, 0.48),
+    rgba(12, 17, 28, 0.66)
+  );
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(var(--blur-panel));
+  backdrop-filter: blur(var(--blur-panel));
+}
+
+/* 顶栏导航：文字 + 细分割线 + 底部指示条 */
+.workspace-navigation {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: 100%;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.workspace-navigation > button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: var(--text-base);
+  letter-spacing: 0.04em;
+  transition:
+    color 220ms var(--ease),
+    background-color 260ms var(--ease);
+}
+
+.workspace-navigation > button + button::before {
+  content: "";
+  position: absolute;
+  top: 25%;
+  bottom: 25%;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(208, 193, 175, 0.27),
+    transparent
+  );
+}
+
+.workspace-navigation > button:is(:hover, [aria-current="page"]) {
+  border: 0;
+  color: var(--gold-strong);
+  background: linear-gradient(180deg, transparent, var(--gold-wash));
+}
+
+.workspace-navigation > button:focus-visible {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: -8px;
+}
+
+.workspace-navigation > button i {
+  left: 22%;
+  right: 22%;
+  bottom: 13px;
+  box-shadow: none;
+  opacity: 0.8;
+}
+
+/* ------------------------------------------------------------------ */
+/* 13. 减少动态：移除过渡与动画                                       */
+/* ------------------------------------------------------------------ */
+
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation: none;
+  transition-duration: 0.01ms;
+  transition-delay: 0ms;
+  scroll-behavior: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
+  }
+}
+
+:root[data-motion="reduced"] {
+  --duration: 0.01ms;
+  --duration-fast: 0.01ms;
+  --duration-slow: 0.01ms;
+}
+
+/* 轻动效下进一步降低模糊采样 */
+:root[data-motion="light"] {
+  --blur-panel: 1px;
+  --blur-control: 0px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --topbar-glass: 0.75;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 14. 响应式                                                         */
+/* ------------------------------------------------------------------ */
+
+/* 中等窗口：侧栏 198 */
+@media (max-width: 1200px) {
+  :root {
+    --sidebar-width: 198px;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 981px) {
+  .app-shell .sidebar {
+    transform: none;
+  }
+
+  .app-shell .mobile-menu,
+  .app-shell .nav-shade {
+    display: none;
+  }
+}
+
+/* 1100 以上侧栏常驻，汉堡按钮与遮罩一律不出现 */
+@media (min-width: 1101px) {
+  .app-shell .mobile-menu,
+  .app-shell .nav-shade {
+    display: none;
+  }
+}
+
+/* 980 及以下：侧栏改为 212 抽屉，顶栏两行 */
+@media (max-width: 980px) {
+  :root {
+    --topbar-height: 104px;
+    --sidebar-width: 212px;
+  }
+
+  .topbar,
+  .app-shell[data-workspace="home"] .topbar {
+    grid-template-columns: 45px minmax(0, 1fr) auto;
+    grid-template-rows: 48px 43px;
+    gap: 0 10px;
+    height: 104px;
+    min-height: 104px;
+    padding: 4px 16px 6px;
+  }
+
+  .app-shell .sidebar {
+    width: 212px;
+  }
+
+  .app-shell main {
+    margin-left: 0;
+  }
+
+  .workspace-navigation {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    overflow-x: auto;
+  }
+
+  .workspace-navigation > button {
+    min-height: 38px;
+    padding-inline: 7px;
+  }
+}
+
+@media (max-width: 800px) {
+  .panel {
+    padding: var(--space-6);
+  }
+}
+
+@media (max-width: 700px) {
+  :root {
+    --blur-panel: 1px;
+    --blur-control: 0px;
+  }
+
+  .topbar,
+  .app-shell[data-workspace="home"] .topbar {
+    padding-inline: 14px;
+  }
+
+  .page-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .tabs {
+    width: 100%;
+    padding: 4px;
+  }
+
+  .tabs > button {
+    min-height: 39px;
+    padding: 9px 12px;
+    font-size: var(--text-base);
+  }
+
+  .modal-shade {
+    padding: 14px;
+  }
+
+  .modal,
+  .modal-card {
+    padding: 21px;
+    max-height: calc(100dvh - 28px);
+  }
+
+  .toast {
+    left: 50%;
+    bottom: 20px;
+    width: max-content;
+    max-width: calc(100vw - 30px);
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 390px) {
+  .app-shell main {
+    padding-inline: 16px;
+  }
+
+  .panel {
+    padding: 18px;
+  }
+
+  .primary,
+  .ghost,
+  .button {
+    min-height: 38px;
+  }
+
+  .tabs > button {
+    padding: 8px 10px;
+  }
+
+  .modal,
+  .modal-card {
+    padding: 18px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 15. 顶栏结构收敛                                                   */
+/* 品牌 / 五个等宽导航格 / 右侧状态，三列固定；面包屑只留当前页名。  */
+/* ------------------------------------------------------------------ */
+
+.app-shell .breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+/* 非首页时：角色切换与添加按钮让位给内容，顶部只保留当前页名 */
+.app-shell:not([data-workspace="home"]) .breadcrumb .home-character-switch,
+.app-shell:not([data-workspace="home"]) .breadcrumb > svg {
+  display: none;
+}
+
+.app-shell .breadcrumb .guide-reopen {
+  min-height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--faint);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.06em;
+  transition:
+    color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease);
+}
+
+.app-shell .breadcrumb .guide-reopen:hover {
+  color: var(--ink);
+  background: rgba(213, 187, 150, 0.07);
+}
+
+.app-shell .breadcrumb > span:last-child {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+@media (min-width: 1101px) {
+  .app-shell .topbar,
+  .app-shell[data-workspace="home"] .topbar {
+    grid-template-columns: 176px minmax(0, 1fr) 300px;
+  }
+}
+
+@media (max-width: 1440px) and (min-width: 1101px) {
+  .app-shell .topbar,
+  .app-shell[data-workspace="home"] .topbar {
+    grid-template-columns: 150px minmax(0, 1fr) 250px;
+  }
+  .workspace-navigation > button {
+    font-size: var(--text-sm);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 16. 诗句与首屏文字的可读性托底                                     */
+/* 场景会随滚动改变明暗，文字区需要一层极轻的暗底，而不是加粗字色。   */
+/* ------------------------------------------------------------------ */
+
+.page-prelude::before,
+.observatory-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    120% 80% at 12% 45%,
+    rgba(8, 11, 20, 0.32),
+    rgba(8, 11, 20, 0.12) 42%,
+    transparent 68%
+  );
+}
+
+.page-prelude > *,
+.observatory-hero > * {
+  z-index: 1;
+}
+
+.prelude-verse h2,
+.observatory-title {
+  text-shadow: 0 2px 18px rgba(6, 9, 17, 0.55);
+}
+
+.prelude-verse p,
+.prelude-poet,
+.observatory-kicker,
+.observatory-dateline {
+  text-shadow: 0 1px 10px rgba(6, 9, 17, 0.6);
+}
+
+/* ------------------------------------------------------------------ */
+/* 17. 窄屏首屏：文字区与滚动提示不能互相压住                          */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 700px) {
+  /* 窄屏把滚动提示收进文字块下方，绝对定位在中线会和标题撞在一起。 */
+  .app-shell .observatory-scroll,
+  .observatory-scroll {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    translate: none;
+    margin: 14px 0 4px;
+    padding: 8px 0;
+    align-self: flex-start;
+    gap: 7px;
+    font-size: 9px;
+  }
+
+  .observatory-scroll > i {
+    display: none;
+  }
+
+  /* 首屏操作按钮在窄屏改为整行两块，不与角色状态挤在一起。 */
+  .observatory-hero .observatory-actions,
+  .observatory-hero .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .observatory-hero .observatory-actions > button {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 18. 窄屏首屏改为正常流                                              */
+/* 桌面首屏靠绝对定位让文字浮在场景上；窄屏必须换成流式排列，        */
+/* 否则标题、操作按钮与滚动提示会叠在一起。                            */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 700px) {
+  .app-shell .observatory-hero {
+    display: flex;
+    flex-direction: column;
+    /* 文字压在场景下缘：先留出大片星空，再让文字与按钮依次落位。 */
+    justify-content: flex-end;
+    gap: 12px;
+    /* 顶部可能还有引导条，首屏不能再按整屏高算，否则文字会被推到折叠线以下。 */
+    min-height: min(calc(100dvh - var(--topbar-height)), 620px);
+    padding: 22px 20px 20px;
+  }
+
+  .app-shell .observatory-heading {
+    position: relative;
+    inset: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    order: 1;
+    pointer-events: auto;
+  }
+
+  .app-shell .observatory-heading-copy {
+    position: relative;
+    inset: auto;
+    left: auto;
+    top: auto;
+    width: 100%;
+    max-width: none;
+  }
+
+  .app-shell .observatory-title {
+    margin: 6px 0 4px;
+    font-size: 27px;
+    line-height: 1.3;
+  }
+
+  .app-shell .observatory-copy {
+    font-size: 11px;
+  }
+
+  .app-shell .observatory-actions {
+    position: relative;
+    inset: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    max-width: none;
+    order: 2;
+    padding: 0;
+  }
+
+  .app-shell .observatory-actions > button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 40px;
+    padding-inline: 10px;
+    font-size: var(--text-sm);
+  }
+
+  .app-shell .observatory-scene-note {
+    display: none;
+  }
+
+  .app-shell .observatory-scroll {
+    position: relative;
+    inset: auto;
+    left: auto;
+    bottom: auto;
+    translate: none;
+    order: 3;
+    align-self: flex-start;
+    margin: 2px 0 0;
+    padding: 6px 0;
+    gap: 7px;
+    font-size: 9px;
+  }
+
+  .app-shell .observatory-scroll > i {
+    display: none;
+  }
+}

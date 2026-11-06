@@ -133,7 +133,7 @@ export function BiliConnection(
                 }
               >
                 <RefreshCw size={14} />
-                {busy ? "正在检查…" : "验证登录"}
+                {busy ? "正在照契…" : "验看信契"}
               </button>
             </div>
             {result && <p role="status">{result}</p>}
@@ -144,14 +144,14 @@ export function BiliConnection(
               enabled={!!data?.loginReady}
               onSaved={props.refresh}
             />
-            <Disclosure title="手动凭据与环境变量（高级）">
+            <Disclosure title="信钥藏处">
               <p>
                 在 Windows 上通过当前用户的系统加密保存。只需要 SESSDATA 与
                 bili_jct；可附带
                 buvid3。已保存的内容不会回显到网页。也可在配置中指定启动环境变量
               </p>
               <label className="field">
-                B站 Cookie
+                山海信钥
                 <input
                   type="password"
                   autoComplete="off"
@@ -180,7 +180,7 @@ export function BiliConnection(
                     })
                   }
                 >
-                  保存凭据
+                  封存信钥
                 </button>
                 <button
                   className="ghost"
@@ -198,23 +198,23 @@ export function BiliConnection(
                     })
                   }
                 >
-                  清除本机凭据
+                  解下信钥
                 </button>
               </div>
             </Disclosure>
           </Panel>
-          <Panel title="模型与互动对象">
+          <Panel title="灵枢与故人">
             <ConfigForm {...props} pages={["bili"]} />
-            <Disclosure title="私信收件">
+            <Disclosure title="尺素入匣">
               <ConfigForm {...props} pages={["bili-dm"]} />
             </Disclosure>
-            <Disclosure title="评论与提及">
+            <Disclosure title="人间回声">
               <ConfigForm {...props} pages={["bili-comment"]} />
             </Disclosure>
-            <Disclosure title="直播间与弹幕">
+            <Disclosure title="同观流光">
               <ConfigForm {...props} pages={["bili-live"]} />
             </Disclosure>
-            <Disclosure title="监听、回复与额度">
+            <Disclosure title="候信应答有度">
               <ConfigForm {...props} pages={["bili-limits"]} />
             </Disclosure>
           </Panel>
@@ -233,25 +233,25 @@ export function BiliConnection(
           </p>
           {props.view !== "publish" && (
             <>
-              <Disclosure title="作息与浏览额度">
+              <Disclosure title="更筹与漫游">
                 <ConfigForm {...props} pages={["bili-watch"]} />
               </Disclosure>
-              <Disclosure title="她的兴趣与偏好">
+              <Disclosure title="心向山海">
                 <ConfigForm {...props} pages={["bili-preferences"]} />
               </Disclosure>
-              <Disclosure title="视频分享对象与额度">
+              <Disclosure title="流影寄予谁">
                 <ConfigForm {...props} pages={["bili-share"]} />
               </Disclosure>
             </>
           )}
           {props.view !== "activities" && (
-            <Disclosure title="定时动态" initialOpen>
+            <Disclosure title="四时寄笺" initialOpen>
               <ConfigForm {...props} pages={["bili-dynamics"]} />
               {[
-                { key: "best", label: "晨间精选" },
-                { key: "game", label: "午间游戏" },
-                { key: "anime", label: "午后二次元" },
-                { key: "gaming", label: "晚间随记" },
+                { key: "best", label: "晨光拾萃" },
+                { key: "game", label: "午间游趣" },
+                { key: "anime", label: "午后幻境" },
+                { key: "gaming", label: "暮色随笺" },
               ].map((item) => (
                 <Disclosure key={item.key} title={item.label}>
                   <ConfigForm {...props} pages={[`bili-dynamic-${item.key}`]} />
@@ -259,7 +259,7 @@ export function BiliConnection(
               ))}
             </Disclosure>
           )}
-          <Disclosure title="最近的浏览与动态记录">
+          <Disclosure title="近来山海笺">
             {data?.activities?.map((item) => (
               <div className="job-error" key={item.id}>
                 <strong>
@@ -273,7 +273,7 @@ export function BiliConnection(
         </Panel>
       )}
       {props.view === "publish" && <BiliOperations {...props} />}
-      <Panel title="最近的收件与处理">
+      <Panel title="近来信笺">
         <p>
           不明回执会保留待核对，插件不会重发。直播接口只返回受理确认时，会明确标为受理，不能等同于已在直播画面显示
         </p>
@@ -284,7 +284,7 @@ export function BiliConnection(
             </Badge>
           ))}
         </div>
-        <Disclosure title="查看最近记录">
+        <Disclosure title="展读近笺">
           {data?.recent.map((row) => (
             <div className="job-error" key={row.id}>
               <strong>{statusNames[row.status] || row.status}</strong>

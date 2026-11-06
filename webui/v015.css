@@ -1,34 +1,6 @@
 /* v0.1.5：诗序、功能层次和共享的控件表面。 */
-.topbar {
-  grid-template-columns: 130px minmax(0, 1fr) auto;
-  gap: 18px;
-  padding-inline: 26px;
-}
-.topbar .topbar-right {
+.topbar-right {
   display: none;
-}
-.workspace-navigation {
-  gap: clamp(4px, 1.2vw, 22px);
-  min-width: 0;
-}
-.workspace-navigation > button {
-  padding: 10px 13px;
-  min-height: 42px;
-  font-size: 12px;
-}
-.workspace-navigation > button::after {
-  content: none;
-}
-.workspace-navigation > button:focus:not(:focus-visible) {
-  outline: none;
-}
-.workspace-navigation > button:focus-visible {
-  outline: 2px solid #c9d9ed;
-  outline-offset: 4px;
-}
-.workspace-navigation > button[aria-current="page"] {
-  background: linear-gradient(135deg, #d6b99020, #8294bc12);
-  border-color: #e7c29550;
 }
 .sidebar nav > button {
   min-height: 60px;
@@ -163,7 +135,7 @@
 .function-groups > section {
   padding: 20px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-control);
   background: #111a254a;
 }
 .function-groups h3 {
@@ -247,14 +219,14 @@
   text-align: center;
   padding: 16px;
   border: 1px solid #e2bc8444;
-  border-radius: 18px;
+  border-radius: var(--radius-control);
   background: #17223388;
 }
 .qr-card img {
   display: block;
   width: 192px;
   height: 192px;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
 }
 .qr-card p {
   font-size: 11px;
@@ -298,7 +270,7 @@
   max-width: 240px;
   max-height: 180px;
   object-fit: contain;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
 }
 .material-result {
   white-space: pre-wrap;
@@ -309,7 +281,7 @@
   overflow: auto;
   padding: 18px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: #111a2466;
 }
 .preview-original,
@@ -318,15 +290,7 @@
   overflow-wrap: anywhere;
   padding: 18px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-}
-.badge,
-.tag-row > span {
-  max-width: 100%;
-  line-height: 1.6;
-  padding: 5px 10px;
-  border-radius: 8px;
-  backdrop-filter: blur(calc(var(--blur) * 0.2));
+  border-radius: var(--radius-control);
 }
 .expression-actions {
   display: flex;
@@ -339,33 +303,6 @@ button.danger {
 }
 button.danger:focus-visible {
   outline-color: #e3b5aa;
-}
-/* 首页共用直角表面；控件流光与卡片内层继承相同轮廓。 */
-.app-shell[data-workspace="home"] {
-  --control-radius: 0px;
-  --radius: 0px;
-}
-.app-shell[data-workspace="home"]
-  :is(
-    button:not(.toggle):not([role="switch"]):not(.world-brand),
-    a.button,
-    .badge,
-    .tag-row > span,
-    .panel,
-    .starmap-wrap,
-    .spectrum,
-    .select-options,
-    .disclosure,
-    .memory-reading,
-    .detail-facts,
-    .job-error,
-    .inline-error,
-    .guide-reminder,
-    .field input,
-    .field textarea
-  ) {
-  --metal-radius: 0px;
-  border-radius: 0;
 }
 .select-trigger,
 .select-option,
@@ -384,17 +321,6 @@ button:not(:disabled):focus-visible {
   outline-offset: 3px;
 }
 @media (max-width: 1300px) {
-  .topbar {
-    grid-template-columns: 100px minmax(0, 1fr) auto;
-    gap: 10px;
-    padding-inline: 18px;
-  }
-  .workspace-navigation {
-    gap: 4px;
-  }
-  .workspace-navigation > button {
-    padding-inline: 9px;
-  }
   .breadcrumb > span {
     display: none;
   }

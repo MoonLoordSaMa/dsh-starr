@@ -130,25 +130,23 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
           : "插件托管的本地模型统一互斥，闲置5分钟自动下线；切换时先卸载旧模型。手动启动的本地兼容服务无法保证卸载，请使用插件托管的本地模式"}
       </p>
       <Select
-        label="使用方式"
+        label="入卷之法"
         value={mode}
         onChange={setMode}
         options={[
           ...(kind === "asr"
             ? [
-                { value: "auto", label: "自动选择" },
-                { value: "free-local", label: "免费本地Whisper" },
+                { value: "auto", label: "随星择路" },
+                { value: "free-local", label: "近处听风" },
               ]
             : []),
           ...(kind === "tts"
-            ? [{ value: "breeze-local", label: "本地Breeze" }]
+            ? [{ value: "breeze-local", label: "近处清音" }]
             : []),
-          ...(kind === "vision"
-            ? [{ value: "host", label: "使用DSH已配置的视觉模型" }]
-            : []),
-          { value: "custom", label: "单独配置云端服务" },
-          { value: "shared", label: "沿用共用连接" },
-          { value: "disabled", label: "停用" },
+          ...(kind === "vision" ? [{ value: "host", label: "灯下观澜" }] : []),
+          { value: "custom", label: "独舟渡云" },
+          { value: "shared", label: "同源共渡" },
+          { value: "disabled", label: "暂掩此卷" },
         ]}
       />
       {kind === "vision" && mode === "host" && (
@@ -186,7 +184,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
             />
           </label>
           <label className="field">
-            模型名称
+            灵枢之名
             <input value={model} onChange={(e) => setModel(e.target.value)} />
           </label>
           <label className="field">
@@ -209,7 +207,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
         mode !== "disabled" &&
         (mode === "breeze-local" && voices.length ? (
           <Select
-            label="说话音色"
+            label="清音底色"
             value={voice}
             onChange={setVoice}
             options={[
@@ -222,7 +220,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
           />
         ) : (
           <label className="field">
-            说话音色编号
+            清音之签
             <input
               value={voice}
               onChange={(e) => setVoice(e.target.value)}
@@ -272,7 +270,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
             })
           }
         >
-          {busy ? "正在处理…" : "保存使用方式"}
+          {busy ? "星事未歇…" : "落定渡法"}
         </button>
         {status?.credentials[prefix]?.saved && (
           <button
@@ -281,7 +279,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
             disabled={busy}
             onClick={() => setClearingCredential(true)}
           >
-            清除{prefix === "media" ? "共用" : "此能力"}已存密钥
+            拂去此痕{prefix === "media" ? "共用" : "此能力"}已存密钥
           </button>
         )}
         {kind === "asr" && (
@@ -299,7 +297,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
               })
             }
           >
-            准备免费听写
+            备好听风笺
           </button>
         )}
       </div>
@@ -313,12 +311,12 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
           {mode === "breeze-local" && (
             <LocalModelDiscovery {...props} kind="tts" />
           )}
-          <Disclosure title="用参考录音建立本地音色">
+          <Disclosure title="依声写笺">
             <p>
               录音与准确文字会编码为Breeze音色并自动选用。云端音色建立请使用服务商支持的流程
             </p>
             <label className="field">
-              音色标识
+              声笺之签
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -333,7 +331,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
               />
             </label>
             <label className="field">
-              参考录音
+              声之底稿
               <input
                 type="file"
                 accept="audio/wav"
@@ -367,7 +365,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
                 })
               }
             >
-              建立并选用音色
+              择声成笺
             </button>
           </Disclosure>
         </>
@@ -400,7 +398,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
                   })
                 }
               >
-                {source === "screen" ? "看看屏幕" : "看看摄像头"}
+                {source === "screen" ? "观窗中景" : "观镜中景"}
               </button>
             ))}
           </div>
@@ -421,7 +419,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
               })
             }
           >
-            分析视频关键帧
+            拾影观澜
           </button>
         </Disclosure>
       )}

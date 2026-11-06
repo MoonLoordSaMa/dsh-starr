@@ -208,7 +208,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                     ))}
                 </div>
                 <div className="current-evidence">
-                  <span>最近的来处</span>
+                  <span>近来星源</span>
                   <p>{overview.state.evidence}</p>
                 </div>
               </Panel>
@@ -298,7 +298,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                   <label className="field">
                     经历了什么
                     <Select
-                      label="经历类型"
+                      label="风过何处"
                       value={kind}
                       onChange={(s) => setKind(s as ExperienceKind)}
                       options={Object.entries(experienceDefinitions).map(
@@ -343,13 +343,13 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                     disabled={busy || !evidence.trim()}
                   >
                     <Plus size={14} />
-                    {busy ? "留下回声…" : "记录这次经历"}
+                    {busy ? "留下回声…" : "风过留痕"}
                   </button>
                 </div>
               </form>
             </Panel>
             <Disclosure
-              title="细调体感与心理"
+              title="细理心潮"
               description="高级调节：预览即时变化，保存后才写入状态；需要说明来源"
             >
               <form
@@ -443,11 +443,11 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                     onClick={() => setDraft(overview.state)}
                   >
                     <RotateCcw size={14} />
-                    恢复已保存状态
+                    重拾旧潮
                   </button>
                   <button className="primary" disabled={busy}>
                     <Save size={14} />
-                    保存调节
+                    落定心潮
                   </button>
                 </div>
               </form>
@@ -527,7 +527,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                         (g) => g.status === "waiting" && g.drive === d.id,
                       )
                         ? "愿望已在酝酿"
-                        : "留下这个愿望"}
+                        : "心愿落笺"}
                       <ArrowUpRight size={14} />
                     </button>
                   </div>
@@ -542,7 +542,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
               aside={
                 <button className="ghost" onClick={() => setGoalModal(true)}>
                   <Plus size={14} />
-                  添加目的
+                  添一心愿
                 </button>
               }
             >
@@ -596,7 +596,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                               }}
                             >
                               {status === "completed" && <Check size={14} />}
-                              {status === "completed" ? "完成" : "先放下"}
+                              {status === "completed" ? "此卷已成" : "先放下"}
                             </button>
                           ))}
                         </div>

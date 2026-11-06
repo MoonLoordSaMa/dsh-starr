@@ -11,7 +11,9 @@ import { navigation, workspaces, poems, fieldRoute } from "./navigation";
 import type { PageProps } from "./main";
 import { MemoryWorkshop } from "./MemoryWorkshop";
 import { PlatformBridge } from "./PlatformBridge";
+import { InteractionPage } from "./InteractionPage";
 import { Today } from "./Today";
+import { poeticField, poeticName } from "./poetic-names";
 
 export function PagePrelude({ page }: { page: string }) {
   const poem = poems[page];
@@ -19,35 +21,36 @@ export function PagePrelude({ page }: { page: string }) {
   if (!poem) return null;
   return (
     <section className="page-prelude" aria-label={`${entry?.name}·诗序`}>
-      <div className="prelude-number" aria-hidden="true">
-        {String(navigation.findIndex((item) => item.id === page)).padStart(
+      <div className="prelude-index" aria-hidden="true">
+        {String(navigation.findIndex((item) => item.id === page) + 1).padStart(
           2,
           "0",
-        )}{" "}
-        / STARR
+        )}
       </div>
       <div className="prelude-verse">
         <h2>
           <span>{poem[0]}</span>
           <span>{poem[1]}</span>
         </h2>
-        <p>{poem[2]}</p>
-      </div>
-      <div className="prelude-caption">
-        <span className="prelude-star" aria-hidden="true">
-          ✦
-        </span>
-        <strong>{entry?.name}</strong>
-        <span>{entry?.purpose}</span>
+        <p>
+          <span>{poem[2]}</span>
+          <i aria-hidden="true" />
+          <strong>{entry?.name}</strong>
+        </p>
       </div>
       <button
         className="prelude-continue"
         onClick={(event) => {
           const main = event.currentTarget.closest("main");
-          const title = main?.querySelector<HTMLElement>(".page-title");
-          if (main && title)
+          const prelude =
+            event.currentTarget.closest<HTMLElement>(".page-prelude");
+          if (main && prelude)
             main.scrollTo({
-              top: title.offsetTop - main.offsetTop - 20,
+              top:
+                main.scrollTop +
+                prelude.getBoundingClientRect().bottom -
+                main.getBoundingClientRect().top -
+                24,
               behavior:
                 document.documentElement.dataset.motion === "reduced" ||
                 matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -56,7 +59,8 @@ export function PagePrelude({ page }: { page: string }) {
             });
         }}
       >
-        循着星光，展开此页 <ArrowDown size={14} />
+        <span>循光入卷</span>
+        <ArrowDown size={14} />
       </button>
     </section>
   );
@@ -117,8 +121,8 @@ export function RelatedRoutes({
     <nav className="related-routes" aria-label="关联功能">
       <span>沿星轨继续</span>
       {items.map(([id, label]) => (
-        <button key={id} onClick={() => go(id)}>
-          {label}
+        <button key={id} onClick={() => go(id)} title={label}>
+          {poeticName(label)}
           <ArrowUpRight size={13} />
         </button>
       ))}
@@ -132,7 +136,7 @@ export function FunctionIndex(props: PageProps) {
     () =>
       props.bootstrap.fields
         .filter((field) =>
-          `${field.label} ${field.help} ${field.key}`
+          `${poeticField(field)} ${field.label} ${field.help} ${field.key}`
             .toLowerCase()
             .includes(query.toLowerCase()),
         )
@@ -166,7 +170,7 @@ export function FunctionIndex(props: PageProps) {
                 onClick={() => props.go(fieldRoute(field.page))}
               >
                 <div>
-                  <strong>{field.label}</strong>
+                  <strong title={field.label}>{poeticField(field)}</strong>
                   <small>{field.help}</small>
                 </div>
                 <span>
@@ -208,18 +212,16 @@ export function FunctionIndex(props: PageProps) {
           </div>
         )}
       </Panel>
-      <Panel title="数据与运行所在">
+      <Panel title="星河归处">
         <div className="detail-facts">
           <span>
-            记忆库<code>{props.bootstrap.installation?.memoryRoot}</code>
+            拾星阁<code>{props.bootstrap.installation?.memoryRoot}</code>
           </span>
           <span>
-            备份库<code>{props.bootstrap.installation?.backupRoot}</code>
+            藏星阁<code>{props.bootstrap.installation?.backupRoot}</code>
           </span>
         </div>
-        <TextLink onClick={() => props.go("maintenance")}>
-          备份、诊断与维护
-        </TextLink>
+        <TextLink onClick={() => props.go("maintenance")}>藏星问脉</TextLink>
       </Panel>
     </div>
   );
@@ -227,6 +229,12 @@ export function FunctionIndex(props: PageProps) {
 
 export function WorkspacePage(props: PageProps & { page: string }) {
   const { page } = props;
+  if (
+    ["host-chat", "qq-private", "qq-group", "qq", "bili", "media"].includes(
+      page,
+    )
+  )
+    return <InteractionPage {...props} page={page} />;
   if (page === "character") return <CharacterPage {...props} />;
   if (
     [
@@ -251,6 +259,7 @@ export function WorkspacePage(props: PageProps & { page: string }) {
             } as Record<string, string>
           )[page]
         }
+        channel={page === "conversation" ? "external" : undefined}
       />
     );
   if (["bili", "bili-activities", "bili-publish"].includes(page))
@@ -287,8 +296,8 @@ export function WorkspacePage(props: PageProps & { page: string }) {
       <>
         <Today {...props} />
         <OrganismPage {...props} view="goals" />
-        <Panel title="主动的时机与边界">
-          <Disclosure title="高级预算、作息与失败恢复">
+        <Panel title="心愿有时">
+          <Disclosure title="更筹与归航">
             <ConfigForm {...props} pages={["state", "agency"]} />
           </Disclosure>
         </Panel>
@@ -323,12 +332,14 @@ export function WorkspacePage(props: PageProps & { page: string }) {
           {...props}
           pages={["permissions", "chat-tools", "chat-media"]}
         />
-        <Disclosure title="角色可自行调整的日常习惯">
+        <Disclosure title="随心有度">
           <ul>
             {props.bootstrap.fields
               .filter((field) => field.bot)
               .map((field) => (
-                <li key={field.key}>{field.label}</li>
+                <li key={field.key} title={field.label}>
+                  {poeticField(field)}
+                </li>
               ))}
           </ul>
           <p>调整幅度、修订号与权限均由服务端检查，每次写入审计</p>
@@ -337,7 +348,7 @@ export function WorkspacePage(props: PageProps & { page: string }) {
     );
   if (page === "legacy")
     return (
-      <Panel title="旧功能，都有明确去处">
+      <Panel title="旧卷新途">
         <LegacyConfiguration go={props.go} />
       </Panel>
     );

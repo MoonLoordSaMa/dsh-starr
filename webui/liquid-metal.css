@@ -1,58 +1,55 @@
 /* 参考液态金属的流光、折射与压痕；保留原生按钮及实际控件语义。 */
-:root {
-  --control-radius: 12px;
+.button-star-field {
+  position: fixed;
+  pointer-events: none;
+  z-index: 160;
+  contain: layout style;
 }
-:root button:not(.world-brand),
-:root a.button {
-  border-radius: var(--control-radius);
+.button-star {
+  position: absolute;
+  pointer-events: none;
+  color: #ffe7bf;
+  filter: drop-shadow(0 0 5px #eac38ac0);
+}
+.button-star svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
 }
 :where([data-liquid]) {
   position: relative;
 }
+/*
+ * 静止态交给 foundation 的按钮材质；这里只负责金属层的位置与过渡。
+ * 早期版本在此直接改写底色、文字色与外框，会让主按钮的文字落到浅色底上几乎看不见，
+ * 也让所有按钮都变成同一块深色玻璃。现在金属只在悬浮时出现。
+ */
 [data-liquid] {
-  --metal-radius: var(--control-radius);
-  --metal-strength: 0.3;
+  --metal-radius: var(--radius-control);
+  --metal-strength: 0;
   isolation: isolate;
-  border: 1px solid transparent;
   border-radius: var(--metal-radius);
-  --metal-background:
-    linear-gradient(145deg, #1c2330, #141d2a) padding-box,
-    conic-gradient(
-        from 35deg,
-        #bfd8f22a,
-        #82705c17 12%,
-        #d0b18a42 26%,
-        #333c501c 44%,
-        #789acb36 67%,
-        #dbe7ff42 78%,
-        #5762781e 88%,
-        #bfd8f22a
-      )
-      border-box;
-  background: var(--metal-background);
-  color: #e8eaf1;
-  box-shadow:
-    inset 0 1px #e7f1ff08,
-    0 2px 6px #02050a14;
   transition:
     box-shadow 0.32s ease,
     border-color 0.32s ease,
     color 0.2s ease,
     translate 0.22s ease;
 }
-[data-liquid]:hover:not(:disabled),
-[data-liquid]:focus-visible {
-  background: var(--metal-background);
-  color: #fff4e4;
+[data-liquid]:hover:not(:disabled) {
   box-shadow:
     inset 0 1px #e7f1ff10,
     0 0 14px #a3c7f310,
     0 3px 10px #02050a1a;
 }
+[data-liquid]:focus-visible {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: 3px;
+}
 [data-liquid]:active:not(:disabled) {
   translate: 0 1px;
   box-shadow:
-    inset 0 2px 5px #0008,
+    inset 0 2px 5px #0006,
     0 0 14px #b7c9ef1f;
 }
 [data-liquid-fx],
@@ -61,30 +58,20 @@
   inset: -1px;
   width: calc(100% + 2px);
   height: calc(100% + 2px);
-  border-radius: inherit;
+  border-radius: var(--radius-control);
   z-index: -1;
   pointer-events: none;
   opacity: 0.95;
 }
+/* 金属层强度由脚本按按钮类型读取：主操作最亮，其余克制。 */
+[data-liquid] {
+  --metal-strength: 0.22;
+}
 [data-liquid].primary {
-  --metal-strength: 0.72;
-  color: #fbecd4;
-  --metal-background:
-    linear-gradient(145deg, #3e3935, #29303a 60%, #18202d) padding-box,
-    conic-gradient(
-        from 60deg,
-        #e9d0aa8c,
-        #5b708b50 28%,
-        #dcb78a99 52%,
-        #7f98b05c 70%,
-        #f5e6cca3 87%,
-        #e9d0aa8c
-      )
-      border-box;
-  box-shadow:
-    inset 0 1px #f6dfbd17,
-    0 3px 12px #080b1221,
-    0 0 18px #d6ac7710;
+  --metal-strength: 0.3;
+}
+[data-liquid].ghost {
+  --metal-strength: 0.18;
 }
 [data-liquid][aria-pressed="true"],
 [data-liquid][aria-selected="true"],
@@ -93,13 +80,7 @@
 [data-liquid].chosen,
 [data-liquid].active,
 [data-liquid][aria-current="page"] {
-  color: #f5dfbe;
-  --metal-background:
-    linear-gradient(145deg, #3c3937, #253143) padding-box,
-    linear-gradient(120deg, #f3d6a970, #869ac940, #dcc9a85c) border-box;
-  box-shadow:
-    inset 0 1px #fff0d51c,
-    0 0 16px #d3b58d12;
+  box-shadow: inset 0 -1px rgba(221, 185, 144, 0.26);
 }
 .workspace-navigation > [data-liquid],
 .sidebar nav > [data-liquid],
@@ -115,7 +96,6 @@
   color: #e3b5aa;
 }
 [data-liquid].primary:hover:not(:disabled),
-[data-liquid].primary:active:not(:disabled),
 [data-liquid].ghost:hover:not(:disabled),
 .sidebar nav > [data-liquid]:hover {
   transform: none;
@@ -154,27 +134,10 @@ button[data-liquid]:active:not(.cluster-label) {
   background: #d8be980a;
   border-color: #d8be9854;
 }
-.disclosure {
-  border-radius: var(--control-radius);
-  background: #1b253333;
-}
 .disclosure > .disclosure-trigger {
   border: 0;
   background: transparent;
   box-shadow: none;
-}
-.select-trigger {
-  border: 1px solid #c4cbd526;
-  background: #182130c4;
-  box-shadow: inset 0 1px #ffffff04;
-}
-.select-trigger:hover {
-  border-color: #d8be9854;
-}
-.select-options button {
-  border: 0;
-  box-shadow: none;
-  background: transparent;
 }
 :root .chapter-navigation > button {
   border-radius: 0;
@@ -205,20 +168,6 @@ button[data-liquid]:active:not(.cluster-label) {
 .text-link[data-liquid] svg {
   flex-shrink: 0;
 }
-.tabs {
-  border: 0;
-  border-radius: var(--control-radius);
-  padding: 4px 4px 10px;
-  gap: 7px;
-  background: transparent;
-  backdrop-filter: none;
-}
-.tabs-active-mark {
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  border-radius: var(--control-radius);
-}
 .tabs-active-mark::after {
   content: "";
   position: absolute;
@@ -226,14 +175,14 @@ button[data-liquid]:active:not(.cluster-label) {
   left: 22%;
   right: 22%;
   height: 2px;
-  border-radius: 2px;
+  border-radius: var(--radius-control);
   background: linear-gradient(90deg, transparent, #e3c69e, transparent);
   box-shadow: 0 2px 9px #d7b98b22;
 }
 [data-liquid].select-trigger,
 [data-liquid].map-reset,
 [data-liquid].cluster-label {
-  --metal-radius: 12px;
+  --metal-radius: 0px;
 }
 :where(
     .sidebar nav,
@@ -247,7 +196,7 @@ button[data-liquid]:active:not(.cluster-label) {
 [data-liquid].relation-row,
 [data-liquid].memory-row,
 [data-liquid].expression-preview {
-  --metal-radius: 12px;
+  --metal-radius: 0px;
 }
 .overview-memory-detail > :not(.detail-heading),
 .memory-detail > .memory-reading {
@@ -287,16 +236,12 @@ button[data-liquid]:active:not(.cluster-label) {
   position: absolute;
 }
 .disclosure > button[data-liquid] {
-  --metal-radius: 10px;
+  --metal-radius: 0px;
 }
 [data-liquid]:disabled {
   opacity: 0.4;
   filter: saturate(0.4);
   box-shadow: inset 0 1px #ffffff05;
-}
-[data-liquid]:focus-visible {
-  outline: 2px solid #d8dfed;
-  outline-offset: 4px;
 }
 @media (max-width: 680px) {
   .workspace-navigation > [data-liquid] {

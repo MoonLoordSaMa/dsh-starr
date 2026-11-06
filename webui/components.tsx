@@ -10,6 +10,7 @@ import {
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, X, ArrowUpRight, Sparkles } from "lucide-react";
 import { gsap, motionDuration } from "./motion";
+import { poeticName } from "./poetic-names";
 
 export function Star({ className = "" }: { className?: string }) {
   return (
@@ -58,7 +59,9 @@ export function Panel({
     <section className={`panel ${className}`}>
       {title && (
         <div className="panel-heading">
-          <h2>{title}</h2>
+          <h2 title={typeof title === "string" ? title : undefined}>
+            {typeof title === "string" ? poeticName(title) : title}
+          </h2>
           {aside}
         </div>
       )}
@@ -157,7 +160,7 @@ export function Select({
         disabled={disabled}
         onClick={() => setOpen(!open)}
       >
-        {options.find((o) => o.value === value)?.label ?? "请选择"}
+        {options.find((o) => o.value === value)?.label ?? "择一星途"}
         <ChevronDown size={14} className={open ? "rotated" : ""} />
       </button>
       {(open || present) && (
@@ -295,7 +298,7 @@ export function Disclosure({
         onClick={() => setOpen(!open)}
       >
         <span>
-          <strong>{title}</strong>
+          <strong title={title}>{poeticName(title)}</strong>
           {description && <small>{description}</small>}
         </span>
         <ChevronDown size={17} />
@@ -446,7 +449,7 @@ export function ConfirmDialog({
           disabled={busy}
           onClick={onClose}
         >
-          取消
+          暂且收笔
         </button>
         <button
           type="button"
@@ -466,7 +469,7 @@ export function ConfirmDialog({
             }
           }}
         >
-          {busy ? "正在处理…" : confirmLabel}
+          {busy ? "星事未歇…" : confirmLabel}
         </button>
       </div>
     </Modal>

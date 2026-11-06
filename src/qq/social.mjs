@@ -337,7 +337,7 @@ export function socialCapabilities({
           Date.now(),
         );
       try {
-        await action(thread.type === "group" ? "group_poke" : "friend_poke", {
+        await action("send_poke", {
           user_id: userId,
           ...(thread.type === "group" ? { group_id: thread.target } : {}),
         });

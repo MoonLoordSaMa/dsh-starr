@@ -1,9 +1,14 @@
 import dns from "node:dns/promises";
-import net from "node:net";
 import { fail } from "../starrcore/store.mjs";
+import { hasOnlyPublicAddresses } from "../runtime/network.mjs";
 export async function downloadBiliMedia(
   value,
-  { signal, maxBytes = 64 * 1024 * 1024, request = fetch } = {},
+  {
+    signal,
+    maxBytes = 64 * 1024 * 1024,
+    request = fetch,
+    lookup = dns.lookup,
+  } = {},
 ) {
   const url = new URL(value);
   if (
@@ -16,15 +21,8 @@ export async function downloadBiliMedia(
     )
   )
     throw fail("视频媒体地址不属于允许的B站资源域名", 403);
-  const addresses = await dns.lookup(url.hostname, { all: true });
-  if (
-    !addresses.length ||
-    addresses.some(
-      ({ address }) =>
-        net.isIP(address) !== 4 ||
-        /^(0|10|127|169\.254|192\.168|172\.(1[6-9]|2\d|3[01]))\./.test(address),
-    )
-  )
+  const addresses = await lookup(url.hostname, { all: true });
+  if (!hasOnlyPublicAddresses(addresses))
     throw fail("视频媒体地址解析到不可用网络", 403);
   const response = await request(url, {
     redirect: "error",

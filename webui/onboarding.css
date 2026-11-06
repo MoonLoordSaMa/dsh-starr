@@ -67,7 +67,7 @@
   align-items: center;
   gap: 14px;
   padding: 9px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   color: var(--muted);
   transition:
     background 220ms,
@@ -79,7 +79,7 @@
   width: 29px;
   height: 29px;
   border: 1px solid var(--line);
-  border-radius: 50%;
+  border-radius: var(--radius-control);
   font-size: 11px;
 }
 .guide-steps li strong {
@@ -148,7 +148,7 @@
 }
 .guide-choice button {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   padding: 10px 16px;
   background: rgba(255, 255, 255, 0.025);
   transition:
@@ -172,7 +172,7 @@
 .guide-result {
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   padding: 14px 16px;
   margin: 16px 0;
 }
@@ -255,7 +255,7 @@
   margin-bottom: 22px;
   padding: 14px 18px;
   border: 1px solid rgba(237, 199, 141, 0.22);
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: rgba(237, 199, 141, 0.05);
 }
 .guide-reminder p {

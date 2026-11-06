@@ -4,14 +4,14 @@ import { Panel, Badge, Disclosure, Select } from "./components";
 import { ConfigForm } from "./pages";
 import { useResource, type PageProps } from "./main";
 const kinds = [
-  { value: "diaryDay", label: "白天日记" },
-  { value: "diaryNight", label: "晚间日记" },
-  { value: "organize", label: "记忆整理" },
-  { value: "weekly", label: "每周回顾" },
-  { value: "monthly", label: "每月回顾" },
-  { value: "yearly", label: "每年回顾" },
-  { value: "backup", label: "角色备份" },
-  { value: "projection", label: "笔记同步补漏" },
+  { value: "diaryDay", label: "朝光入笺" },
+  { value: "diaryNight", label: "夜语成笺" },
+  { value: "organize", label: "拾光成册" },
+  { value: "weekly", label: "七日回眸" },
+  { value: "monthly", label: "月满回眸" },
+  { value: "yearly", label: "经年回眸" },
+  { value: "backup", label: "藏星入阁" },
+  { value: "projection", label: "双笺补光" },
 ];
 type Status = {
   hostReady: boolean;
@@ -75,7 +75,7 @@ export function MemoryJobs(props: PageProps) {
           {data.configurationError}
         </p>
       )}
-      <Disclosure title="日记与整理使用的模型">
+      <Disclosure title="拾光执笔者">
         <ConfigForm {...props} pages={["memory-jobs"]} />
       </Disclosure>
       {kinds.map((item) => (
@@ -88,7 +88,7 @@ export function MemoryJobs(props: PageProps) {
           value={kind}
           onChange={setKind}
           options={kinds}
-          label="立即执行的任务"
+          label="此刻落笔"
         />
         <button
           className="ghost"
@@ -110,10 +110,10 @@ export function MemoryJobs(props: PageProps) {
             }
           }}
         >
-          {busy ? "正在执行…" : "立即执行一次"}
+          {busy ? "落笔未歇…" : "此刻落笔一回"}
         </button>
       </div>
-      <Disclosure title="最近的任务记录">
+      <Disclosure title="近来星程">
         {data?.recent.map((row) => (
           <div className="job-error" key={row.id}>
             <strong>

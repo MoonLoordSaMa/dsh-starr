@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import { StarrStore } from "../src/starrcore/store.mjs";
 import { QQService, normalizeQQEvent } from "../src/qq/service.mjs";
 import { QQSecrets } from "../src/qq/secrets.mjs";
+import { waitForMessages } from "../src/qq/wait-message.mjs";
 import {
   onebotAction,
   checkOnebot,
@@ -126,7 +127,266 @@ test("QQ 角色表情外发与文字共用单批回执，重复调用不能多�
   await f.flush();
   assert.equal(f.sends.length, 1);
   assert.equal(f.sends[0].params.message[0].type, "image");
+  assert.equal(f.sends[0].params.message[0].data.sub_type, 1);
   assert.equal(f.service.status().counts.done, 1);
+});
+
+test("群聊接收拍一拍与纯@事件，发送使用SnowLuma原生路由和群@段", async (t) => {
+  const settings = {
+    privateUsers: "200001",
+    groups: "300001",
+    requireMention: true,
+  };
+  const poke = normalizeQQEvent(
+    {
+      post_type: "notice",
+      notice_type: "notify",
+      sub_type: "poke",
+      self_id: "100001",
+      user_id: "200001",
+      target_id: "100001",
+      group_id: "300001",
+      time: 1760000000,
+    },
+    settings,
+    "100001",
+  );
+  assert.equal(poke.type, "group");
+  assert.match(poke.text, /拍了拍/);
+  assert.equal(
+    normalizeQQEvent(
+      {
+        post_type: "notice",
+        notice_type: "notify",
+        sub_type: "poke",
+        self_id: "100001",
+        user_id: "200001",
+        target_id: "999999",
+        group_id: "300001",
+        time: 1760000000,
+      },
+      settings,
+      "100001",
+    ),
+    null,
+  );
+  const mention = event(73, "", {
+    message_type: "group",
+    group_id: "300001",
+    message: [{ type: "at", data: { qq: "100001" } }],
+  });
+  assert.equal(
+    normalizeQQEvent(mention, settings, "100001").text,
+    "[对方 @ 了你]",
+  );
+  const f = await fixture(t, async ({ reply }) =>
+    reply("你好", undefined, "200001"),
+  );
+  await f.service.configure({
+    revision: f.service.settings().revision,
+    patch: { groups: "300001" },
+  });
+  f.incoming(
+    event(74, "", {
+      message_type: "group",
+      group_id: "300001",
+      message: [{ type: "at", data: { qq: "100001" } }],
+    }),
+  );
+  await f.flush();
+  assert.equal(f.sends[0].params.message[0].type, "at");
+  assert.equal(f.sends[0].params.message[0].data.qq, "200001");
+  assert.equal(f.sends[0].name, "send_group_msg");
+});
+
+test("拍一拍只回应收到事件对应的私聊好友", async (t) => {
+  const f = await fixture(t, async ({ capabilities }) =>
+    capabilities.poke({ userId: "200001" }),
+  );
+  f.store.configure(
+    f.characterId,
+    { "chat.tools.poke": true },
+    { revision: 1 },
+  );
+  f.incoming(event(75));
+  await f.flush();
+  assert.equal(f.sends[0].name, "send_poke");
+  assert.equal(f.sends[0].params.user_id, "200001");
+  assert.equal(f.sends[0].params.group_id, undefined);
+});
+
+test("引用来信保留原消息上下文，引用回复只能指向当前会话已收到消息", async (t) => {
+  const seen = [];
+  const f = await fixture(t, async ({ input, reply }) => {
+    seen.push(input.messages[0]);
+    if (input.messages[0].messageId === "quote-source")
+      await reply("原消息收到");
+    else await reply("我说的是这条", input.messages[0].replyToId);
+  });
+  f.incoming(event("quote-source", "原消息正文"));
+  await f.flush();
+  f.incoming(
+    event("quote-followup", "想问这条", {
+      message: [
+        { type: "reply", data: { id: "quote-source" } },
+        { type: "text", data: { text: "想问这条" } },
+      ],
+    }),
+  );
+  await f.flush();
+  assert.equal(seen[1].replyToId, "quote-source");
+  assert.deepEqual(seen[1].replyTo, {
+    messageId: "quote-source",
+    available: true,
+    senderName: "",
+    userId: "200001",
+    text: "原消息正文",
+  });
+  assert.deepEqual(f.sends.at(-1).params.message[0], {
+    type: "reply",
+    data: { id: "quote-source" },
+  });
+  assert.equal(f.sends.at(-1).params.message[1].data.text, "我说的是这条");
+});
+
+test("当前会话里对方引用角色的旧回复时保留内容并可继续引用", async (t) => {
+  const seen = [];
+  let sentId = "";
+  const f = await fixture(t, async ({ input, reply }) => {
+    seen.push(input.messages[0]);
+    if (input.messages[0].messageId === "outgoing-source")
+      sentId = (await reply("我之前说过的话")).messageId;
+    else await reply("我接着解释", input.messages[0].replyToId);
+  });
+  f.incoming(event("outgoing-source", "你刚才说了什么"));
+  await f.flush();
+  assert.ok(sentId);
+  f.incoming(
+    event("outgoing-followup", "解释一下", {
+      message: [
+        { type: "reply", data: { id: sentId } },
+        { type: "text", data: { text: "解释一下" } },
+      ],
+    }),
+  );
+  await f.flush();
+  assert.equal(seen[1].replyTo.available, true);
+  assert.equal(seen[1].replyTo.text, "我之前说过的话");
+  assert.deepEqual(f.sends.at(-1).params.message[0], {
+    type: "reply",
+    data: { id: sentId },
+  });
+});
+
+test("引用验证会拒绝另一位好友会话里的真实消息编号", async (t) => {
+  const f = await fixture(t, async ({ reply }) => reply("当前私聊回复"));
+  f.incoming(event("private-a", "甲的消息"));
+  await f.flush();
+  await f.service.configure({
+    revision: f.service.settings().revision,
+    patch: { privateUsers: "200001,200002" },
+  });
+  f.service.driver.run = async ({ reply }) => {
+    await assert.rejects(() => reply("不能跨好友引用", "private-a"), {
+      status: 403,
+    });
+    await reply("乙的正常回复");
+  };
+  f.incoming(event("private-b", "乙的消息", { user_id: 200002 }));
+  await f.flush();
+  assert.equal(f.sends.length, 2);
+  assert.equal(f.sends.at(-1).params.message[0].data.text, "乙的正常回复");
+});
+
+test("回复后等待一次接管新批次，不额外消耗唤醒额度", async (t) => {
+  let f;
+  f = await fixture(t, async ({ input, reply, waitMessage }) => {
+    if (input.messages[0].messageId === "wait-first") {
+      await reply("我在听");
+      const arrived = new Promise((resolve) =>
+        setTimeout(() => {
+          f.incoming(event("wait-second", "再补充一句"));
+          resolve();
+        }, 0),
+      );
+      const result = await waitMessage({ seconds: 30 });
+      await arrived;
+      assert.equal(result.status, "received");
+      assert.equal(result.messages[0].messageId, "wait-second");
+      await reply("我接着听");
+    }
+  });
+  f.store.configure(
+    f.characterId,
+    { "chat.tools.wait": false },
+    { revision: f.store.character(f.characterId).revision },
+  );
+  f.incoming(event("wait-first", "先说一句"));
+  await f.flush();
+  assert.equal(f.sends.length, 2);
+  assert.equal(
+    f.store.db
+      .prepare("SELECT count(*) n FROM chat_rates WHERE kind='wake'")
+      .get().n,
+    1,
+  );
+  assert.deepEqual(
+    f.store.db
+      .prepare("SELECT status FROM qq_inbox ORDER BY seq")
+      .all()
+      .map((row) => row.status),
+    ["done", "done"],
+  );
+});
+
+test("QQ群聊默认支持有限分段回复，引用与@只附在第一条", async (t) => {
+  let runs = 0;
+  const f = await fixture(t, async ({ reply, burst }) => {
+    runs++;
+    if (runs === 1) await reply("先收到啦");
+    else await burst(["我先说重点", "还有一句补充"], "group-source", "200001");
+  });
+  await f.service.configure({
+    revision: f.service.settings().revision,
+    patch: { groups: "300001", requireMention: true },
+  });
+  const groupMessage = (id, text, quotedId) =>
+    event(id, text, {
+      message_type: "group",
+      group_id: 300001,
+      message: [
+        ...(quotedId ? [{ type: "reply", data: { id: quotedId } }] : []),
+        { type: "at", data: { qq: "100001" } },
+        { type: "text", data: { text } },
+      ],
+    });
+  f.incoming(groupMessage("group-source", "先前的话"));
+  await f.flush();
+  f.incoming(groupMessage("group-followup", "你怎么看", "group-source"));
+  await f.flush();
+  assert.equal(f.sends.length, 3);
+  assert.equal(f.sends[1].name, "send_group_msg");
+  assert.equal(f.sends[1].params.message[0].type, "reply");
+  assert.equal(f.sends[1].params.message[1].type, "at");
+  assert.equal(f.sends[1].params.message[2].data.text, "我先说重点");
+  assert.deepEqual(f.sends[2].params.message, [
+    { type: "text", data: { text: "还有一句补充" } },
+  ]);
+});
+
+test("等待消息超时使用单一截止时间，不在空收件箱持续轮询", async () => {
+  let now = 0;
+  const result = await waitForMessages({
+    milliseconds: 700,
+    signal: new AbortController().signal,
+    clock: () => now,
+    read: () => [],
+    sleep: async (milliseconds) => {
+      now += milliseconds;
+    },
+  });
+  assert.deepEqual(result, []);
+  assert.equal(now, 700);
 });
 
 const event = (id, text = "你好", extra = {}) => ({
@@ -728,6 +988,11 @@ test("宿主适配使用 Agent 接口，回复工具固定会话，再次调用�
         events.push({ type: "user/message", data: message });
       },
       async whenIdle() {
+        assert.equal(tools.has("starr_qq_burst"), true);
+        assert.deepEqual(
+          Object.keys(tools.get("starr_qq_burst").parameters.properties),
+          ["texts", "quoteId", "mentionUserId"],
+        );
         selected = await hooks.get("agent/request")({}, async () => ({
           provider: "old",
           model: "old",
@@ -767,6 +1032,7 @@ test("宿主适配使用 Agent 接口，回复工具固定会话，再次调用�
     thread: {
       sessionId: "session-qq-test",
       characterId: store.listCharacters()[0].id,
+      type: "group",
       target: "200001",
       started: false,
     },
@@ -821,4 +1087,84 @@ test("宿主适配使用 Agent 接口，回复工具固定会话，再次调用�
         .execute({ text: "越权" }, { agent: { id: "other" } }),
     /不属于/,
   );
+});
+
+test("B站复用宿主驱动时不暴露 QQ 引用、@ 或回复后等待能力", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "starr-bili-driver-"));
+  const store = new StarrStore(root);
+  store.setup({
+    name: "合成角色",
+    memoryRoot: path.join(root, "memory"),
+    backupRoot: path.join(root, "backup"),
+  });
+  store.db.exec(
+    "CREATE TABLE qq_session_bindings(session_id TEXT PRIMARY KEY,character_id TEXT NOT NULL)",
+  );
+  const tools = new Map(),
+    messages = [];
+  let agent;
+  const driver = createQQDriver(
+    {
+      agents: {
+        get: () => agent,
+        create: async (options) => {
+          agent = {
+            id: options.sessionId,
+            status: "idle",
+            options: {},
+            session: { snapshotEvents: () => [] },
+            ctx: {
+              on: () => () => {},
+              tools: {
+                register(spec) {
+                  tools.set(spec.name, spec);
+                  return () => tools.delete(spec.name);
+                },
+              },
+            },
+            followup: (message) => messages.push(message),
+            async whenIdle() {
+              const reply = tools.get("starr_bili_reply");
+              assert.deepEqual(Object.keys(reply.parameters.properties), [
+                "text",
+              ]);
+              assert.equal(tools.has("starr_bili_wait_message"), false);
+              assert.doesNotMatch(
+                messages[0].content[0].text,
+                /quoteId|wait_message/,
+              );
+              await reply.execute({ text: "B站回复" }, { agent });
+            },
+            cancel() {},
+          };
+          await options.setup(agent.ctx, agent);
+          return { agent };
+        },
+      },
+      agentPresets: { mount: async () => {} },
+    },
+    store,
+    { platform: "bili" },
+  );
+  t.after(() => {
+    driver.close();
+    store.close();
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+  await driver.run({
+    thread: {
+      sessionId: "session-bili-test",
+      characterId: store.listCharacters()[0].id,
+      type: "private",
+      target: "200001",
+      started: false,
+    },
+    settings: { provider: "test", model: "test" },
+    input: {
+      batchId: "bili-batch",
+      messages: [{ userId: "200001", text: "你好" }],
+    },
+    reply: async () => ({ messageId: "1" }),
+    signal: new AbortController().signal,
+  });
 });

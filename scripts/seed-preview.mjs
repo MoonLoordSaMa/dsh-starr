@@ -34,7 +34,10 @@ for (let i = 0; i < 36; i++) {
   const [kind, title, content] = templates[i % templates.length];
   records.push(
     await request(`/characters/${role.id}/memories`, {
-      title: `${title} · 示例 ${Math.floor(i / 6) + 1}`,
+      title:
+        kind === "summary"
+          ? `${2021 + Math.floor(i / 6)} 年概览`
+          : `${title} · 示例 ${Math.floor(i / 6) + 1}`,
       content: `${content}\n\n这是一条合成验收记录，不属于真实斯塔的历史。`,
       kind,
       importance: 25 + ((i * 17) % 75),

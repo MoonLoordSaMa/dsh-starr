@@ -13,6 +13,22 @@ const number = (key, label, value, min, max, page, help) =>
   field(key, label, "number", value, page, help, { min, max, integer: true });
 export const policyFields = [
   field(
+    "chat.reply.mention",
+    "群内回复时 @ 对方",
+    "boolean",
+    true,
+    "chat-reply",
+    "仅群聊文字回复，对本批真实发言者生成原生 @ 消息段；私聊不添加。",
+  ),
+  field(
+    "chat.wait.afterReply",
+    "回复后接听下一句",
+    "boolean",
+    true,
+    "chat-reply",
+    "首次回复后，角色可在当前会话回合内等待一次 30–60 秒；收到补充后沿用当前回合，不额外创建唤醒。",
+  ),
+  field(
     "chat.reply.statePacing",
     "状态影响回复节奏",
     "boolean",
@@ -153,11 +169,11 @@ export const policyFields = [
   ),
   field(
     "chat.reply.burstEnabled",
-    "允许分条回复",
+    "允许私聊分条回复",
     "boolean",
     false,
     "chat-reply",
-    "开启后角色可显式调用分条工具；每条独立记录回执，结果不明时停止剩余条目。",
+    "私聊默认保持单条；群聊分段回复默认可用并受单轮条数与外发额度限制。每条独立记录回执，结果不明时停止剩余条目。",
   ),
   number(
     "chat.reply.burstMax",
@@ -378,11 +394,11 @@ export const policyFields = [
   ),
   field(
     "chat.tools.wait",
-    "允许主动等待",
+    "允许暂缓当前回复",
     "boolean",
     true,
     "chat-tools",
-    "关闭后等待工具执行会明确拒绝。",
+    "角色可选择先不回复当前来信，等待后续消息或进入观察；这与成功回复后短暂接听下一句是两种不同流程。",
   ),
   field(
     "chat.tools.close",

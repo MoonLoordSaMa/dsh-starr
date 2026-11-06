@@ -28,7 +28,7 @@ export function UsageBudget(props: PageProps) {
           </strong>
         </div>
         <div>
-          <small>已记录的模型响应</small>
+          <small>灵枢回响</small>
           <strong>{data?.requests.toLocaleString("zh-CN") ?? "—"}</strong>
         </div>
       </div>
@@ -55,7 +55,7 @@ export function UsageBudget(props: PageProps) {
           onClick={() => setRevision((v) => v + 1)}
         >
           <RefreshCw size={14} />
-          刷新统计
+          重数星筹
         </button>
       </div>
       <p className="footnote">

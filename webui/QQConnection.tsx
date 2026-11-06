@@ -189,7 +189,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
           )}
           <div className="form-columns">
             <label className="field">
-              OneBot HTTP 端口
+              鹊桥收信埠
               <input
                 type="number"
                 value={draft.httpPort}
@@ -197,7 +197,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               />
             </label>
             <label className="field">
-              正向 WebSocket 端口
+              鹊桥应答埠
               <input
                 type="number"
                 value={draft.wsPort}
@@ -206,7 +206,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
             </label>
           </div>
           <label className="field">
-            OneBot 访问令牌
+            鹊桥信钥
             <input
               type="password"
               autoComplete="new-password"
@@ -229,7 +229,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
           </label>
           <div className="form-columns">
             <label className="field">
-              允许私聊回复的 QQ 号
+              私语故人
               <input
                 value={draft.privateUsers}
                 onChange={(e) => update("privateUsers", e.target.value)}
@@ -237,7 +237,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               />
             </label>
             <label className="field">
-              允许回复的群号
+              同席之所
               <input
                 value={draft.groups}
                 onChange={(e) => update("groups", e.target.value)}
@@ -246,7 +246,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
             </label>
           </div>
           <Select
-            label="绑定角色"
+            label="结缘之星"
             value={draft.characterId}
             onChange={(value) => update("characterId", value)}
             options={bootstrap.characters.map((item) => ({
@@ -256,7 +256,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
           />
           <div className="form-columns">
             <Select
-              label="聊天服务"
+              label="言语渡口"
               value={draft.provider}
               onChange={(value) => {
                 update("provider", value);
@@ -271,7 +271,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               ]}
             />
             <Select
-              label="聊天模型"
+              label="执笺灵枢"
               value={draft.model}
               onChange={(value) => update("model", value)}
               options={[
@@ -289,7 +289,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               checked={draft.enabled}
               onChange={(e) => update("enabled", e.target.checked)}
             />
-            启用 QQ 自动回复
+            鹊桥启语
           </label>
           <label className="check-field">
             <input
@@ -297,11 +297,11 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               checked={draft.requireMention}
               onChange={(e) => update("requireMention", e.target.checked)}
             />
-            群聊仅在被 @ 时回应
+            呼名方应
           </label>
-          <Disclosure title="更多连接选项">
+          <Disclosure title="渡口别径">
             <label className="field">
-              令牌环境变量名
+              信钥藏名
               <input
                 value={draft.tokenEnv}
                 onChange={(e) => update("tokenEnv", e.target.value)}
@@ -309,7 +309,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               <small>环境变量中的令牌优先于本机加密存储；这里填写变量名</small>
             </label>
             <label className="field">
-              短消息合并等待（毫秒）
+              零笺合卷候时
               <input
                 type="number"
                 min={200}
@@ -332,7 +332,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
                 })
               }
             >
-              重新读取配置
+              重展星枢
             </button>
             <button
               className="ghost"
@@ -356,7 +356,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               }
             >
               <RefreshCw size={15} />
-              检查协议与登录
+              验看渡口信契
             </button>
             <button
               className="primary"
@@ -385,7 +385,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               }
             >
               <Save size={15} />
-              {busy ? "正在处理…" : "保存并应用"}
+              {busy ? "星事未歇…" : "落笺生效"}
             </button>
           </div>
           {check && (
@@ -446,7 +446,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
                 })
               }
             >
-              重试失败消息
+              重寄未达
             </button>
           </div>
         </Panel>
@@ -461,7 +461,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
             返回的消息编号。错误、超时和结果不明会保留状态，便于排查
           </p>
         </Panel>
-        <Panel title="连接检查的边界">
+        <Panel title="验契有界">
           <p>
             协议与登录通过表示 SnowLuma
             已在线。模型能否生成回复、平台是否成功接收，都以实际消息回执为准
