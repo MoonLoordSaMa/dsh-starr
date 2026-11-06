@@ -12,7 +12,8 @@ starr 将角色人设、长期记忆、情绪状态、会话接续与听说看�
 
 当前版本：**v0.1.9**。主要面向 Windows，已核对的宿主版本为 **DSH 0.2.1-rc.5**；其他系统与宿主版本仍需分别验证。
 
-[安装与更新](docs/INSTALL.md) · [首次配置](docs/ONBOARDING.md) · [完整配置](docs/CONFIGURATION.md) · [版本说明](docs/V019.md) 
+[安装与更新](docs/INSTALL.md) · [首次配置](docs/ONBOARDING.md) · [完整配置](docs/CONFIGURATION.md) · [版本说明](docs/V019.md)
+
 ## 能做什么
 
 | 能力             | 说明                                                                                                                   |
