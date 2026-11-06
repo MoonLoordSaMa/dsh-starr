@@ -167,7 +167,13 @@ export class OneBotConnection {
           const raw = typeof event.data === "string" ? event.data : "";
           if (raw.length > 1024 * 1024) return;
           const message = JSON.parse(raw);
-          if (message.post_type === "message") this.onEvent(message);
+          if (
+            message.post_type === "message" ||
+            (message.post_type === "notice" &&
+              message.notice_type === "notify" &&
+              message.sub_type === "poke")
+          )
+            this.onEvent(message);
         } catch {
           /* 非消息帧和无效协议帧不能中断连接。 */
         }

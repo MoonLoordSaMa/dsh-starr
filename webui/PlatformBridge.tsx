@@ -28,13 +28,13 @@ export function PlatformBridge(props: PageProps) {
   return (
     <div className="settings-stack">
       <Panel
-        title="从山海，寄往熟悉的窗口"
+        title="B站到 QQ 分享设置"
         aside={<Badge>{data?.hostReady ? "宿主已接入" : "需要 DSH"}</Badge>}
       >
         <p>
           B站与 QQ
           共享角色，外发仍有独立边界。公开视频与公开动态可同步到明确授权的 QQ
-          目标；私密对话、日记和记忆原文不会进入星桥
+          目标；私密对话、日记和记忆原文不会跨平台转发
         </p>
         <ConfigForm {...props} pages={["bridge"]} />
         <button
@@ -59,13 +59,13 @@ export function PlatformBridge(props: PageProps) {
             }
           }}
         >
-          试渡星桥
+          检查平台与记忆互通
         </button>
         {message && <p role="status">{message}</p>}
       </Panel>
-      <Panel title="往来有据">
+      <Panel title="跨平台分享记录">
         {!data?.recent.length && (
-          <p>尚无跨平台任务。启用前请同时配置 QQ 允许名单、B站账号与星桥目标</p>
+          <p>尚无跨平台任务。启用前请同时配置 QQ 允许名单、B站账号与分享目标</p>
         )}
         {data?.recent.map((row) => (
           <div className="job-error" key={row.id}>

@@ -64,7 +64,7 @@ export function ObservatoryOverview(
             </h2>
             <p className="observatory-copy">
               <strong>{character.name}</strong> 正在经历自己的每一天
-              <span>{state.emotion || "心绪尚未落定"}</span>
+              <span>{state.emotion || "暂无情绪记录"}</span>
             </p>
           </div>
           <div className="observatory-actions">
@@ -73,14 +73,14 @@ export function ObservatoryOverview(
               onClick={props.onMemory}
             >
               <Plus size={16} />
-              记下这一刻
+              添加记忆
             </button>
             <button
               className="ghost observatory-action-secondary"
               onClick={() => go("host-chat")}
             >
               <MessageCircle size={16} />
-              与她相逢
+              打开角色会话
             </button>
           </div>
         </header>
@@ -105,7 +105,7 @@ export function ObservatoryOverview(
             });
           }}
         >
-          <span>循光而下</span>
+          <span>查看角色近况</span>
           <ArrowDown size={16} />
         </button>
       </section>
@@ -122,7 +122,7 @@ export function ObservatoryOverview(
           <div className="journey-footnote">
             <span>穿过树影，循光入庭</span>
             <button onClick={() => go("character")}>
-              认识她 <ArrowUpRight size={15} />
+              查看角色资料 <ArrowUpRight size={15} />
             </button>
           </div>
         </article>
@@ -137,7 +137,7 @@ export function ObservatoryOverview(
           <div className="journey-footnote">
             <span>{overview.counts.memories} 段经历，在星海里相逢</span>
             <button onClick={() => go("memory")}>
-              走入星海 <ArrowUpRight size={15} />
+              查看记忆 <ArrowUpRight size={15} />
             </button>
           </div>
         </article>
@@ -152,7 +152,7 @@ export function ObservatoryOverview(
           <div className="journey-footnote">
             <span>星轨之外，也有人间回声</span>
             <button onClick={() => go("conversation")}>
-              看看近况 <ArrowUpRight size={15} />
+              查看会话记录 <ArrowUpRight size={15} />
             </button>
           </div>
         </article>
@@ -161,26 +161,26 @@ export function ObservatoryOverview(
       <div className="observatory-content">
         <nav className="observatory-metrics" aria-label="角色近况索引">
           <button onClick={() => go("memory")}>
-            <span>拾忆一笺</span>
+            <span>记忆片段</span>
             <strong>{overview.counts.memories.toLocaleString()}</strong>
-            <small>留在星海的经历</small>
+            <small>已保存的记忆</small>
           </button>
           <button onClick={() => go("memory")}>
             <span>真实关联</span>
             <strong>{overview.counts.links.toLocaleString()}</strong>
-            <small>记忆之间的来处</small>
+            <small>已建立的记忆关联</small>
           </button>
           <button onClick={() => go("state")}>
-            <span>此刻心绪</span>
+            <span>当前情绪</span>
             <strong className="metric-emotion">
               {state.emotion || "平静"}
             </strong>
             <small>来自角色的状态记录</small>
           </button>
           <button onClick={() => go("intentions")}>
-            <span>尚在期待</span>
+            <span>待处理目的</span>
             <strong>{waiting.length.toLocaleString()}</strong>
-            <small>正在酝酿的愿望</small>
+            <small>等待评估或执行的目的</small>
           </button>
         </nav>
 
@@ -193,30 +193,30 @@ export function ObservatoryOverview(
                 <p>光芒映照记忆权重，星轨只连接真实相关的经历</p>
               </div>
               <button className="text-link" onClick={() => go("memory")}>
-                展开星海 <ArrowUpRight size={14} />
+                打开记忆图谱 <ArrowUpRight size={14} />
               </button>
             </header>
             <div className="observatory-map-stage">
               {graphError ? (
                 <div className="observatory-map-state" role="alert">
                   <Sparkles size={22} />
-                  <p>星图暂时没有展开</p>
+                  <p>记忆图谱暂时无法加载</p>
                   <small>{graphError}</small>
                   <button className="text-link" onClick={refresh}>
-                    重展此卷 <ArrowUpRight size={13} />
+                    重新读取 <ArrowUpRight size={13} />
                   </button>
                 </div>
               ) : !graph ? (
                 <div className="observatory-map-state" role="status">
                   <span className="map-loading-orbit" aria-hidden="true" />
-                  <p>星光正在归位</p>
+                  <p>正在加载记忆</p>
                 </div>
               ) : graph.nodes.length ? (
                 <Suspense
                   fallback={
                     <div className="observatory-map-state" role="status">
                       <span className="map-loading-orbit" aria-hidden="true" />
-                      <p>星图正在展开</p>
+                      <p>正在加载记忆图谱</p>
                     </div>
                   }
                 >
@@ -237,7 +237,7 @@ export function ObservatoryOverview(
                   <p>写下一件值得记住的事，它会从这里长出自己的星轨</p>
                   <button className="primary" onClick={props.onMemory}>
                     <Plus size={15} />
-                    拾取初星
+                    记录第一段记忆
                   </button>
                 </div>
               )}
@@ -252,7 +252,7 @@ export function ObservatoryOverview(
                 连线表示已记录的关联
               </span>
               <button className="text-link" onClick={props.onMemory}>
-                <Plus size={13} /> 落笺拾忆
+                <Plus size={13} /> 记录记忆
               </button>
             </footer>
           </section>
@@ -264,7 +264,7 @@ export function ObservatoryOverview(
                 aria-label="选中记忆的完整详情"
               >
                 <header className="observatory-detail-heading">
-                  <span className="observatory-eyebrow">一颗星的来处</span>
+                  <span className="observatory-eyebrow">记忆详情</span>
                   <button
                     className="icon-button"
                     aria-label="关闭记忆详情"
@@ -289,11 +289,11 @@ export function ObservatoryOverview(
                     <dd>{date(selectedMemory.created)}</dd>
                   </div>
                   <div>
-                    <dt>星光分量</dt>
+                    <dt>重要度</dt>
                     <dd>{selectedMemory.importance} / 100</dd>
                   </div>
                   <div>
-                    <dt>此刻星重</dt>
+                    <dt>当前召回权重</dt>
                     <dd>{selectedMemory.score}</dd>
                   </div>
                 </dl>
@@ -337,8 +337,8 @@ export function ObservatoryOverview(
                 >
                   <header className="observatory-section-heading">
                     <div>
-                      <span className="observatory-eyebrow">此刻的她</span>
-                      <h3>心绪流动</h3>
+                      <span className="observatory-eyebrow">当前角色状态</span>
+                      <h3>情绪变化</h3>
                     </div>
                     <button
                       className="icon-button"
@@ -353,7 +353,7 @@ export function ObservatoryOverview(
                       <Star size={19} />
                     </span>
                     <div>
-                      <h4>{state.emotion || "心绪尚未落定"}</h4>
+                      <h4>{state.emotion || "暂无情绪记录"}</h4>
                       <p>由经历慢慢形成，不替她下结论</p>
                     </div>
                   </div>
@@ -386,7 +386,7 @@ export function ObservatoryOverview(
                       onClick={() => go("memory")}
                       aria-label="查看全部记忆"
                     >
-                      万象 <ArrowUpRight size={13} />
+                      全部 <ArrowUpRight size={13} />
                     </button>
                   </header>
                   {overview.memories.length ? (

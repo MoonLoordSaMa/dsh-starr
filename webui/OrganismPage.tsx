@@ -110,7 +110,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
           <>
             <Panel
               className="inner-weather"
-              title="心潮，有它自己的方向"
+              title="当前情绪状态"
               aside={
                 <Badge>
                   {organism.mixed ? "多种感受同时存在" : "此刻的感受"}
@@ -186,7 +186,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
             </Panel>
             <div className="organism-columns">
               <Panel
-                title="身体是感受落脚的地方"
+                title="体感与心理状态"
                 className="body-rhythm"
                 aside={<Activity size={17} />}
               >
@@ -208,12 +208,12 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                     ))}
                 </div>
                 <div className="current-evidence">
-                  <span>近来星源</span>
+                  <span>最近的来处</span>
                   <p>{overview.state.evidence}</p>
                 </div>
               </Panel>
               <Panel
-                title="每种感受，都可以被留下"
+                title="各项情绪强度"
                 className="emotion-inventory"
                 aside={<Heart size={17} />}
               >
@@ -235,7 +235,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                   ))}
                 </div>
                 <Disclosure
-                  title="还有一些细微的感受"
+                  title="其他情绪"
                   description="不把负面情绪折成一个不开心的数值"
                 >
                   <div className="emotion-rest">
@@ -252,7 +252,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
             </div>
             <Panel
               className="experience-panel"
-              title="让经历成为一阵风"
+              title="记录经历并更新状态"
               aside={<Sparkles size={17} />}
             >
               <p className="section-intro">
@@ -298,7 +298,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                   <label className="field">
                     经历了什么
                     <Select
-                      label="风过何处"
+                      label="经历类型"
                       value={kind}
                       onChange={(s) => setKind(s as ExperienceKind)}
                       options={Object.entries(experienceDefinitions).map(
@@ -343,13 +343,13 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                     disabled={busy || !evidence.trim()}
                   >
                     <Plus size={14} />
-                    {busy ? "留下回声…" : "风过留痕"}
+                    {busy ? "留下回声…" : "记录这次经历"}
                   </button>
                 </div>
               </form>
             </Panel>
             <Disclosure
-              title="细理心潮"
+              title="细调体感与心理"
               description="高级调节：预览即时变化，保存后才写入状态；需要说明来源"
             >
               <form
@@ -443,17 +443,17 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                     onClick={() => setDraft(overview.state)}
                   >
                     <RotateCcw size={14} />
-                    重拾旧潮
+                    恢复已保存状态
                   </button>
                   <button className="primary" disabled={busy}>
                     <Save size={14} />
-                    落定心潮
+                    保存调节
                   </button>
                 </div>
               </form>
             </Disclosure>
             <Disclosure
-              title="感受之下，调节正在发生"
+              title="虚拟调节参数"
               description="虚拟兴奋、安定、联结、压力、警觉与睡眠倾向"
             >
               <div className="modulator-grid">
@@ -478,7 +478,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
         ) : tab === "goals" ? (
           <>
             <Panel
-              title="风往哪里吹，心就往哪里望"
+              title="需求与主动候选"
               aside={
                 <Badge>{intentions?.enabled ? "正在评估" : "仅观察需求"}</Badge>
               }
@@ -527,7 +527,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                         (g) => g.status === "waiting" && g.drive === d.id,
                       )
                         ? "愿望已在酝酿"
-                        : "心愿落笺"}
+                        : "留下这个愿望"}
                       <ArrowUpRight size={14} />
                     </button>
                   </div>
@@ -538,11 +538,11 @@ export function OrganismPage(props: PageProps & { view?: string }) {
               </p>
             </Panel>
             <Panel
-              title="星光慢慢走成约定"
+              title="已保存的目的"
               aside={
                 <button className="ghost" onClick={() => setGoalModal(true)}>
                   <Plus size={14} />
-                  添一心愿
+                  添加目的
                 </button>
               }
             >
@@ -586,7 +586,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                                   notify(
                                     status === "completed"
                                       ? "约定已标记完成"
-                                      : "这个目的已放下",
+                                      : "目的已取消",
                                   );
                                 } catch (e) {
                                   notify((e as Error).message);
@@ -596,7 +596,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                               }}
                             >
                               {status === "completed" && <Check size={14} />}
-                              {status === "completed" ? "此卷已成" : "先放下"}
+                              {status === "completed" ? "完成" : "取消目的"}
                             </button>
                           ))}
                         </div>
@@ -613,7 +613,7 @@ export function OrganismPage(props: PageProps & { view?: string }) {
             </Panel>
           </>
         ) : tab === "history" ? (
-          <Panel title="每一场心潮，都有它的来处" aside={<Wind size={18} />}>
+          <Panel title="状态变化记录" aside={<Wind size={18} />}>
             {historyError && (
               <p className="inline-error" role="alert">
                 {historyError}
@@ -643,13 +643,13 @@ export function OrganismPage(props: PageProps & { view?: string }) {
               ))
             ) : (
               <Empty
-                title="风还没有留下足迹"
+                title="暂无状态变化记录"
                 description="记录真实经历或调节状态后，这里会保留变化前后与来源"
               />
             )}
           </Panel>
         ) : (
-          <Panel title="让日常有呼吸，也有边界">
+          <Panel title="主动行为与作息">
             <ConfigForm {...props} pages={["state"]} />
             <Disclosure title="她如何形成一个目的">
               <ol className="organism-chain">

@@ -134,12 +134,20 @@ export class Agency {
           this.store.conversations.get(g.originSession).purpose ===
             "management") &&
         (!g.due || Date.parse(g.due) <= this.clock()) &&
+        !evaluation.goals.find((evaluatedGoal) => evaluatedGoal.id === g.id)
+          ?.blockers.length &&
         !this.store.db
           .prepare(
             "SELECT 1 FROM agency_runs WHERE character_id=? AND goal_id=?",
           )
           .get(characterId, g.id),
     );
+    const evaluated = (goalId) =>
+      this.store.db
+        .prepare("SELECT 1 FROM agency_runs WHERE id=?")
+        .get(digest(`${characterId}:${goalId}`));
+    const automaticId = (drive) =>
+      `auto:${drive}:${Math.floor(this.clock() / 86400000)}`;
     const candidate = evaluation.candidates.find(
       (g) =>
         g.score >= 60 &&
@@ -147,13 +155,28 @@ export class Agency {
           (g.id === "connection"
             ? agencyRank(c["agency.level"]) >= 1
             : agencyRank(c["agency.level"]) >= 2)) &&
-        !g.blockers.length,
+        !g.blockers.length &&
+        !evaluated(automaticId(g.id)),
     );
+    const interval = Number(c["agency.opportunityMinutes"]) * 60000;
+    const lastRun = this.rows(characterId)[0];
+    const routine =
+      interval > 0 && (!lastRun || this.clock() - lastRun.created >= interval)
+        ? {
+            id: `routine:${Math.floor(this.clock() / interval)}`,
+            title: "看看最近有没有值得做的事",
+            reason:
+              "日常主动机会：回顾真实近况与约定，按当前状态选择交流、探索、整理或反思；情绪平淡或低落并不取消行动。",
+            action: "consider",
+            external: false,
+            automatic: true,
+          }
+        : null;
     const goal =
       active ||
       (candidate
         ? {
-            id: `auto:${candidate.id}:${Math.floor(this.clock() / 86400000)}`,
+            id: automaticId(candidate.id),
             title: candidate.title,
             reason: candidate.reason,
             action: candidate.action,
@@ -161,7 +184,7 @@ export class Agency {
             external: candidate.external,
             automatic: true,
           }
-        : null);
+        : routine);
     const blockers = this.blockers(characterId);
     if (goal?.action === "explore" && agencyRank(c["agency.level"]) < 2)
       blockers.push("此目的需要浏览级主动权限");
@@ -349,6 +372,7 @@ export class Agency {
       AbortSignal.timeout(120000),
     ]);
     let finished = false;
+    let decision;
     const finish = async ({ text = "", reason }) => {
       if (finished) throw fail("本轮已经结束，不可重复提交");
       this.check(characterId, plan.id);
@@ -363,7 +387,7 @@ export class Agency {
         throw fail("请填写简短理由，主动私聊最多1000字符", 400);
       if (!text.trim()) {
         finished = true;
-        return { status: "silent", reason };
+        return (decision = { status: "silent", reason });
       }
       const owner = this.owner(characterId);
       this.reserve(characterId, plan.id, "action");
@@ -417,7 +441,7 @@ export class Agency {
       this.store.db
         .prepare("UPDATE agency_runs SET result=? WHERE id=?")
         .run(JSON.stringify(receipt), plan.id);
-      return receipt;
+      return (decision = receipt);
     };
     try {
       if (!provider || !model) throw fail("请先配置DSH聊天模型");
@@ -450,17 +474,21 @@ export class Agency {
           "UPDATE agency_runs SET status=?,result=?,updated=? WHERE id=?",
         )
         .run(
-          outcome?.status === "sent"
+          decision?.status === "sent"
             ? "sent"
             : social
               ? social.status
               : "silent",
-          JSON.stringify({ ...outcome, ...(social ? { social } : {}) }),
+          JSON.stringify({
+            ...outcome,
+            ...decision,
+            ...(social ? { social } : {}),
+          }),
           this.clock(),
           plan.id,
         );
       if (
-        outcome?.status === "sent" ||
+        decision?.status === "sent" ||
         social?.status === "accepted" ||
         social?.status === "sent" ||
         outcome?.effect

@@ -45,13 +45,16 @@ export function createQQDriver(ctx, store, { platform = "qq" } = {}) {
       },
       {
         name: "starr_qq_reply",
-        description: `向当前可信 ${platformName} 对话发送一条文字回复。目标由插件绑定，不能传入其他收件人。成功返回真实消息编号；失败或结果待核对时不要重发。`,
+        description: `向当前可信 ${platformName} 对话发送文字回复。${platform === "qq" ? "群聊中空行分隔的自然段会分条发送，最多遵循当前分条上限；单个换行保持原样。" : "B站保持单条回复。"}目标由插件绑定，不能传入其他收件人。成功返回真实消息编号；失败或结果待核对时不要重发。`,
         parameters: {
           type: "object",
           properties: {
             text: {
               type: "string",
-              description: "要发送的回复，长度遵循当前角色配置",
+              description:
+                platform === "qq"
+                  ? "要发送的回复，长度遵循当前角色配置；QQ群聊可用空行分段，或使用 starr_qq_burst 明确提交多条"
+                  : "要发送的一条B站回复，长度遵循当前角色配置",
             },
             ...(platform === "qq"
               ? {

@@ -81,7 +81,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
               })
             }
           >
-            重织星图
+            重建全文索引
           </button>
           <button
             disabled={busy}
@@ -96,7 +96,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
               })
             }
           >
-            补笺校卷
+            补漏并检查笔记冲突
           </button>
           {!props.sync && (
             <button
@@ -114,7 +114,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                 })
               }
             >
-              循意牵星
+              寻找主题关联
             </button>
           )}
         </div>
@@ -134,11 +134,11 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                 <p>{item.warning}</p>
                 <div className="merge-comparison">
                   <label className="field">
-                    阁中原笺
+                    库内原文
                     <textarea readOnly rows={8} value={item.before.content} />
                   </label>
                   <label className="field">
-                    双笺此卷
+                    Obsidian 当前正文
                     <textarea readOnly rows={8} value={item.content} />
                   </label>
                 </div>
@@ -162,7 +162,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                     })
                   }
                 >
-                  择此笺文
+                  确认采用外部正文
                 </button>
               </>
             )}
@@ -202,13 +202,13 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                 })
               }
             >
-              牵起星线
+              建立关联
             </button>
           </div>
         ))}
       </Panel>
       {!props.sync && (
-        <Panel title="暂藏星光 · 可恢复归档">
+        <Panel title="记忆归档与恢复">
           <p>
             适合重复、暂时无关或已经失效的记忆。长期锚点也须由你明确选择后才归档，不批量清空记忆
           </p>
@@ -225,7 +225,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
             ]}
           />
           <label className="field">
-            藏星缘由
+            归档理由
             <input
               value={reason}
               maxLength={500}
@@ -252,7 +252,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
               })
             }
           >
-            暂藏此星
+            归档所选记忆
           </button>
           <Disclosure title={`归档中的记忆 · ${data?.archived.length ?? 0}`}>
             {data?.archived.map((item) => (
@@ -278,7 +278,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
                     })
                   }
                 >
-                  星光归来
+                  恢复记忆
                 </button>
               </div>
             ))}

@@ -379,6 +379,68 @@ test("星桥首次动态检查只建水位，之后仅分享同账号新公开�
   now += 301000;
   await bridge.tick(f.a);
   assert.equal(sends, 1);
+  now += 301000;
+  feed.push({
+    id: "3",
+    author: "777777",
+    text: "又一条新动态",
+    time: now / 1000,
+  });
+  await bridge.tick(f.a);
+  assert.equal(sends, 2, "已发动态不能阻塞之后的新动态");
+});
+
+test("星桥分次完成全部 QQ 目标，已发记录不阻塞后续收件者", async (t) => {
+  const f = fixture(t);
+  f.configure({
+    "bridge.enabled": true,
+    "bridge.targets": "group:123456,private:234567",
+    "bridge.videos": true,
+    "bridge.dynamics": false,
+    "bridge.times": "12:00",
+    "bridge.minGapSeconds": 10,
+    "agency.timezone": "UTC",
+  });
+  let now = Date.UTC(2026, 10, 6, 12, 0);
+  const sent = [];
+  const bridge = new PlatformBridge(f.store, {
+    clock: () => now,
+    qq: {
+      settings: () => ({
+        config: {
+          enabled: true,
+          characterId: f.a,
+          groups: "123456",
+          privateUsers: "234567",
+        },
+      }),
+      secrets: { read: async () => "synthetic" },
+      action: async (settings, action, args) => {
+        sent.push({ action, args });
+        return { message_id: String(sent.length) };
+      },
+    },
+    bili: {},
+  });
+  t.after(() => bridge.close());
+  f.store.db.exec(
+    "CREATE TABLE IF NOT EXISTS bili_activities(character_id TEXT,kind TEXT,status TEXT,data TEXT,created INTEGER)",
+  );
+  f.store.db
+    .prepare("INSERT INTO bili_activities VALUES(?,'watch','done',?,?)")
+    .run(f.a, JSON.stringify({ videos: ["BV0000000001"] }), now);
+  await bridge.tick(f.a);
+  assert.equal(sent.length, 1);
+  await bridge.tick(f.a);
+  assert.equal(sent.length, 1, "冷却期间不额外发送");
+  now += 11000;
+  await bridge.tick(f.a);
+  assert.equal(sent.length, 2);
+  assert.equal(sent[1].action, "send_private_msg");
+  assert.equal(sent[1].args.user_id, "234567");
+  now += 11000;
+  await bridge.tick(f.a);
+  assert.equal(sent.length, 2, "本时段重查不重复发送");
 });
 test("QQ 社交能力固定当前群、当前批用户，反馈持久化且撤销权限立即生效", async (t) => {
   const f = fixture(t);

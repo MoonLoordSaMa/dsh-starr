@@ -142,6 +142,64 @@ test("动态类型校验字数和间隔，不明回执不允许同轮重发", as
   assert.equal(sends, 1);
 });
 
+test("浏览视频分享必须取得明确回执，不明结果持久化并阻止再次发送", async (t) => {
+  const f = fixture(t, async () => {});
+  const c = f.store.character(f.id);
+  f.store.configure(
+    f.id,
+    {
+      "bili.watch.enabled": true,
+      "bili.watch.skipChance": 0,
+      "bili.share.enabled": true,
+      "bili.share.target": "200001",
+    },
+    { revision: c.revision },
+  );
+  f.receive("share-incoming");
+  let attempts = 0,
+    secondRound = false;
+  const client = {
+    ...f.client,
+    candidates: async () => [{ bvid: "BV0000000001", title: "合成星空" }],
+    video: async (bvid) => ({ bvid, title: "合成星空" }),
+    send: async () => {
+      attempts++;
+      return { status: "sent" };
+    },
+  };
+  f.service.activityDriver = {
+    run: async ({ read, share, finish }) => {
+      await read({ bvid: "BV0000000001" });
+      await assert.rejects(
+        () => share({ bvid: "BV0000000001", text: "合成短评", score: 90 }),
+        secondRound ? /七天内/ : /明确消息编号/,
+      );
+      finish({ title: "合成阅读", content: "本轮只阅读合成资料", score: 80 });
+    },
+  };
+  const run = () =>
+    f.service.activities.run(
+      f.id,
+      "watch",
+      "synthetic-share",
+      client,
+      { selfId: "100001" },
+      new AbortController().signal,
+    );
+  await run();
+  assert.equal(
+    f.store.db.prepare("SELECT status FROM bili_shares").get().status,
+    "uncertain",
+  );
+  assert.equal(
+    f.store.db.prepare("SELECT status FROM bili_sends").get().status,
+    "uncertain",
+  );
+  secondRound = true;
+  await run();
+  assert.equal(attempts, 1);
+});
+
 function fixture(t, run, send) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "starr-bili-")),
     store = new StarrStore(path.join(root, "runtime"));

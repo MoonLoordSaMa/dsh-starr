@@ -13,7 +13,6 @@ import { MemoryWorkshop } from "./MemoryWorkshop";
 import { PlatformBridge } from "./PlatformBridge";
 import { InteractionPage } from "./InteractionPage";
 import { Today } from "./Today";
-import { poeticField, poeticName } from "./poetic-names";
 
 export function PagePrelude({ page }: { page: string }) {
   const poem = poems[page];
@@ -35,7 +34,7 @@ export function PagePrelude({ page }: { page: string }) {
         <p>
           <span>{poem[2]}</span>
           <i aria-hidden="true" />
-          <strong>{entry?.name}</strong>
+          <strong>{entry?.label}</strong>
         </p>
       </div>
       <button
@@ -59,7 +58,7 @@ export function PagePrelude({ page }: { page: string }) {
             });
         }}
       >
-        <span>循光入卷</span>
+        <span>查看功能设置</span>
         <ArrowDown size={14} />
       </button>
     </section>
@@ -119,10 +118,10 @@ export function RelatedRoutes({
   const items = relations[page];
   return items ? (
     <nav className="related-routes" aria-label="关联功能">
-      <span>沿星轨继续</span>
+      <span>相关功能</span>
       {items.map(([id, label]) => (
         <button key={id} onClick={() => go(id)} title={label}>
-          {poeticName(label)}
+          {navigation.find((item) => item.id === id)?.name || label}
           <ArrowUpRight size={13} />
         </button>
       ))}
@@ -136,7 +135,7 @@ export function FunctionIndex(props: PageProps) {
     () =>
       props.bootstrap.fields
         .filter((field) =>
-          `${poeticField(field)} ${field.label} ${field.help} ${field.key}`
+          `${field.label} ${field.label} ${field.help} ${field.key}`
             .toLowerCase()
             .includes(query.toLowerCase()),
         )
@@ -146,7 +145,7 @@ export function FunctionIndex(props: PageProps) {
   return (
     <div className="settings-stack">
       <Panel
-        title="群星各有其位"
+        title="全部功能与配置"
         aside={<Badge>{props.bootstrap.fields.length} 项角色配置</Badge>}
       >
         <p>
@@ -170,7 +169,7 @@ export function FunctionIndex(props: PageProps) {
                 onClick={() => props.go(fieldRoute(field.page))}
               >
                 <div>
-                  <strong title={field.label}>{poeticField(field)}</strong>
+                  <strong title={field.label}>{field.label}</strong>
                   <small>{field.help}</small>
                 </div>
                 <span>
@@ -212,16 +211,16 @@ export function FunctionIndex(props: PageProps) {
           </div>
         )}
       </Panel>
-      <Panel title="星河归处">
+      <Panel title="运行目录">
         <div className="detail-facts">
           <span>
-            拾星阁<code>{props.bootstrap.installation?.memoryRoot}</code>
+            记忆库<code>{props.bootstrap.installation?.memoryRoot}</code>
           </span>
           <span>
-            藏星阁<code>{props.bootstrap.installation?.backupRoot}</code>
+            备份库<code>{props.bootstrap.installation?.backupRoot}</code>
           </span>
         </div>
-        <TextLink onClick={() => props.go("maintenance")}>藏星问脉</TextLink>
+        <TextLink onClick={() => props.go("maintenance")}>备份与诊断</TextLink>
       </Panel>
     </div>
   );
@@ -296,8 +295,8 @@ export function WorkspacePage(props: PageProps & { page: string }) {
       <>
         <Today {...props} />
         <OrganismPage {...props} view="goals" />
-        <Panel title="心愿有时">
-          <Disclosure title="更筹与归航">
+        <Panel title="主动行为与节律">
+          <Disclosure title="高级预算、作息与失败恢复">
             <ConfigForm {...props} pages={["state", "agency"]} />
           </Disclosure>
         </Panel>
@@ -306,7 +305,7 @@ export function WorkspacePage(props: PageProps & { page: string }) {
   if (page === "memory-care")
     return (
       <div className="settings-stack">
-        <Panel title="重要的事，当下留下">
+        <Panel title="记忆保存设置">
           <ConfigForm {...props} pages={["memory", "chat-memory"]} />
         </Panel>
         <MemoryJobs {...props} />
@@ -318,7 +317,7 @@ export function WorkspacePage(props: PageProps & { page: string }) {
   if (page === "maintenance") return <MaintenancePage {...props} />;
   if (page === "appearance")
     return (
-      <Panel title="把夜色调成喜欢的样子">
+      <Panel title="外观设置">
         <p>
           性能档位、背景星光与局部玻璃统一管理。减少动态时停止持续运动，页面切换复用场景
         </p>
@@ -327,18 +326,18 @@ export function WorkspacePage(props: PageProps & { page: string }) {
     );
   if (page === "permissions")
     return (
-      <Panel title="信任有分寸">
+      <Panel title="角色权限设置">
         <ConfigForm
           {...props}
           pages={["permissions", "chat-tools", "chat-media"]}
         />
-        <Disclosure title="随心有度">
+        <Disclosure title="角色可自行调整的日常习惯">
           <ul>
             {props.bootstrap.fields
               .filter((field) => field.bot)
               .map((field) => (
                 <li key={field.key} title={field.label}>
-                  {poeticField(field)}
+                  {field.label}
                 </li>
               ))}
           </ul>
@@ -348,7 +347,7 @@ export function WorkspacePage(props: PageProps & { page: string }) {
     );
   if (page === "legacy")
     return (
-      <Panel title="旧卷新途">
+      <Panel title="旧版功能对照">
         <LegacyConfiguration go={props.go} />
       </Panel>
     );

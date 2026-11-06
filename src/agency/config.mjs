@@ -9,6 +9,14 @@ const field = (key, label, type, value, help, extra = {}) => [
 ];
 export const agencyFields = [
   field(
+    "agency.opportunityMinutes",
+    "日常主动评估间隔（分钟）",
+    "number",
+    180,
+    "不依赖情绪强度，定期检查约定、近况与已授权的探索机会；平静、低落和愉快时都可行动。没有合适内容可保持安静，仍受冷却、作息、权限和预算限制。0 表示只按明确目的与需求触发。",
+    { min: 0, max: 1440, integer: true },
+  ),
+  field(
     "agency.level",
     "主动范围",
     "select",

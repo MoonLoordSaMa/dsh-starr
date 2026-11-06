@@ -106,7 +106,7 @@ export function CompanionOverview(props: PageProps) {
           <p>发生新的交流后，会显示在这里。</p>
         )}
         <button className="companion-text-link" onClick={() => go("host-chat")}>
-          灯下续语
+          查看角色会话
         </button>
       </div>
     </section>

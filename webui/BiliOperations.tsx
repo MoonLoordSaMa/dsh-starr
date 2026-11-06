@@ -43,13 +43,13 @@ export function BiliOperations(props: PageProps) {
   };
   return (
     <div className="settings-stack">
-      <Panel title="公开内容，落笔之前">
+      <Panel title="B站公开内容管理">
         <ConfigForm {...props} pages={["bili-actions"]} />
         <p>
           草稿只存本机。发布、编辑、删除与点赞先核验账号和预览，再由你确认；编辑保留原图，删除只能操作自己的动态
         </p>
         <Select
-          label="人间落笔"
+          label="公开内容操作"
           value={kind}
           onChange={(value) => {
             setKind(value);
@@ -71,7 +71,7 @@ export function BiliOperations(props: PageProps) {
         )}
         {["publish", "edit"].includes(kind) && (
           <label className="field">
-            笺文
+            正文
             <textarea
               rows={7}
               maxLength={2000}
@@ -120,7 +120,7 @@ export function BiliOperations(props: PageProps) {
               })
             }
           >
-            暂寄笺底
+            只存草稿
           </button>
           <button
             className="primary"
@@ -136,11 +136,11 @@ export function BiliOperations(props: PageProps) {
               )
             }
           >
-            照笺试读
+            核验并预览
           </button>
         </div>
         {message && <p role="status">{message}</p>}
-        <Disclosure title="未寄之笺">
+        <Disclosure title="本地草稿">
           {data?.drafts.map((draft) => (
             <div className="job-error" key={draft.id}>
               <p>{draft.text}</p>
@@ -150,12 +150,12 @@ export function BiliOperations(props: PageProps) {
                   setKind("publish");
                 }}
               >
-                展读笺文
+                载入正文
               </button>
             </div>
           ))}
         </Disclosure>
-        <Disclosure title="渡口回笺">
+        <Disclosure title="平台操作回执">
           {data?.recent.map((item) => (
             <div className="job-error" key={item.id}>
               <strong>
@@ -163,8 +163,8 @@ export function BiliOperations(props: PageProps) {
                   (
                     {
                       publish: "发布",
-                      edit: "重理此笺",
-                      delete: "归于尘寂",
+                      edit: "编辑",
+                      delete: "删除",
                       like: "点赞",
                     } as Record<string, string>
                   )[item.kind]
@@ -187,9 +187,9 @@ export function BiliOperations(props: PageProps) {
           ))}
         </Disclosure>
       </Panel>
-      <Panel title="山海拾遗 · 公开资料">
+      <Panel title="B站资料查询">
         <Select
-          label="星笺门类"
+          label="资料类型"
           value={read}
           onChange={setRead}
           options={[
@@ -228,17 +228,17 @@ export function BiliOperations(props: PageProps) {
             )
           }
         >
-          展读此笺
+          读取资料
         </button>
         {material && <pre className="material-result">{material}</pre>}
       </Panel>
       {preview && (
-        <Modal title="确认落笔" onClose={() => setPreview(null)}>
+        <Modal title="确认此次平台操作" onClose={() => setPreview(null)}>
           <p>
             当前账号：{preview.account.name} · 动态：{preview.id || "新动态"}
           </p>
           {preview.original && (
-            <p className="preview-original">原笺：{preview.original.text}</p>
+            <p className="preview-original">原正文：{preview.original.text}</p>
           )}
           <p className="preview-text">{preview.text}</p>
           {preview.image && (
@@ -262,7 +262,7 @@ export function BiliOperations(props: PageProps) {
               })
             }
           >
-            落笔一回
+            确认执行一次
           </button>
         </Modal>
       )}

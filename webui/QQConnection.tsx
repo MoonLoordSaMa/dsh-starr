@@ -151,7 +151,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
   };
   if (!status || !draft)
     return (
-      <Panel title="让对话，跨过屏幕">
+      <Panel title="QQ 连接设置">
         <p>{error || "正在读取 QQ 连接…"}</p>
       </Panel>
     );
@@ -159,7 +159,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
     <div className="content-with-rail qq-connection">
       <div>
         <Panel
-          title="让对话，跨过屏幕"
+          title="QQ 连接设置"
           aside={
             <Badge
               tone={status.runtime.status === "connected" ? "good" : "quiet"}
@@ -189,7 +189,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
           )}
           <div className="form-columns">
             <label className="field">
-              鹊桥收信埠
+              OneBot HTTP 端口
               <input
                 type="number"
                 value={draft.httpPort}
@@ -197,7 +197,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               />
             </label>
             <label className="field">
-              鹊桥应答埠
+              正向 WebSocket 端口
               <input
                 type="number"
                 value={draft.wsPort}
@@ -206,7 +206,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
             </label>
           </div>
           <label className="field">
-            鹊桥信钥
+            OneBot 访问令牌
             <input
               type="password"
               autoComplete="new-password"
@@ -229,7 +229,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
           </label>
           <div className="form-columns">
             <label className="field">
-              私语故人
+              允许私聊回复的 QQ 号
               <input
                 value={draft.privateUsers}
                 onChange={(e) => update("privateUsers", e.target.value)}
@@ -237,7 +237,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               />
             </label>
             <label className="field">
-              同席之所
+              允许回复的群号
               <input
                 value={draft.groups}
                 onChange={(e) => update("groups", e.target.value)}
@@ -246,7 +246,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
             </label>
           </div>
           <Select
-            label="结缘之星"
+            label="绑定角色"
             value={draft.characterId}
             onChange={(value) => update("characterId", value)}
             options={bootstrap.characters.map((item) => ({
@@ -256,7 +256,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
           />
           <div className="form-columns">
             <Select
-              label="言语渡口"
+              label="聊天服务"
               value={draft.provider}
               onChange={(value) => {
                 update("provider", value);
@@ -271,7 +271,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               ]}
             />
             <Select
-              label="执笺灵枢"
+              label="聊天模型"
               value={draft.model}
               onChange={(value) => update("model", value)}
               options={[
@@ -289,7 +289,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               checked={draft.enabled}
               onChange={(e) => update("enabled", e.target.checked)}
             />
-            鹊桥启语
+            启用 QQ 自动回复
           </label>
           <label className="check-field">
             <input
@@ -297,11 +297,11 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               checked={draft.requireMention}
               onChange={(e) => update("requireMention", e.target.checked)}
             />
-            呼名方应
+            群聊仅在被 @ 时回应
           </label>
-          <Disclosure title="渡口别径">
+          <Disclosure title="更多连接选项">
             <label className="field">
-              信钥藏名
+              令牌环境变量名
               <input
                 value={draft.tokenEnv}
                 onChange={(e) => update("tokenEnv", e.target.value)}
@@ -309,7 +309,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               <small>环境变量中的令牌优先于本机加密存储；这里填写变量名</small>
             </label>
             <label className="field">
-              零笺合卷候时
+              短消息合并等待（毫秒）
               <input
                 type="number"
                 min={200}
@@ -332,7 +332,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
                 })
               }
             >
-              重展星枢
+              重新读取配置
             </button>
             <button
               className="ghost"
@@ -356,7 +356,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               }
             >
               <RefreshCw size={15} />
-              验看渡口信契
+              检查协议与登录
             </button>
             <button
               className="primary"
@@ -385,7 +385,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               }
             >
               <Save size={15} />
-              {busy ? "星事未歇…" : "落笺生效"}
+              {busy ? "正在处理…" : "保存并应用"}
             </button>
           </div>
           {check && (
@@ -404,7 +404,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
             </p>
           )}
         </Panel>
-        <Panel title="消息行至何处">
+        <Panel title="QQ 消息处理记录">
           <div className="protocol-facts">
             {["pending", "processing", "done", "failed", "uncertain"].map(
               (key) => (
@@ -446,13 +446,13 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
                 })
               }
             >
-              重寄未达
+              重试失败消息
             </button>
           </div>
         </Panel>
       </div>
       <div className="rail">
-        <Panel title="只回应约定的对话">
+        <Panel title="QQ 回复对象与授权">
           <p>
             只有允许名单中的私聊和群聊会进入角色会话。每个角色、每个对话分别保存上下文；更换角色会开启对应角色的新会话
           </p>
@@ -461,7 +461,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
             返回的消息编号。错误、超时和结果不明会保留状态，便于排查
           </p>
         </Panel>
-        <Panel title="验契有界">
+        <Panel title="连接检查的边界">
           <p>
             协议与登录通过表示 SnowLuma
             已在线。模型能否生成回复、平台是否成功接收，都以实际消息回执为准

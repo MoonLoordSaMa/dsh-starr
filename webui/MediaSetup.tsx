@@ -116,7 +116,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
     mode === "free-local" || mode === "breeze-local" || mode === "auto";
   const prefix = mode === "custom" ? kind : "media";
   return (
-    <Panel title="先选一种适合你的方式">
+    <Panel title="媒体接入方式">
       <p>
         {kind === "asr"
           ? "无需API密钥也能在本机听写。自动模式沿用已配置的共用服务；没有共用服务时使用免费本地Whisper"
@@ -130,23 +130,25 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
           : "插件托管的本地模型统一互斥，闲置5分钟自动下线；切换时先卸载旧模型。手动启动的本地兼容服务无法保证卸载，请使用插件托管的本地模式"}
       </p>
       <Select
-        label="入卷之法"
+        label="使用方式"
         value={mode}
         onChange={setMode}
         options={[
           ...(kind === "asr"
             ? [
-                { value: "auto", label: "随星择路" },
-                { value: "free-local", label: "近处听风" },
+                { value: "auto", label: "自动选择" },
+                { value: "free-local", label: "免费本地Whisper" },
               ]
             : []),
           ...(kind === "tts"
-            ? [{ value: "breeze-local", label: "近处清音" }]
+            ? [{ value: "breeze-local", label: "本地Breeze" }]
             : []),
-          ...(kind === "vision" ? [{ value: "host", label: "灯下观澜" }] : []),
-          { value: "custom", label: "独舟渡云" },
-          { value: "shared", label: "同源共渡" },
-          { value: "disabled", label: "暂掩此卷" },
+          ...(kind === "vision"
+            ? [{ value: "host", label: "使用DSH已配置的视觉模型" }]
+            : []),
+          { value: "custom", label: "单独配置云端服务" },
+          { value: "shared", label: "沿用共用连接" },
+          { value: "disabled", label: "停用" },
         ]}
       />
       {kind === "vision" && mode === "host" && (
@@ -184,7 +186,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
             />
           </label>
           <label className="field">
-            灵枢之名
+            模型名称
             <input value={model} onChange={(e) => setModel(e.target.value)} />
           </label>
           <label className="field">
@@ -207,7 +209,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
         mode !== "disabled" &&
         (mode === "breeze-local" && voices.length ? (
           <Select
-            label="清音底色"
+            label="参考音色"
             value={voice}
             onChange={setVoice}
             options={[
@@ -220,7 +222,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
           />
         ) : (
           <label className="field">
-            清音之签
+            说话音色编号
             <input
               value={voice}
               onChange={(e) => setVoice(e.target.value)}
@@ -270,7 +272,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
             })
           }
         >
-          {busy ? "星事未歇…" : "落定渡法"}
+          {busy ? "正在处理…" : "保存使用方式"}
         </button>
         {status?.credentials[prefix]?.saved && (
           <button
@@ -279,7 +281,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
             disabled={busy}
             onClick={() => setClearingCredential(true)}
           >
-            拂去此痕{prefix === "media" ? "共用" : "此能力"}已存密钥
+            清除{prefix === "media" ? "共用" : "此能力"}已存密钥
           </button>
         )}
         {kind === "asr" && (
@@ -297,7 +299,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
               })
             }
           >
-            备好听风笺
+            准备免费听写
           </button>
         )}
       </div>
@@ -311,12 +313,12 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
           {mode === "breeze-local" && (
             <LocalModelDiscovery {...props} kind="tts" />
           )}
-          <Disclosure title="依声写笺">
+          <Disclosure title="用参考录音建立本地音色">
             <p>
               录音与准确文字会编码为Breeze音色并自动选用。云端音色建立请使用服务商支持的流程
             </p>
             <label className="field">
-              声笺之签
+              音色标识
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -331,7 +333,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
               />
             </label>
             <label className="field">
-              声之底稿
+              参考录音
               <input
                 type="file"
                 accept="audio/wav"
@@ -365,13 +367,13 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
                 })
               }
             >
-              择声成笺
+              建立并选用音色
             </button>
           </Disclosure>
         </>
       )}
       {kind === "vision" && (
-        <Disclosure title="看一小段真实画面">
+        <Disclosure title="视频关键帧测试">
           <p>
             屏幕与摄像头需要在高级配置独立开启。每次采集3秒并停止；视频只分析前30秒内的关键帧，不代表看完整片
           </p>
@@ -398,7 +400,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
                   })
                 }
               >
-                {source === "screen" ? "观窗中景" : "观镜中景"}
+                {source === "screen" ? "看看屏幕" : "看看摄像头"}
               </button>
             ))}
           </div>
@@ -419,7 +421,7 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
               })
             }
           >
-            拾影观澜
+            分析视频关键帧
           </button>
         </Disclosure>
       )}

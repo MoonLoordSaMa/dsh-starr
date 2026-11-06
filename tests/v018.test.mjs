@@ -87,6 +87,129 @@ function fixture(t, driver) {
   });
   return { store, character, agency, qq, patch, goal, owner, sends, root };
 }
+test("平淡、低落和乐观均可获得主动机会，工具回执不依赖驱动重复返回结果", async (t) => {
+  for (const [mood, values] of Object.entries({
+    平淡: {
+      energy: 55,
+      joy: 35,
+      social: 40,
+      curiosity: 25,
+      sleepiness: 5,
+      fatigue: 10,
+      loneliness: 20,
+      stimulation: 20,
+    },
+    低落: {
+      energy: 45,
+      joy: 5,
+      social: 10,
+      curiosity: 15,
+      confidence: 20,
+      loneliness: 30,
+      security: 40,
+      tension: 45,
+      stimulation: 35,
+    },
+    乐观: { energy: 80, joy: 85, social: 85, curiosity: 80, confidence: 80 },
+  })) {
+    await t.test(mood, async (t) => {
+      let calls = 0;
+      const f = fixture(t, {
+        run: async (input) => {
+          calls++;
+          await input.finish({
+            text: `合成${mood}主动交流`,
+            reason: "来自真实近况的简短接续",
+          });
+          // 宿主完成工具调用后可能不把工具回执作为驱动返回值。
+        },
+      });
+      f.owner();
+      f.store.updateState(f.character.id, {
+        revision: f.store.getState(f.character.id).revision,
+        values,
+        eventKey: `mood-${mood}`,
+      });
+      const plan = f.agency.plan(f.character.id);
+      assert.equal(plan.blockers.length, 0);
+      if (mood === "平淡") assert.match(plan.goal.id, /^routine:/);
+      const result = await f.agency.run(f.character.id);
+      assert.equal(result.status, "sent");
+      assert.equal(JSON.parse(result.result).messageId, "synthetic-receipt");
+      assert.equal(f.sends.length, 1);
+      assert.equal(calls, 1);
+    });
+  }
+});
+
+test("日常主动机会遵守间隔且重启不重复，设为零可关闭，已评估需求不阻塞其他机会", async (t) => {
+  const f = fixture(t, {
+    run: (input) => input.finish({ reason: "合成安静决定" }),
+  });
+  let clock = Date.now();
+  f.agency.clock = () => clock;
+  f.patch({ "agency.opportunityMinutes": 60 });
+  const initial = f.agency.plan(f.character.id);
+  assert.ok(initial.goal);
+  await f.agency.run(f.character.id);
+  assert.equal(f.agency.plan(f.character.id).goal, null);
+  clock += 61 * 60000;
+  const second = f.agency.plan(f.character.id);
+  assert.match(second.goal.id, /^routine:/);
+  assert.equal(second.blockers.length, 0);
+  const restarted = new Agency(f.store, {
+    qq: f.qq,
+    driver: f.agency.driver,
+    clock: () => clock,
+  });
+  try {
+    assert.equal(restarted.plan(f.character.id).id, second.id);
+  } finally {
+    restarted.close();
+  }
+  f.patch({ "agency.opportunityMinutes": 0 });
+  assert.equal(f.agency.plan(f.character.id).goal, null);
+});
+
+test("不急迫的旧需求目的不会阻塞平淡情绪下的日常主动机会", async (t) => {
+  const f = fixture(t, {
+    run: (input) => input.finish({ reason: "合成安静决定" }),
+  });
+  f.owner();
+  f.store.updateState(f.character.id, {
+    revision: f.store.getState(f.character.id).revision,
+    values: {
+      energy: 80,
+      sleepiness: 0,
+      fatigue: 0,
+      joy: 35,
+      curiosity: 25,
+      social: 40,
+      loneliness: 20,
+      stimulation: 20,
+    },
+    eventKey: "synthetic-not-tired",
+  });
+  const old = f.store.createGoal(f.character.id, {
+    title: "合成休息目的",
+    reason: "先前留下的待评估需要",
+    drive: "rest",
+  });
+  assert.ok(
+    f.store.intentions(f.character.id).goals.find((g) => g.id === old.id)
+      .blockers.length,
+  );
+  const plan = f.agency.plan(f.character.id);
+  assert.match(plan.goal.id, /^routine:/);
+  assert.equal(plan.blockers.length, 0);
+  const result = await f.agency.run(f.character.id);
+  assert.equal(result.status, "silent", result.error);
+  assert.equal(
+    f.store.goals(f.character.id).find((g) => g.id === old.id).status,
+    "waiting",
+  );
+});
+
 test("模型错误分类保留根因且不暴露服务正文、密钥与路径", () => {
   for (const [error, code] of [
     [

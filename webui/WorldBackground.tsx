@@ -82,14 +82,14 @@ export default function WorldBackground({
             : 1,
     );
     renderer.setPixelRatio(pixelRatio);
-    renderer.setClearColor("#0b0e19");
+    renderer.setClearColor("#15131b");
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.16;
     el.prepend(renderer.domElement);
     const world = new THREE.Scene();
     // 雾色与天空底部同源，远山才会自然融进天色而不是浮在暗底上。
-    world.fog = new THREE.FogExp2("#29354e", 0.0018);
+    world.fog = new THREE.FogExp2("#46414a", 0.0018);
     const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 1000);
     const depth = light ? undefined : createGardenDepth(renderer, camera);
     renderer.info.autoReset = false;
@@ -112,12 +112,12 @@ export default function WorldBackground({
     };
     const group = new THREE.Group();
     world.add(group);
-    world.add(new THREE.HemisphereLight("#c1d5ef", "#697c87", 2.4));
+    world.add(new THREE.HemisphereLight("#f3e1bb", "#77756d", 2.5));
     const moonlight = new THREE.DirectionalLight("#ffe2af", 2.6);
     moonlight.position.set(20, 26, -20);
     world.add(moonlight);
     // 补一盏极弱的环境补光，避免侧看时背光面全黑成剪影。
-    const fillLight = new THREE.DirectionalLight("#a6cde7", 1.8);
+    const fillLight = new THREE.DirectionalLight("#d5d5c7", 1.65);
     fillLight.position.set(-24, 8, 26);
     world.add(fillLight);
 
@@ -139,8 +139,8 @@ export default function WorldBackground({
         void main(){
           vec3 d=normalize(vDir);
           float h=clamp(d.y,0.,1.);
-          vec3 horizon=mix(vec3(.035,.075,.13),vec3(.085,.035,.12),smoothstep(-.6,.8,d.x));
-          vec3 c=mix(horizon,vec3(.008,.018,.065),smoothstep(.02,.80,h));
+          vec3 horizon=mix(vec3(.12,.086,.065),vec3(.105,.083,.09),smoothstep(-.6,.8,d.x));
+          vec3 c=mix(horizon,vec3(.026,.025,.041),smoothstep(.02,.80,h));
           // 有星云色差、暗尘带和细碎恒星的银河；固定天球坐标，不随镜头游动。
           vec2 space=vec2(atan(d.x,-d.z),asin(clamp(d.y,-1.,1.)));
           float across=space.y-.36-space.x*.38;
@@ -148,9 +148,9 @@ export default function WorldBackground({
           float band=exp(-pow((across+(cloud-.5)*.23)*7.,2.));
           float core=exp(-pow((across-.018)*16.,2.));
           float dust=smoothstep(.40,.64,grain(space*35.+vec2(7.,11.)));
-          vec3 nebula=mix(vec3(.035,.16,.34),vec3(.31,.045,.22),smoothstep(-.7,.7,d.x));
+          vec3 nebula=mix(vec3(.24,.18,.10),vec3(.18,.14,.14),smoothstep(-.7,.7,d.x));
           c+=nebula*band*(.08+pow(cloud,2.)*1.6);
-          c+=vec3(.42,.32,.31)*core*pow(cloud,3.)*.8;
+          c+=vec3(.55,.39,.20)*core*pow(cloud,3.)*.8;
           c*=1.-dust*core*.48;
           vec2 grid=space*740.; vec2 cell=floor(grid); vec2 q=fract(grid)-.5;
           float tiny=exp(-dot(q,q)*120.)*step(.975,hash(cell));
@@ -259,8 +259,8 @@ export default function WorldBackground({
       world.add(sprite);
       return spriteMaterial;
     };
-    const haloInner = halo(moonRadius * 3.6, 0.34, "#cbd6ff");
-    const haloOuter = halo(moonRadius * 7.5, 0.12, "#bfa5e8");
+    const haloInner = halo(moonRadius * 3.6, 0.34, "#f5d8a0");
+    const haloOuter = halo(moonRadius * 7.5, 0.12, "#e1c69c");
 
     // ——— 星空 ———
     const starPositions: number[] = [],

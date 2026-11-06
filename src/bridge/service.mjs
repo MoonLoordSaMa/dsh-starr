@@ -247,7 +247,7 @@ export class PlatformBridge {
               destination,
               `${String(video.title || "今日拾趣").slice(0, 150)}\nhttps://www.bilibili.com/video/${video.bvid}`,
             );
-            if (result.status === "sent") return;
+            if (result.status === "sent" && !result.duplicate) return;
           }
       }
     }
@@ -286,7 +286,7 @@ export class PlatformBridge {
           destination,
           `${item.text.slice(0, 500)}\nhttps://t.bilibili.com/${item.id}`,
         );
-        if (result.status === "sent") return;
+        if (result.status === "sent" && !result.duplicate) return;
       }
     }
   }
@@ -332,7 +332,7 @@ export class PlatformBridge {
       db = this.store.db,
       id = hash(`${characterId}:${kind}:${itemId}:${destination}`);
     const old = db.prepare("SELECT status FROM bridge_log WHERE id=?").get(id);
-    if (old) return old;
+    if (old) return { ...old, duplicate: true };
     const rows = db
       .prepare(
         "SELECT created FROM bridge_log WHERE character_id=? AND status<>'baseline' AND kind<>'check' AND created>? ORDER BY created DESC",

@@ -117,7 +117,7 @@ export function LegacyConfiguration({ go }: Pick<PageProps, "go">) {
             <p>{entry.note}</p>
             {entry.target && (
               <TextLink onClick={() => go(fieldRoute(entry.target!.page))}>
-                展读星枢 · {entry.target.key}
+                查看配置 · {entry.target.key}
               </TextLink>
             )}
           </div>

@@ -10,7 +10,18 @@ export function releaseFiles(root) {
     { cwd: root, encoding: "utf8" },
   );
   if (git.status !== 0) throw new Error("无法读取Git待发布文件清单");
-  return [...new Set(git.stdout.split("\0").filter(Boolean))].sort();
+  return [...new Set(git.stdout.split("\0").filter(Boolean))]
+    .filter((name) => {
+      try {
+        // Git 索引仍可能保留本轮已删除的旧源码；分发以当前工作区为准。
+        fs.lstatSync(path.join(root, name));
+        return true;
+      } catch (error) {
+        if (error.code === "ENOENT") return false;
+        throw error;
+      }
+    })
+    .sort();
 }
 
 export function auditFiles(root, files) {

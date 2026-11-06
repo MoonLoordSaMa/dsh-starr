@@ -50,10 +50,10 @@ export function usePageEntrance(
             gsap.fromTo(
               sceneRoot,
               {
-                "--world-overlay-opacity": 0.16,
+                "--world-overlay-opacity": 0.12,
               },
               {
-                "--world-overlay-opacity": 0.32,
+                "--world-overlay-opacity": 0.24,
                 ease: "none",
                 scrollTrigger: {
                   trigger: root,
@@ -84,7 +84,6 @@ export function usePageEntrance(
             if (hero)
               gsap.to(hero.querySelector(".observatory-heading"), {
                 y: -35,
-                opacity: 0.35,
                 ease: "none",
                 scrollTrigger: {
                   trigger: hero,
@@ -97,24 +96,19 @@ export function usePageEntrance(
           } else {
             const prelude = root.querySelector(".page-prelude");
             if (prelude)
-              gsap.fromTo(
-                prelude.querySelector(".prelude-verse"),
-                { autoAlpha: 1 },
-                {
-                  y: -22,
-                  // 停在本页时诗句保持可读；离开首屏才逐渐退到背景里。
-                  autoAlpha: 0.42,
-                  ease: "none",
-                  scrollTrigger: {
-                    trigger: prelude,
-                    scroller: root,
-                    start: "top -12%",
-                    end: "bottom top",
-                    scrub: 0.65,
-                    invalidateOnRefresh: true,
-                  },
+              gsap.to(prelude.querySelector(".prelude-verse"), {
+                y: -22,
+                // 文字保持完整对比度，也避免透明祖先隔断控件的背景模糊。
+                ease: "none",
+                scrollTrigger: {
+                  trigger: prelude,
+                  scroller: root,
+                  start: "top -12%",
+                  end: "bottom top",
+                  scrub: 0.65,
+                  invalidateOnRefresh: true,
                 },
-              );
+              });
           }
           const groups = root.querySelectorAll(
             home

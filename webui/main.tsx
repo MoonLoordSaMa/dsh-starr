@@ -80,6 +80,7 @@ import "./v019-surfaces.css";
 import "./v019-journey.css";
 import "./foundation.css";
 import "./v019-glass.css";
+import "./v020.css";
 import { PageContinuation } from "./PageContinuation";
 import { CompanionOverview } from "./CompanionOverview";
 import { ObservatoryOverview } from "./ObservatoryOverview";
@@ -129,7 +130,7 @@ class Boundary extends Component<{ children: ReactNode }, { error: boolean }> {
         <Star />
         <h1>页面暂时没能展开</h1>
         <p>数据仍在本地保存，重新载入后继续</p>
-        <button onClick={() => location.reload()}>重启星卷</button>
+        <button onClick={() => location.reload()}>重新载入</button>
       </div>
     ) : (
       this.props.children
@@ -178,17 +179,17 @@ function Overview({
         <div className="hero-footer">
           <div className="hero-actions">
             <button className="primary hero-enter" onClick={() => go("memory")}>
-              走进记忆的星海 <ArrowUpRight size={18} />
+              查看记忆 <ArrowUpRight size={18} />
             </button>
             <button className="hero-write" onClick={onMemory}>
               <Plus size={16} />
-              落笺拾忆
+              记录记忆
             </button>
           </div>
           <div className="hero-status">
             <span className="live-dot" />
             <strong>{s.emotion}</strong>
-            <span>此刻的她</span>
+            <span>当前角色状态</span>
             <span className="hero-status-rule" />
             <b>{overview.counts.memories}</b>
             <span>段记忆</span>
@@ -235,7 +236,7 @@ function Overview({
             <small>留下</small>
             <strong>那些未曾散去的光</strong>
             <span>
-              从一颗星，找到一段经历 <ArrowUpRight size={18} />
+              查看记忆详情 <ArrowUpRight size={18} />
             </span>
           </button>
           <button onClick={() => go("state")}>
@@ -275,11 +276,11 @@ function Overview({
         <div className={`overview-grid ${selectedMemory ? "has-memory" : ""}`}>
           <Panel
             className="universe-panel"
-            title="她记得的宇宙"
+            title="记忆图谱"
             aside={<TextLink onClick={() => go("memory")}>进入记忆</TextLink>}
           >
             <Suspense
-              fallback={<div className="scene-loading">正在展开星空</div>}
+              fallback={<div className="scene-loading">正在加载场景</div>}
             >
               {graph && (
                 <StarMap
@@ -306,7 +307,7 @@ function Overview({
               </div>
               <button className="ghost" onClick={onMemory}>
                 <Plus size={15} />
-                记下一件事
+                添加记忆
               </button>
             </div>
           </Panel>
@@ -328,7 +329,7 @@ function Overview({
                 </div>
                 <h2>{selectedMemory.title}</h2>
                 <section className="memory-reading" aria-label="记忆完整正文">
-                  <span className="detail-content-label">星笺全卷</span>
+                  <span className="detail-content-label">完整正文</span>
                   <div className="memory-body">{selectedMemory.content}</div>
                 </section>
                 <div className="detail-facts">
@@ -336,19 +337,19 @@ function Overview({
                     记录于<strong>{date(selectedMemory.created)}</strong>
                   </span>
                   <span>
-                    星之来处<strong>{selectedMemory.source}</strong>
+                    来源<strong>{selectedMemory.source}</strong>
                   </span>
                   <span>
-                    星光分量<strong>{selectedMemory.importance} / 100</strong>
+                    重要度<strong>{selectedMemory.importance} / 100</strong>
                   </span>
                   <span>
-                    笺中可信<strong>{selectedMemory.confidence} / 100</strong>
+                    事实置信度<strong>{selectedMemory.confidence} / 100</strong>
                   </span>
                   <span>
-                    此刻星重<strong>{selectedMemory.score}</strong>
+                    当前召回权重<strong>{selectedMemory.score}</strong>
                   </span>
                 </div>
-                <h3 className="detail-subtitle">同光旧笺</h3>
+                <h3 className="detail-subtitle">相关记忆</h3>
                 {graph?.links
                   .filter(
                     (edge) =>
@@ -377,7 +378,7 @@ function Overview({
               </aside>
             )}
             <Panel
-              title="此刻的她"
+              title="当前角色状态"
               className="feeling-panel"
               aside={<TextLink onClick={() => go("state")}>看状态</TextLink>}
             >
@@ -414,7 +415,7 @@ function Overview({
                 ))}
               </div>
             </Panel>
-            <Panel title="渡口启程">
+            <Panel title="连接与准备">
               <div className="connection-row">
                 <span>
                   <i className="live-dot" />
@@ -429,8 +430,8 @@ function Overview({
                 </span>
               </div>
               <div className="connection-row">
-                <span>灵枢与渡口</span>
-                <TextLink onClick={() => go("media")}>百器入枢</TextLink>
+                <span>模型与平台</span>
+                <TextLink onClick={() => go("media")}>配置能力</TextLink>
               </div>
               <p className="footnote">
                 {bootstrap.host?.connected
@@ -442,8 +443,8 @@ function Overview({
         </div>
         <div className="bottom-grid">
           <Panel
-            title="最近留在心里的事"
-            aside={<TextLink onClick={() => go("memory")}>满卷星光</TextLink>}
+            title="最近记忆"
+            aside={<TextLink onClick={() => go("memory")}>全部记忆</TextLink>}
           >
             {overview.memories.length ? (
               <div className="memory-list">
@@ -477,18 +478,18 @@ function Overview({
                 description="值得记住的事，可以从一句话开始"
                 action={
                   <button className="ghost" onClick={onMemory}>
-                    拾取初星
+                    记录第一段记忆
                   </button>
                 }
               />
             )}
           </Panel>
           <Panel
-            title="正在心里酝酿的事"
+            title="待处理目的"
             aside={
               <button className="text-link" onClick={onGoal}>
                 <Plus size={14} />
-                添一心愿
+                添加目的
               </button>
             }
           >
@@ -510,7 +511,7 @@ function Overview({
                 description="主动来自值得做的事，不必为了开口而开口"
               />
             )}
-            <TextLink onClick={() => go("state")}>心愿有章</TextLink>
+            <TextLink onClick={() => go("state")}>管理目的与行动条件</TextLink>
           </Panel>
         </div>
       </div>
@@ -539,7 +540,7 @@ export function MemoryModal({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   return (
-    <Modal title="把这一刻留下" onClose={onClose}>
+    <Modal title="添加记忆" onClose={onClose}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -572,7 +573,7 @@ export function MemoryModal({
         <div className="field">
           <label>它属于</label>
           <Select
-            label="星笺门类"
+            label="资料类型"
             value={form.kind}
             onChange={(kind) => setForm({ ...form, kind })}
             options={Object.entries(kindNames).map(([value, label]) => ({
@@ -593,7 +594,7 @@ export function MemoryModal({
         </label>
         <div className="form-columns">
           <label className="field">
-            星光分量 <span>{form.importance}</span>
+            重要度 <span>{form.importance}</span>
             <input
               type="range"
               min={0}
@@ -606,7 +607,7 @@ export function MemoryModal({
             <small>影响检索顺序，不会删除原文</small>
           </label>
           <label className="field">
-            笺中可信 <span>{form.confidence}</span>
+            事实置信度 <span>{form.confidence}</span>
             <input
               type="range"
               min={0}
@@ -635,7 +636,7 @@ export function MemoryModal({
         <div className="form-footer">
           <small>提交后立即保存，再输出笔记</small>
           <button className="primary" disabled={busy}>
-            {busy ? "落笔未歇…" : "落笺拾忆"}
+            {busy ? "保存中…" : "记录记忆"}
             <Check size={15} />
           </button>
         </div>
@@ -656,7 +657,7 @@ export function GoalModal({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   return (
-    <Modal title="给她一个想做的事" onClose={onClose}>
+    <Modal title="添加目的" onClose={onClose}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -713,7 +714,7 @@ export function GoalModal({
         <div className="form-footer">
           <span />
           <button className="primary" disabled={busy}>
-            {busy ? "正在记录…" : "留下一愿"}
+            {busy ? "正在记录…" : "保存目的"}
           </button>
         </div>
       </form>
@@ -731,7 +732,7 @@ function NewCharacter({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   return (
-    <Modal title="再逢一星" onClose={onClose}>
+    <Modal title="添加角色" onClose={onClose}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -751,7 +752,7 @@ function NewCharacter({
         }}
       >
         <label className="field">
-          星之名
+          角色名称
           <input
             required
             maxLength={40}
@@ -768,7 +769,7 @@ function NewCharacter({
         <div className="form-footer">
           <span />
           <button className="primary" disabled={busy}>
-            点亮新星
+            创建角色
             <Plus size={15} />
           </button>
         </div>
@@ -911,9 +912,9 @@ function App() {
         <Background motion="light" density={0.6} />
         <div className="fatal">
           <Star />
-          <h1>{bootError ? "暂时无法连接 starr" : "正在接住星光"}</h1>
+          <h1>{bootError ? "暂时无法连接 starr" : "正在加载 starr"}</h1>
           <p>{bootError || "连接独立角色核心…"}</p>
-          {bootError && <button onClick={load}>再结星桥</button>}
+          {bootError && <button onClick={load}>重试连接</button>}
         </div>
       </>
     );
@@ -1072,7 +1073,7 @@ function App() {
                   load();
                 }}
               >
-                初逢引星
+                新手调试
               </button>
               {
                 <div className="home-character-switch">
@@ -1099,7 +1100,7 @@ function App() {
                 </div>
               }
               <ChevronRight size={13} />
-              <span>{nav.name}</span>
+              <span>{nav.label}</span>
             </div>
             <div className="topbar-right">
               <span className="preview-label">
@@ -1107,7 +1108,7 @@ function App() {
               </span>
               <span className="saved-indicator">
                 <CheckCheck size={14} />
-                星笺长存
+                本地持久化
               </span>
               <button
                 className="icon-button"
@@ -1131,7 +1132,7 @@ function App() {
                     load();
                   }}
                 >
-                  重续初逢
+                  继续新手调试
                 </button>
               </div>
             )}
@@ -1140,7 +1141,7 @@ function App() {
             <div className="page-title">
               <div>
                 <h1>
-                  {nav.name}
+                  {nav.label}
                   <small className="page-purpose">{nav.purpose}</small>
                 </h1>
                 <p>
@@ -1162,14 +1163,14 @@ function App() {
               {page === "memory" ? (
                 <button className="primary" onClick={() => setModal("memory")}>
                   <Plus size={15} />
-                  落笺拾忆
+                  记录记忆
                 </button>
               ) : null}
             </div>
             {error && (
               <div className="inline-error" role="alert">
                 {error}
-                <button onClick={refresh}>再循星途</button>
+                <button onClick={refresh}>重试</button>
               </div>
             )}
             {!props && !error && (

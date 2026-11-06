@@ -23,7 +23,7 @@ export function addGardenStarflow(
       ],
     },
     {
-      tint: "#83d9ff",
+      tint: "#f1d295",
       width: 1.65,
       amplitude: 0.52,
       points: [
@@ -35,7 +35,7 @@ export function addGardenStarflow(
       ],
     },
     {
-      tint: "#a5e8f0",
+      tint: "#ebdeb5",
       width: 1.25,
       amplitude: 0.38,
       points: [
@@ -59,7 +59,7 @@ export function addGardenStarflow(
       ],
     },
     {
-      tint: "#91c9ff",
+      tint: "#d8d8bb",
       width: 3.9,
       amplitude: 1,
       points: [
@@ -71,7 +71,7 @@ export function addGardenStarflow(
       ],
     },
     {
-      tint: "#d6bbff",
+      tint: "#e6c6a7",
       width: 4.2,
       amplitude: 1.2,
       points: [
@@ -95,7 +95,7 @@ export function addGardenStarflow(
       ],
     },
     {
-      tint: "#7ad7e8",
+      tint: "#c9d5b0",
       width: 2.3,
       amplitude: 0.65,
       points: [
@@ -107,7 +107,7 @@ export function addGardenStarflow(
       ],
     },
     {
-      tint: "#c6f3ee",
+      tint: "#f3e4be",
       width: 2.8,
       amplitude: 0.8,
       points: [
@@ -175,8 +175,8 @@ export function addGardenStarflow(
         }
       }
     }
-    for (let i = 0; i < (light ? 6 : 12); i++) {
-      seeds.push((i + 0.37) / (light ? 6 : 12));
+    for (let i = 0; i < (light ? 14 : 30); i++) {
+      seeds.push((i + 0.37) / (light ? 14 : 30));
       pointColors.push(...color.toArray());
       rows.push((row + 0.5) / paths.length);
       pointWidths.push(path.width);
@@ -238,8 +238,16 @@ export function addGardenStarflow(
         float fold=.5+.5*sin(u*6.3+t*33.-elapsed*1.3);
         float sheen=pow(fold,7.);float wave=pow(.5+.5*cos(t*42.-elapsed*2.1+u*2.4),4.);
         float fiber=pow(.5+.5*sin(u*65.+sin(t*19.-elapsed)*1.3),14.);
-        float alpha=(.12+fold*.12+sheen*.22+wave*.11+fiber*.025)*edge*smoothstep(0.,.035,t)*(1.-smoothstep(.98,1.,t));
-        gl_FragColor=vec4(tint*(.8+sheen*.55+wave*.16),alpha);
+        // 多层顺流光脉和掠过的四芒星写入现有绸面，不新增透明网格。
+        float lane=u+sin(t*18.-elapsed*.55)*.10;
+        float stream=pow(.5+.5*cos(t*96.-elapsed*6.8+u*2.),18.)*pow(.5+.5*cos(lane*19.),12.);
+        vec2 cell=vec2(t*64.-elapsed*3.4,lane*5.);
+        vec2 p=abs(fract(cell)-.5)*2.;
+        float star=pow(max(0.,1.-pow(sqrt(p.x)+sqrt(p.y),2.)),2.);
+        float trail=exp(-p.y*25.)*pow(max(0.,1.-p.x),2.5);
+        float glints=(star*.95+trail*.45)*(.6+.4*sin(floor(cell.x)*2.4+floor(cell.y)*8.));
+        float alpha=(.10+fold*.11+sheen*.22+wave*.11+fiber*.025+stream*.4+glints*.75)*edge*smoothstep(0.,.035,t)*(1.-smoothstep(.98,1.,t));
+        gl_FragColor=vec4(mix(tint,vec3(1.,.77,.36),.35)*(.8+sheen*.55+wave*.16+stream*.9+glints*1.5),alpha);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
@@ -267,13 +275,13 @@ export function addGardenStarflow(
       uniform sampler2D paths;uniform float elapsed;uniform float ratio;varying vec3 tint;varying float alpha;
       ${deformation}
       vec3 samplePath(float t){float f=clamp(t,0.,1.)*255.;float i=floor(f);return mix(texture2D(paths,vec2((i+.5)/256.,pathRow)).xyz,texture2D(paths,vec2((min(i+1.,255.)+.5)/256.,pathRow)).xyz,fract(f));}
-      void main(){float t=fract(seed+elapsed*(.045+pathRow*.017));vec3 p=samplePath(t);
+      void main(){float t=fract(seed+elapsed*(.075+pathRow*.023));vec3 p=samplePath(t);
         vec3 tangent=samplePath(min(1.,t+.004))-samplePath(max(0.,t-.004));vec3 n=normalize(cross(tangent,vec3(0.,1.,0.)));
         p=displace(p,n,t,sin(seed*71.)*.65,width,amplitude);vec4 view=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*view;
-        gl_PointSize=clamp((55.+fract(seed*71.)*45.)*ratio/max(2.,-view.z),1.5*ratio,6.*ratio);
+        gl_PointSize=clamp((90.+fract(seed*71.)*90.)*ratio/max(2.,-view.z),1.5*ratio,9.*ratio);
         alpha=smoothstep(0.,.04,t)*(1.-smoothstep(.97,1.,t));tint=flowColor;
       }`,
-    fragmentShader: `varying vec3 tint;varying float alpha;void main(){vec2 p=abs(gl_PointCoord-.5)*2.;float star=pow(sqrt(p.x)+sqrt(p.y),2.);float a=1.-smoothstep(.62,1.,star);if(a*alpha<.025)discard;gl_FragColor=vec4(tint,a*alpha*.6);
+    fragmentShader: `varying vec3 tint;varying float alpha;void main(){vec2 p=abs(gl_PointCoord-.5)*2.;float star=pow(sqrt(p.x)+sqrt(p.y),2.);float a=1.-smoothstep(.62,1.,star);if(a*alpha<.025)discard;gl_FragColor=vec4(tint,a*alpha*.85);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
     }`,

@@ -1,0 +1,289 @@
+/* v0.2.0：暖金夜色、可读文字，以及覆盖控件自身的玻璃。 */
+:root {
+  --ink: #fff5e4;
+  --secondary: #e0d8c9;
+  --muted: #c1baac;
+  --faint: #aaa396;
+  --gold: #eccb8b;
+  --gold-strong: #ffe3ac;
+  --accent: #bfd2da;
+  --surface: rgba(31, 29, 27, 0.78);
+  --surface-raised: rgba(39, 35, 30, 0.88);
+  --surface-sunken: rgba(18, 20, 24, 0.58);
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --world-overlay-opacity: 0.12;
+}
+
+/* 轻动效仍保留可见的局部玻璃；避免旧规则将控件模糊直接归零。 */
+:root[data-motion="light"] {
+  --blur-panel: min(7px, var(--blur));
+  --blur-control: min(4px, calc(var(--blur) * 0.5));
+}
+
+.app-shell
+  :is(
+    .panel,
+    .callout,
+    .capability-card,
+    .model-card,
+    .resource-card,
+    .companion-overview,
+    .memory-reading,
+    .detail-facts,
+    .connection-details,
+    .function-group,
+    .settings-group
+  ) {
+  background: linear-gradient(
+    140deg,
+    rgba(33, 32, 30, 0.64),
+    rgba(17, 23, 29, 0.74)
+  );
+}
+
+/* 入场层与内容祖先不常驻合成提示，否则后代的背景采样只能看到透明层。 */
+.app-shell
+  :is(
+    .page-content,
+    .settings-stack,
+    .observatory-heading-copy,
+    .observatory-actions,
+    .prelude-verse
+  ) {
+  will-change: auto;
+}
+
+.app-shell
+  :is(
+    .tabs,
+    .interaction-routes,
+    .context-routes,
+    .related-routes,
+    .badge,
+    .tag-row > span,
+    .observatory-metrics > button,
+    .observatory-action,
+    .observatory-action-secondary,
+    .prelude-continue,
+    .observatory-scroll,
+    .select-trigger,
+    .icon-button
+  ) {
+  background-color: rgba(28, 30, 31, 0.62);
+  -webkit-backdrop-filter: blur(var(--blur-control));
+  backdrop-filter: blur(var(--blur-control));
+}
+
+/* 已由面板模糊的内部标签无需重复采样；菜单独立保持较强玻璃。 */
+.app-shell
+  :is(.panel, .callout, .companion-overview, .function-group, .settings-group)
+  :is(
+    .tabs,
+    .badge,
+    .tag-row > span,
+    .select-trigger,
+    .icon-button,
+    .related-routes,
+    .interaction-routes,
+    .context-routes
+  ) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.app-shell :is(.select-options, .modal, .toast) {
+  background: rgba(28, 29, 30, 0.91);
+  -webkit-backdrop-filter: blur(var(--blur-menu));
+  backdrop-filter: blur(var(--blur-menu));
+}
+
+.app-shell
+  :is(
+    .observatory-title,
+    .prelude-verse h2,
+    .journey-stop h2,
+    .page-title h1,
+    .panel-heading h2
+  ) {
+  color: var(--ink);
+  text-shadow:
+    0 2px 4px rgba(8, 12, 19, 0.95),
+    0 0 22px rgba(9, 12, 18, 0.85);
+}
+
+.app-shell
+  :is(
+    .observatory-copy,
+    .observatory-kicker,
+    .observatory-scene-note,
+    .prelude-verse p,
+    .prelude-caption,
+    .journey-stop > p,
+    .journey-footnote,
+    .page-subtitle,
+    .section-intro,
+    .panel p,
+    .field-help,
+    .config-help
+  ) {
+  color: var(--secondary);
+}
+
+.app-shell :is(.observatory-heading-copy, .prelude-verse, .journey-stop) {
+  text-shadow:
+    0 1px 4px #10151e,
+    0 0 12px rgba(10, 14, 20, 0.95);
+}
+
+.app-shell :is(.observatory-title, .prelude-verse h2) > span:last-child {
+  color: #ffe3ac;
+}
+
+/* 仅托住文字所在区域，天空与庭院继续保留较淡的整体遮罩。 */
+.app-shell :is(.observatory-heading-copy, .prelude-verse) {
+  background: radial-gradient(
+    ellipse at 30% 45%,
+    rgba(17, 22, 29, 0.8),
+    rgba(17, 22, 29, 0.36) 62%,
+    transparent 78%
+  );
+  border-radius: 20px;
+  padding: 18px 22px;
+  margin: -18px -22px;
+}
+
+.app-shell .observatory-copy,
+.app-shell .observatory-copy > span {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.app-shell .journey-footnote > button {
+  padding: 10px 14px;
+  background: rgba(25, 29, 31, 0.68);
+  -webkit-backdrop-filter: blur(var(--blur-control));
+  backdrop-filter: blur(var(--blur-control));
+  color: var(--gold-strong);
+}
+
+.app-shell
+  :is(
+    .observatory-kicker,
+    .observatory-scene-note,
+    .prelude-caption,
+    .journey-footnote,
+    .page-footer,
+    .sidebar-bottom,
+    .sidebar-note
+  ) {
+  font-size: 12px;
+}
+
+.app-shell
+  :is(
+    .workspace-navigation > button,
+    .sidebar nav > button,
+    .tabs > button,
+    .interaction-routes > button,
+    .context-routes > button,
+    .related-routes > button
+  ) {
+  color: var(--secondary);
+  font-size: 13px;
+}
+
+.app-shell
+  :is(
+    .sidebar nav > button.active,
+    .workspace-navigation > button[aria-current="page"],
+    .tabs > button.active,
+    .tabs > button[aria-selected="true"]
+  ) {
+  color: var(--gold-strong);
+}
+
+.app-shell :is(label, .config-row strong, .field-label, .detail-content-label) {
+  color: var(--ink);
+}
+
+.app-shell .sidebar nav > button strong {
+  font-size: 13px;
+}
+
+.app-shell .sidebar nav > button small,
+.app-shell .sidebar-note,
+.app-shell .sidebar-bottom small {
+  font-size: 12px;
+  color: var(--secondary);
+}
+
+.app-shell .config-row strong,
+.app-shell .config-inspector p,
+.app-shell .config-detail p,
+.app-shell .page-subtitle {
+  font-size: 14px;
+}
+
+.app-shell .observatory-copy > span {
+  display: block;
+}
+
+.app-shell .observatory-action-secondary {
+  background: rgba(23, 26, 30, 0.84);
+  color: var(--ink);
+}
+
+.app-shell :is(input, textarea)::placeholder {
+  color: #b4b0a7;
+  opacity: 1;
+}
+
+.app-shell .badge {
+  color: #e9dfcc;
+}
+.app-shell .badge.green {
+  color: #c9e0b9;
+}
+.app-shell .badge.red {
+  color: #f4c5b7;
+}
+.app-shell .badge.gold {
+  color: var(--gold-strong);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .app-shell
+    :is(
+      .panel,
+      .callout,
+      .capability-card,
+      .model-card,
+      .resource-card,
+      .companion-overview,
+      .function-group,
+      .settings-group,
+      .tabs,
+      .badge,
+      .tag-row > span,
+      .select-trigger,
+      .observatory-action,
+      .prelude-continue
+    ) {
+    background: rgba(25, 28, 31, 0.94);
+  }
+}
+
+@media (max-width: 700px) {
+  .app-shell .workspace-navigation > button {
+    font-size: 12px;
+  }
+  .app-shell .observatory-kicker {
+    flex-wrap: wrap;
+    row-gap: 3px;
+  }
+}

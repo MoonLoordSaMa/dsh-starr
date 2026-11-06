@@ -88,7 +88,7 @@ export function BiliLogin({
   return (
     <div className="bili-qr-login">
       <div className="qr-copy">
-        <strong>扫码相逢 · B站快捷登录</strong>
+        <strong>B站快捷扫码登录</strong>
         <p>
           使用哔哩哔哩手机端扫码并确认，账号核验后加密保存在本机。扫码不会开启自动回复，也不会发送消息
         </p>
@@ -133,7 +133,7 @@ export function BiliLogin({
             }}
           >
             {login ? <RefreshCw size={15} /> : <QrCode size={15} />}{" "}
-            {busy ? "星笺初成…" : login ? "重绘星契" : "绘契相逢"}
+            {busy ? "正在生成…" : login ? "重新生成二维码" : "生成登录二维码"}
           </button>
         )}
         {error && (
@@ -158,7 +158,7 @@ export function BiliLogin({
                 : "等待扫码 · 三分钟内有效"}
           </p>
           <button className="text-link" onClick={cancel}>
-            <X size={12} /> 暂收信契
+            <X size={12} /> 取消扫码
           </button>
         </div>
       )}

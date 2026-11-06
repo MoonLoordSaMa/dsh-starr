@@ -87,6 +87,7 @@ export function normalizeQQEvent(event, settings, selfId) {
     if (String(event.target_id) !== selfId || !event.time) return null;
     event = {
       ...event,
+      user_id: event.sender_id || event.user_id,
       post_type: "message",
       message_type: event.group_id ? "group" : "private",
       message_id: `poke:${event.group_id || "private"}:${event.user_id}:${event.target_id}:${event.time}:${event.raw_info?.seq || ""}`,
@@ -934,8 +935,30 @@ export class QQService {
         throw error;
       }
     };
-    const reply = (text, quoteId, mentionUserId) =>
-      sendTexts([text], quoteId, undefined, mentionUserId);
+    // 常用回复入口也支持自然段，避免模型只选 reply 时把群聊整篇发成一条。
+    // 保留单个换行（诗句、代码等）；超出条数时合并尾段，不截断正文。
+    const reply = (text, quoteId, mentionUserId) => {
+      const c = this.policy.config(thread.character_id);
+      const paragraphs =
+        thread.type === "group" && typeof text === "string"
+          ? text
+              .split(/\r?\n[\t ]*\r?\n+/)
+              .map((part) => part.trim())
+              .filter(Boolean)
+          : [text];
+      const max = Math.min(
+        c["chat.reply.burstMax"],
+        c["chat.reply.maxOutboundPerTurn"],
+      );
+      const texts =
+        paragraphs.length > max
+          ? [
+              ...paragraphs.slice(0, max - 1),
+              paragraphs.slice(max - 1).join("\n\n"),
+            ]
+          : paragraphs;
+      return sendTexts(texts, quoteId, undefined, mentionUserId);
+    };
     const lookup = (messageId) => {
       const row = db
         .prepare(

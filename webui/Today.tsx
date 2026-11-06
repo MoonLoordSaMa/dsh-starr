@@ -129,7 +129,7 @@ export function Today(props: PageProps & { compact?: boolean }) {
                 })
               }
             >
-              万籁暂歇
+              一键暂停主动活动
             </button>
           </div>
           {!compact && (
@@ -164,7 +164,9 @@ export function Today(props: PageProps & { compact?: boolean }) {
                     })
                   }
                 >
-                  {character.config["agency.enabled"] ? "心愿暂歇" : "心愿启程"}
+                  {character.config["agency.enabled"]
+                    ? "关闭目的执行"
+                    : "开启目的执行"}
                 </button>
                 {data.agency.paused && (
                   <button
@@ -172,7 +174,7 @@ export function Today(props: PageProps & { compact?: boolean }) {
                     disabled={busy}
                     onClick={() => save({ "agency.paused": false })}
                   >
-                    万籁复苏
+                    恢复后台主动活动
                   </button>
                 )}
                 <button
@@ -184,7 +186,7 @@ export function Today(props: PageProps & { compact?: boolean }) {
                     })
                   }
                 >
-                  试问星机
+                  预演下一次机会
                 </button>
                 <button
                   className="ghost"
@@ -199,7 +201,7 @@ export function Today(props: PageProps & { compact?: boolean }) {
                     })
                   }
                 >
-                  风波已平
+                  确认故障已处理
                 </button>
               </div>
               <p className="footnote">

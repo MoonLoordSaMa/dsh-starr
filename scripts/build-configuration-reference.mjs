@@ -5,8 +5,8 @@ const { version } = JSON.parse(
 );
 const titles = {
   agency: "主动范围、预算与暂停",
-  bridge: "星桥传书 · B站到 QQ",
-  "bili-actions": "寄语人间 · B站公开内容管理",
+  bridge: "B站到 QQ 分享",
+  "bili-actions": "B站公开内容管理",
   "chat-social": "QQ 群成员、拍一拍与问题反馈",
   appearance: "界面与动态",
   memory: "记忆权重与投影",

@@ -510,7 +510,12 @@ export class BiliActivities {
               `${text}\nhttps://www.bilibili.com/video/${bvid}`,
               signal,
             );
-            check();
+            signal.throwIfAborted();
+            if (this.service.closed) throw fail("B站活动服务已停止", 409);
+            if (result?.status !== "sent" || !result.messageId)
+              throw Object.assign(fail("视频分享没有取得明确消息编号", 502), {
+                uncertain: true,
+              });
             db.prepare("UPDATE bili_shares SET status=? WHERE id=?").run(
               result.status,
               shareId,

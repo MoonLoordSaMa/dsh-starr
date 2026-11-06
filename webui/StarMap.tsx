@@ -1054,7 +1054,7 @@ export default function StarMap({
       <div className="map-top">
         <span className="map-caption">
           {selected
-            ? "拾忆一笺"
+            ? "记忆片段"
             : activeFilter
               ? `${kindNames[activeFilter] ?? activeFilter}星团`
               : "记忆全景"}
@@ -1073,7 +1073,7 @@ export default function StarMap({
             onClick={() => controls.current.back()}
           >
             <ArrowLeft size={13} />
-            溯流而上
+            上一级
           </button>
           <button
             type="button"
@@ -1082,7 +1082,7 @@ export default function StarMap({
             onClick={() => controls.current.recenter()}
           >
             <Crosshair size={13} />
-            归于中天
+            回正
           </button>
           <button
             type="button"
@@ -1090,7 +1090,7 @@ export default function StarMap({
             onClick={() => controls.current.home()}
           >
             <RotateCcw size={13} />
-            万象
+            全部
           </button>
         </div>
       </div>

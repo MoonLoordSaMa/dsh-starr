@@ -263,7 +263,7 @@ export function OnboardingWizard({
               })
             }
           >
-            暂收此卷
+            保存进度，返回控制台
           </button>
         )}
       </header>
@@ -297,7 +297,7 @@ export function OnboardingWizard({
           </ol>
           <div className="guide-preset">
             <span>安装时自动准备</span>
-            <code>会话回廊</code>
+            <code>Starr-chat</code>
             <Result value={preset} />
             <button
               className="ghost"
@@ -313,7 +313,7 @@ export function OnboardingWizard({
               }
             >
               <RefreshCw size={14} />
-              试照星枢
+              检查预设
             </button>
           </div>
         </aside>
@@ -340,14 +340,14 @@ export function OnboardingWizard({
                     aria-pressed={draft.snowluma === "configure"}
                     onClick={() => update("snowluma", "configure")}
                   >
-                    此刻结鹊桥
+                    现在连接 QQ
                   </button>
                   <button
                     className={draft.snowluma === "later" ? "selected" : ""}
                     aria-pressed={draft.snowluma === "later"}
                     onClick={() => update("snowluma", "later")}
                   >
-                    暂歇渡口
+                    稍后连接，先安顿角色
                   </button>
                 </div>
                 {draft.snowluma === "configure" ? (
@@ -367,7 +367,7 @@ export function OnboardingWizard({
                     </ol>
                     <div className="form-columns">
                       <label className="field">
-                        鹊桥收信埠
+                        OneBot HTTP 端口
                         <input
                           type="number"
                           min={1}
@@ -377,7 +377,7 @@ export function OnboardingWizard({
                         />
                       </label>
                       <label className="field">
-                        鹊桥应答埠
+                        正向 WebSocket 端口
                         <input
                           type="number"
                           min={1}
@@ -388,7 +388,7 @@ export function OnboardingWizard({
                       </label>
                     </div>
                     <label className="field">
-                      鹊桥信钥
+                      OneBot 访问令牌
                       <input
                         type="password"
                         autoComplete="new-password"
@@ -403,7 +403,7 @@ export function OnboardingWizard({
                     </label>
                     <div className="form-columns">
                       <label className="field">
-                        私语故人
+                        允许私聊回复的 QQ 号
                         <input
                           value={draft.qqPrivateUsers}
                           onChange={(event) =>
@@ -413,7 +413,7 @@ export function OnboardingWizard({
                         />
                       </label>
                       <label className="field">
-                        同席之所（选填）
+                        允许回复的群号（选填）
                         <input
                           value={draft.qqGroups}
                           onChange={(event) =>
@@ -426,7 +426,7 @@ export function OnboardingWizard({
                     <details className="guide-note">
                       <summary>使用环境变量管理令牌</summary>
                       <label className="field">
-                        信钥藏名
+                        令牌环境变量名
                         <input
                           value={draft.qqTokenEnv}
                           onChange={(event) =>
@@ -450,7 +450,7 @@ export function OnboardingWizard({
                     </label>
                     <button className="ghost" disabled={busy} onClick={snow}>
                       <RefreshCw size={15} />
-                      验看鹊桥信契
+                      检查协议与 QQ 登录
                     </button>
                     <Result value={state.checks.snowluma} />
                     <p className="footnote">
@@ -475,7 +475,7 @@ export function OnboardingWizard({
                 {state.installed ? (
                   <>
                     <Select
-                      label="重逢旧星"
+                      label="使用已有角色"
                       value={selected}
                       onChange={(value) =>
                         run(async () => {
@@ -510,7 +510,7 @@ export function OnboardingWizard({
                 ) : (
                   <>
                     <label className="field">
-                      星之名
+                      角色名称
                       <input
                         maxLength={40}
                         value={draft.name}
@@ -519,7 +519,7 @@ export function OnboardingWizard({
                       />
                     </label>
                     <label className="field">
-                      更漏所在
+                      作息时区
                       <input
                         value={draft.timezone}
                         onChange={(e) => update("timezone", e.target.value)}
@@ -541,7 +541,7 @@ export function OnboardingWizard({
                   写下性格、偏好、相处方式和分寸。工具与配置规则由插件负责，不必塞进人格里
                 </p>
                 <label className="field">
-                  星魂入笺
+                  人格与提示词
                   <textarea
                     rows={11}
                     maxLength={20000}
@@ -561,7 +561,7 @@ export function OnboardingWizard({
                     }
                   >
                     <Sparkles size={14} />
-                    借笺起笔
+                    填入基础模板
                   </button>
                 )}
                 {state.installed && (
@@ -578,7 +578,7 @@ export function OnboardingWizard({
                   库，普通文件夹也完全可以使用
                 </p>
                 <label className="field">
-                  星海归处
+                  记忆主目录
                   <input
                     value={
                       state.installed
@@ -594,7 +594,7 @@ export function OnboardingWizard({
                   </small>
                 </label>
                 <label className="field">
-                  藏星之所
+                  当前备份目录
                   <input
                     value={
                       state.installed
@@ -615,7 +615,7 @@ export function OnboardingWizard({
                         update("allowExistingVault", e.target.checked)
                       }
                     />
-                    旧笺续卷
+                    使用已有 Obsidian 库，保留现有笔记与设置
                   </label>
                 )}
                 <p className="footnote">
@@ -636,13 +636,13 @@ export function OnboardingWizard({
                     className={draft.bili === "configure" ? "selected" : ""}
                     onClick={() => update("bili", "configure")}
                   >
-                    愿赴山海
+                    希望接入 B站
                   </button>
                   <button
                     className={draft.bili === "later" ? "selected" : ""}
                     onClick={() => update("bili", "later")}
                   >
-                    暂缓此笺
+                    稍后再说
                   </button>
                 </div>
                 {draft.bili === "configure" && state.characterId && (
@@ -666,7 +666,7 @@ export function OnboardingWizard({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  启卷山海 <ExternalLink size={14} />
+                  打开 B站 <ExternalLink size={14} />
                 </a>
                 <div className="guide-note">
                   <AlertCircle size={18} />
@@ -683,14 +683,14 @@ export function OnboardingWizard({
                   扩展模型可以跳过；聊天模型使用 DSH
                   已有连接，先检测后台调用能否工作
                 </p>
-                <h3>鹊桥试笺</h3>
+                <h3>QQ 后台模型检查</h3>
                 <button className="ghost" disabled={busy} onClick={loadModels}>
                   <RefreshCw size={14} />
-                  寻访灯下灵枢
+                  读取 DSH 模型列表
                 </button>
                 <div className="form-columns">
                   <Select
-                    label="言语渡口"
+                    label="聊天服务"
                     value={draft.qqProvider}
                     onChange={(value) => {
                       update("qqProvider", value);
@@ -705,7 +705,7 @@ export function OnboardingWizard({
                     ]}
                   />
                   <Select
-                    label="执笺灵枢"
+                    label="聊天模型"
                     value={draft.qqModel}
                     onChange={(value) => update("qqModel", value)}
                     options={[
@@ -724,31 +724,31 @@ export function OnboardingWizard({
                   disabled={busy || !draft.qqModel}
                   onClick={testModel}
                 >
-                  试问灵枢
+                  测试后台模型与工具响应
                 </button>
                 <p className="footnote">
                   点击才会发送一条不含私人记忆的测试请求，可能消耗少量模型额度。测试不发送
                   QQ 消息、不更改 DSH 的默认模型，也不等于完整会话验收
                 </p>
                 <Result value={state.checks.model} />
-                <h3>声色四时</h3>
+                <h3>说、听、看与唱</h3>
                 <div className="guide-choice">
                   <button
                     className={draft.media === "configure" ? "selected" : ""}
                     onClick={() => update("media", "configure")}
                   >
-                    此刻添灵枢
+                    现在填写扩展模型
                   </button>
                   <button
                     className={draft.media === "later" ? "selected" : ""}
                     onClick={() => update("media", "later")}
                   >
-                    留待来日
+                    跳过，之后再配
                   </button>
                 </div>
                 {draft.media === "configure" && (
                   <div className="guide-media">
-                    <Disclosure title="寻访近处灵枢">
+                    <Disclosure title="发现本机已有模型">
                       <LocalModelDiscovery
                         onChoose={(patch) => {
                           setMedia((old) => ({ ...old, ...patch }));
@@ -810,7 +810,7 @@ export function OnboardingWizard({
                         })
                       }
                     >
-                      落定灵枢
+                      保存扩展模型配置
                     </button>
                     {mediaSaved && (
                       <p role="status">
@@ -835,13 +835,13 @@ export function OnboardingWizard({
                     角色<strong>{draft.name}</strong>
                   </span>
                   <span>
-                    拾星阁
+                    记忆库
                     <strong>
                       {data.installation?.memoryRoot || draft.memoryRoot}
                     </strong>
                   </span>
                   <span>
-                    藏星之所
+                    当前备份目录
                     <strong>
                       {data.installation?.backupRoot || draft.backupRoot}
                     </strong>
@@ -862,7 +862,7 @@ export function OnboardingWizard({
                     </strong>
                   </span>
                   <span>
-                    别有灵枢
+                    扩展模型
                     <strong>
                       {draft.media === "later"
                         ? "已跳过"
@@ -870,7 +870,7 @@ export function OnboardingWizard({
                     </strong>
                   </span>
                   <span>
-                    鹊桥应答
+                    QQ 自动回复
                     <strong>
                       {draft.snowluma === "configure" && draft.qqEnabled
                         ? "完成后启用 · 仅限允许的对话"
@@ -902,7 +902,7 @@ export function OnboardingWizard({
                   })
                 }
               >
-                重拾此程
+                重新读取进度
               </button>
             </p>
           )}
@@ -914,7 +914,7 @@ export function OnboardingWizard({
                 onClick={() => run(() => save(step - 1))}
               >
                 <ArrowLeft size={14} />
-                回看前笺
+                上一步
               </button>
             ) : (
               <small>QQ 可以稍后连接</small>
@@ -925,17 +925,17 @@ export function OnboardingWizard({
               onClick={step === 6 ? finish : next}
             >
               {busy
-                ? "星事未歇…"
+                ? "正在处理…"
                 : step === 6
-                  ? "星河启卷"
+                  ? "完成向导，进入控制台"
                   : step === 3
                     ? state.installed
-                      ? "验阁续程"
-                      : "点星筑阁"
+                      ? "检查目录并继续"
+                      : "创建角色与记忆库"
                     : (step === 4 && draft.bili === "later") ||
                         (step === 5 && draft.media === "later")
-                      ? "落笺续程"
-                      : "循光续程"}
+                      ? "保存并继续"
+                      : "继续"}
               {!busy && <ArrowRight size={15} />}
             </button>
           </footer>

@@ -1,4 +1,3 @@
-import { poeticField, poeticName } from "./poetic-names";
 import {
   Suspense,
   useCallback,
@@ -182,7 +181,7 @@ export function ConfigForm({
               onClick={() => setSelectedKey(f.key)}
             >
               <label htmlFor={f.key}>
-                <strong title={f.label}>{poeticField(f)}</strong>
+                <strong title={f.label}>{f.label}</strong>
                 <small className="sr-only" id={`${f.key}-help`}>
                   {f.help}
                 </small>
@@ -257,7 +256,7 @@ export function ConfigForm({
                     value={String(draft[f.key])}
                     options={f.options.map((value) => ({
                       value,
-                      label: poeticName(
+                      label:
                         f.key === "memory.defaultVisibility"
                           ? value === "shared"
                             ? "角色各平台共享"
@@ -288,7 +287,6 @@ export function ConfigForm({
                               cpu: "处理器（CPU）",
                               mps: "Apple 图形处理器（MPS）",
                             }[value] ?? value),
-                      ),
                     }))}
                     onChange={(v) => setDraft({ ...draft, [f.key]: v })}
                   />
@@ -330,11 +328,11 @@ export function ConfigForm({
             aria-label="所选配置说明"
             aria-live="polite"
           >
-            <span className="eyebrow">星枢笺注</span>
-            <h3 title={selectedField.label}>{poeticField(selectedField)}</h3>
+            <span className="eyebrow">功能详情</span>
+            <h3 title={selectedField.label}>{selectedField.label}</h3>
             <p>{selectedField.help}</p>
             <dl>
-              <dt>信契裁度</dt>
+              <dt>调整权限</dt>
               <dd>
                 {selectedField.bot
                   ? "管理员授权后，角色可按范围自行调整"
@@ -342,13 +340,13 @@ export function ConfigForm({
               </dd>
               {selectedField.type === "number" && (
                 <>
-                  <dt>信契所及</dt>
+                  <dt>允许范围</dt>
                   <dd>
                     {selectedField.min} — {selectedField.max}
                   </dd>
                 </>
               )}
-              <dt>落笺之法</dt>
+              <dt>保存方式</dt>
               <dd>修改后点击保存，应用到当前角色。</dd>
             </dl>
           </aside>
@@ -367,7 +365,7 @@ export function ConfigForm({
         </small>
         <button className="primary" disabled={!changed.length || busy}>
           <Save size={14} />
-          {busy ? "落笔未歇…" : "落笔成笺"}
+          {busy ? "保存中…" : "保存"}
         </button>
       </div>
     </form>
@@ -417,7 +415,7 @@ export function MemoryPage(props: PageProps) {
         onChange={setView}
         items={[
           { id: "map", name: "记忆星图" },
-          { id: "timeline", name: "流年卷" },
+          { id: "timeline", name: "时间线" },
         ]}
       />
       {view === "settings" ? (
@@ -427,7 +425,10 @@ export function MemoryPage(props: PageProps) {
               重要内容立即提交；笔记与双链通过可重试队列同步。普通记忆的新鲜度变化，只影响检索顺序
             </p>
             <ConfigForm {...props} pages={["memory"]} />
-            <Disclosure title="拾忆笺注" description="查看当前实现边界">
+            <Disclosure
+              title="关于整理、向量与外部编辑"
+              description="查看当前实现边界"
+            >
               <p>
                 已实现即时保存、重要度与半衰期排序、关键词检索、真实关系边、笔记投影、外部笔记修订预览导入与定时模型整理。向量索引仍待接入。
               </p>
@@ -541,7 +542,7 @@ export function MemoryPage(props: PageProps) {
                   action={
                     <button className="ghost" onClick={() => setModal(true)}>
                       <Plus size={14} />
-                      记下一件事
+                      添加记忆
                     </button>
                   }
                 />
@@ -562,7 +563,7 @@ export function MemoryPage(props: PageProps) {
                   </div>
                   <h2>{current.title}</h2>
                   <section className="memory-reading" aria-label="记忆完整正文">
-                    <span className="detail-content-label">星笺全卷</span>
+                    <span className="detail-content-label">完整正文</span>
                     <div className="memory-body">{current.content}</div>
                   </section>
                   <div className="detail-facts">
@@ -570,22 +571,22 @@ export function MemoryPage(props: PageProps) {
                       记录于<strong>{date(current.created)}</strong>
                     </span>
                     <span>
-                      星之来处<strong>{current.source}</strong>
+                      来源<strong>{current.source}</strong>
                     </span>
                     <span>
-                      星光分量<strong>{current.importance} / 100</strong>
+                      重要度<strong>{current.importance} / 100</strong>
                     </span>
                     <span>
-                      笺中可信<strong>{current.confidence} / 100</strong>
+                      事实置信度<strong>{current.confidence} / 100</strong>
                     </span>
                     <span>
-                      此刻星重<strong>{current.score}</strong>
+                      当前召回权重<strong>{current.score}</strong>
                     </span>
-                    {!!current.anchor && <Badge tone="good">长明之星</Badge>}
+                    {!!current.anchor && <Badge tone="good">长期锚点</Badge>}
                   </div>
                   <h3 className="detail-subtitle">
                     <Link2 size={15} />
-                    同光旧笺
+                    相关记忆
                   </h3>
                   {data?.links
                     .filter(
@@ -605,7 +606,7 @@ export function MemoryPage(props: PageProps) {
                         >
                           <span>{other.title}</span>
                           <small>
-                            {l.kind === "explicit" ? "已牵星线" : "候牵星线"}
+                            {l.kind === "explicit" ? "明确关联" : "建议关联"}
                           </small>
                         </button>
                       ) : null;
@@ -648,7 +649,7 @@ export function MemoryPage(props: PageProps) {
                       }}
                     >
                       <Plus size={14} />
-                      牵起星线
+                      建立关联
                     </button>
                   </div>
                 </>
@@ -728,7 +729,7 @@ export function CharacterPage(props: PageProps) {
   }, [character.id]);
   return (
     <div className="content-with-rail">
-      <Panel title="星魂小传">
+      <Panel title="人格与相处方式">
         <form
           data-dirty={persona !== character.persona || name !== character.name}
           onSubmit={async (e) => {
@@ -793,7 +794,7 @@ export function CharacterPage(props: PageProps) {
                   setBaseRevision(character.revision);
                 }}
               >
-                重拾旧笺
+                重新载入已保存资料
               </TextLink>
             </p>
           )}
@@ -811,13 +812,13 @@ export function CharacterPage(props: PageProps) {
               }
             >
               <Save size={14} />
-              {busy ? "落笔未歇…" : "落定星魂"}
+              {busy ? "保存中…" : "保存角色"}
             </button>
           </div>
         </form>
       </Panel>
       <div className="rail">
-        <Panel title="卿之小传">
+        <Panel title="角色资料">
           <div className="profile-portrait">
             <OrbitIllustration />
             <span>{name}</span>
@@ -827,17 +828,17 @@ export function CharacterPage(props: PageProps) {
               创建于<strong>{date(character.created)}</strong>
             </span>
             <span>
-              星之印<code>{character.id.slice(0, 8)}</code>
+              身份编号<code>{character.id.slice(0, 8)}</code>
             </span>
             <span>
-              笺卷修次<strong>{character.revision}</strong>
+              资料修订<strong>{character.revision}</strong>
             </span>
           </div>
           <p className="footnote">
             人设会在 QQ、B站和网页角色会话共用；此处星轨为档案装饰
           </p>
         </Panel>
-        <Panel title="让她有自己的想法">
+        <Panel title="角色行为偏好">
           <p>
             偏好可以有理由，坚持可以有边界。允许她提议、等待、拒绝重复的话题，也允许她在无事可做时安静
           </p>
@@ -928,10 +929,10 @@ export function MediaPage(props: PageProps & { view?: string }) {
           value={tab}
           onChange={setTab}
           items={[
-            { id: "tts", name: "清音" },
-            { id: "sing", name: "弦歌" },
-            { id: "asr", name: "听风" },
-            { id: "vision", name: "观澜" },
+            { id: "tts", name: "语音合成" },
+            { id: "sing", name: "唱歌" },
+            { id: "asr", name: "语音识别" },
+            { id: "vision", name: "视觉理解" },
           ]}
         />
       )}
@@ -996,7 +997,7 @@ export function MediaPage(props: PageProps & { view?: string }) {
                     }
                   >
                     <Headphones size={15} />
-                    {busy ? "星笺初成…" : "清音初试"}
+                    {busy ? "正在生成…" : "生成试听"}
                   </button>
                 </div>
                 {audio && (
@@ -1080,7 +1081,7 @@ export function MediaPage(props: PageProps & { view?: string }) {
                     }
                   >
                     <Eye size={15} />
-                    {busy ? "观澜未歇…" : "观画知意"}
+                    {busy ? "正在看图…" : "理解这张图"}
                   </button>
                 </div>
               </>
@@ -1091,7 +1092,7 @@ export function MediaPage(props: PageProps & { view?: string }) {
                 </p>
                 <label className="upload-button">
                   <Upload size={20} />
-                  <strong>{busy ? "听风未歇…" : "择一声笺"}</strong>
+                  <strong>{busy ? "正在听写…" : "选择一段音频"}</strong>
                   <span>WAV、MP3、M4A、WebM、Ogg，最多 15MB</span>
                   <input
                     type="file"
@@ -1139,11 +1140,11 @@ export function MediaPage(props: PageProps & { view?: string }) {
                     : "视觉的配置"
               }
             >
-              <Disclosure title="清音通幽">
+              <Disclosure title="高级连接与能力配置">
                 <ConfigForm {...props} pages={[tab]} />
               </Disclosure>
               {tab === "tts" && (
-                <Disclosure title="翻阅声笺">
+                <Disclosure title="查看已配置音色">
                   <p>
                     本地列出音色文件；云端只显示已配置名称，清单不代表已完成合成验证
                   </p>
@@ -1163,12 +1164,12 @@ export function MediaPage(props: PageProps & { view?: string }) {
                       }
                     }}
                   >
-                    展读声谱
+                    读取音色清单
                   </button>
                 </Disclosure>
               )}
               {tab === "tts" && (
-                <Disclosure title="风吟栖处">
+                <Disclosure title="本地 Breeze 程序与模型">
                   <p>
                     连接方式选择 breeze-local
                     时，首次生成按下面路径启动已安装的服务。这里只管理插件自己启动的进程
@@ -1188,7 +1189,7 @@ export function MediaPage(props: PageProps & { view?: string }) {
                       }
                     }}
                   >
-                    清音暂歇
+                    停止本地语音进程
                   </button>
                 </Disclosure>
               )}
@@ -1196,16 +1197,16 @@ export function MediaPage(props: PageProps & { view?: string }) {
           )}
         </div>
         <div className="rail">
-          <Panel title="同源分流">
+          <Panel title="共用连接，按需独立">
             <Cloud size={22} className="section-icon" />
             <p className="section-intro">
               视觉可直接沿用DSH模型，无需在此填写。多种能力使用同一云端兼容服务时只需配置一次；各功能也能选择独立连接、本地托管或停用
             </p>
-            <Disclosure title="源流细笺">
+            <Disclosure title="高级共用连接配置">
               <ConfigForm {...props} pages={["media"]} />
             </Disclosure>
           </Panel>
-          <Panel title="近灯远帆">
+          <Panel title="本地与宿主能力">
             <p>
               说话与唱歌使用插件托管的Breeze、SoulX，听写可使用免费Whisper。它们共用本地模型许可，闲置5分钟下线。视觉可直接沿用DSH已有视觉模型，也可单独配置远程服务；每项能力都需真实输入验证
             </p>
@@ -1271,14 +1272,14 @@ export function ExpressionsPage(props: PageProps) {
             className={!favorite ? "selected" : ""}
             onClick={() => setFavorite(false)}
           >
-            眉目百态 <span>{data?.length ?? 0}</span>
+            全部表情 <span>{data?.length ?? 0}</span>
           </button>
           <button
             className={favorite ? "selected" : ""}
             onClick={() => setFavorite(true)}
           >
             <StarIcon size={13} />
-            藏星
+            收藏
           </button>
         </div>
         <label className="search-box">
@@ -1292,7 +1293,7 @@ export function ExpressionsPage(props: PageProps) {
         </label>
         <label className="button primary file-action">
           <Plus size={14} />
-          {busy ? "纳卷途中…" : "纳眉目入卷"}
+          {busy ? "导入中…" : "导入表情"}
           <input
             hidden
             type="file"
@@ -1368,7 +1369,7 @@ export function ExpressionsPage(props: PageProps) {
                       type="button"
                       className="icon-button danger"
                       aria-label={`删除表情 ${item.name}`}
-                      title="散去此影"
+                      title="删除表情"
                       disabled={busy}
                       onClick={() => setDeleting(item)}
                     >
@@ -1388,7 +1389,7 @@ export function ExpressionsPage(props: PageProps) {
             description="导入 PNG、JPEG、GIF 或 WebP。收藏、备注与图片按角色独立保存，文件缺失不会清空记录"
             action={
               <label className="button ghost">
-                初藏眉目
+                导入第一组表情
                 <input
                   hidden
                   type="file"
@@ -1412,7 +1413,7 @@ export function ExpressionsPage(props: PageProps) {
             alt={selected.name}
           />
           <label className="field">
-            心绪题词
+            情绪与关键词
             <input
               maxLength={500}
               value={tags}
@@ -1431,7 +1432,7 @@ export function ExpressionsPage(props: PageProps) {
               }}
             >
               <Trash2 size={14} />
-              散去此影
+              删除表情
             </button>
             <button
               className="primary"
@@ -1453,7 +1454,7 @@ export function ExpressionsPage(props: PageProps) {
                 }
               }}
             >
-              留存唤词
+              保存关键词
             </button>
           </div>
         </Modal>
@@ -1490,45 +1491,45 @@ export function ExpressionsPage(props: PageProps) {
 export function SettingsPage(props: PageProps) {
   return (
     <div className="settings-stack">
-      <Panel title="星光设色">
+      <Panel title="外观设置">
         <p className="section-intro">
           动效强度随设备调整，背景持续存在，页面切换时不重新搭建星空
         </p>
         <ConfigForm {...props} pages={["appearance"]} />
       </Panel>
-      <Panel title="随心有界">
+      <Panel title="角色能调整多少日常习惯">
         <p className="section-intro">
           由你授权，再由服务端检查字段和改动幅度。不能修改凭据、路径、执行程序或扩大自己的权限
         </p>
         <ConfigForm {...props} pages={["permissions"]} />
-        <Disclosure title="信契所许">
+        <Disclosure title="当前允许的调整项">
           <ul>
             {props.bootstrap.fields
               .filter((f) => f.bot)
               .map((f) => (
                 <li key={f.key} title={f.label}>
-                  {poeticField(f)}
+                  {f.label}
                 </li>
               ))}
           </ul>
           <p>每次改动写入审计记录，权限仅作用于这个角色。</p>
         </Disclosure>
       </Panel>
-      <Panel title="星河栖处">
+      <Panel title="运行与数据目录">
         <div className="detail-facts">
           <span>
-            星海归处<code>{props.bootstrap.installation?.memoryRoot}</code>
+            记忆主目录<code>{props.bootstrap.installation?.memoryRoot}</code>
           </span>
           <span>
-            藏星之所<code>{props.bootstrap.installation?.backupRoot}</code>
+            当前备份目录<code>{props.bootstrap.installation?.backupRoot}</code>
           </span>
         </div>
         <p className="footnote">
           目录在首次向导确认。跨机器迁移时先备份、导入，再重新配置连接与凭据
         </p>
-        <TextLink onClick={() => props.go("maintenance")}>藏星问脉</TextLink>
+        <TextLink onClick={() => props.go("maintenance")}>备份与诊断</TextLink>
       </Panel>
-      <Panel title="旧卷寻踪">
+      <Panel title="旧版功能对照">
         <LegacyConfiguration go={props.go} />
       </Panel>
     </div>
@@ -1564,7 +1565,7 @@ export function MaintenancePage(props: PageProps) {
     [result, setResult] = useState("");
   return (
     <div className="settings-stack">
-      <Panel title="言后余响">
+      <Panel title="会话留下的反馈">
         <p>
           角色通过反馈工具提交的问题保存在本机，供管理员排查。此处最多展示最近
           100 项
@@ -1584,11 +1585,11 @@ export function MaintenancePage(props: PageProps) {
         )}
       </Panel>
       <Panel
-        title="星途问脉"
+        title="运行状态与诊断"
         aside={
           <button className="ghost" onClick={refresh}>
             <RefreshCw size={14} />
-            再观星象
+            重新检查
           </button>
         }
       >
@@ -1596,7 +1597,7 @@ export function MaintenancePage(props: PageProps) {
         <div className="health-row">
           <span>
             <Database size={18} />
-            星魂藏卷
+            角色数据库
           </span>
           <Badge tone={data?.database === "ok" ? "good" : "quiet"}>
             {data?.database === "ok" ? "完整性正常" : "检查中"}
@@ -1668,18 +1669,18 @@ export function MaintenancePage(props: PageProps) {
               }
             }}
           >
-            重渡星桥
+            重试同步
           </button>
         )}
       </Panel>
-      <Panel title="把这一片星空带走">
+      <Panel title="数据备份">
         <p className="section-intro">
           为当前角色创建数据库一致性快照，同时保存角色资料、笔记与文件校验清单。环境变量中的凭据不会包含在备份里
         </p>
         <div className="backup-location">
           <HardDrive size={22} />
           <div>
-            <strong>藏星之所</strong>
+            <strong>当前备份目录</strong>
             <code>{props.bootstrap.installation?.backupRoot}</code>
           </div>
         </div>
@@ -1705,7 +1706,7 @@ export function MaintenancePage(props: PageProps) {
             }}
           >
             <Save size={14} />
-            {busy ? "星事未歇…" : "藏星入阁"}
+            {busy ? "正在处理…" : "角色备份"}
           </button>
         </div>
         {result && (
@@ -1714,14 +1715,14 @@ export function MaintenancePage(props: PageProps) {
           </p>
         )}
       </Panel>
-      <Panel title="旧梦渡新河">
+      <Panel title="旧版本迁移说明">
         <p>
           旧数据先做只读预检，检查来源、重复项和角色归属后再导入新目录。当前提供命令行预检，网页导入向导与全量格式转换仍待完成
         </p>
         <code className="command">
           pnpm migrate:inspect -- &lt;备份目录&gt;
         </code>
-        <Disclosure title="星程未央">
+        <Disclosure title="初版与开源发布的距离">
           <p>
             已接入 Starr-chat、QQ 与
             B站收发、模型发现、本地媒体管理和自动整理。真实平台账号、实际模型生成与远程机器仍需在你的环境中验证；尚未接入的旧能力可在“旧版功能对照”中查阅。

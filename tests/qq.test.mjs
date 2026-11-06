@@ -13,6 +13,7 @@ import {
   onebotAction,
   checkOnebot,
   checkOnebotSocket,
+  OneBotConnection,
 } from "../src/qq/onebot.mjs";
 import { createQQDriver } from "../src/host/qq-driver.mjs";
 import { Onboarding } from "../src/onboarding/service.mjs";
@@ -372,6 +373,110 @@ test("QQ群聊默认支持有限分段回复，引用与@只附在第一条", as
   assert.deepEqual(f.sends[2].params.message, [
     { type: "text", data: { text: "还有一句补充" } },
   ]);
+});
+
+test("普通群聊回复按空行分段并保留单换行，超过条数合并尾段而不丢字", async (t) => {
+  const f = await fixture(t, ({ reply }) =>
+    reply("第一段\n保留换行\n\n第二段\n\n第三段\n\n第四段", "paragraph-source"),
+  );
+  await f.service.configure({
+    revision: f.service.settings().revision,
+    patch: { groups: "300001" },
+  });
+  clearInterval(f.service.timer);
+  f.incoming(
+    event("paragraph-source", "你好", {
+      message_type: "group",
+      group_id: 300001,
+      message: [
+        { type: "at", data: { qq: "100001" } },
+        { type: "text", data: { text: "你好" } },
+      ],
+    }),
+  );
+  await f.flush();
+  assert.deepEqual(
+    f.sends.map((item) => item.params.message.at(-1).data.text),
+    ["第一段\n保留换行", "第二段", "第三段\n\n第四段"],
+  );
+  assert.deepEqual(f.sends[0].params.message.slice(0, 2), [
+    { type: "reply", data: { id: "paragraph-source" } },
+    { type: "at", data: { qq: "200001" } },
+  ]);
+  assert.equal(f.sends[1].params.message.length, 1);
+  assert.equal(f.service.status().counts.done, 1);
+});
+
+test("真实连接的消息分发允许群戳一戳通知进入回复链路，忽略其他通知", async (t) => {
+  const f = await fixture(t, ({ reply }) => reply("收到你的戳一戳啦"));
+  await f.service.configure({
+    revision: f.service.settings().revision,
+    patch: { groups: "300001" },
+  });
+  clearInterval(f.service.timer);
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async (url) =>
+      new Response(
+        JSON.stringify({
+          status: "ok",
+          retcode: 0,
+          data: String(url).includes("get_login_info")
+            ? { user_id: 100001 }
+            : { online: true },
+        }),
+      ),
+  );
+  let socket;
+  class TestSocket extends EventTarget {
+    constructor() {
+      super();
+      socket = this;
+      queueMicrotask(() => this.dispatchEvent(new Event("open")));
+    }
+    close() {}
+  }
+  t.mock.method(globalThis, "WebSocket", function () {
+    return new TestSocket();
+  });
+  const connection = new OneBotConnection(
+    { httpPort: 3000, wsPort: 3001 },
+    {
+      onState() {},
+      onEvent: (message) => f.service.receive(message),
+    },
+  );
+  t.after(() => connection.close());
+  await connection.connect();
+  const notification = {
+    post_type: "notice",
+    notice_type: "notify",
+    sub_type: "poke",
+    self_id: 100001,
+    group_id: 300001,
+    user_id: 200001,
+    target_id: 100001,
+    time: 1793937600,
+  };
+  const dispatch = (value) =>
+    socket.dispatchEvent(
+      new MessageEvent("message", { data: JSON.stringify(value) }),
+    );
+  dispatch({ ...notification, sub_type: "honor" });
+  dispatch({ ...notification, target_id: 200002 });
+  dispatch({ ...notification, group_id: 300002 });
+  assert.equal(
+    f.store.db.prepare("SELECT count(*) n FROM qq_inbox").get().n,
+    0,
+  );
+  dispatch(notification);
+  dispatch(notification);
+  await f.flush();
+  assert.equal(f.sends.length, 1);
+  assert.equal(f.sends[0].name, "send_group_msg");
+  assert.equal(f.sends[0].params.message.at(-1).data.text, "收到你的戳一戳啦");
+  assert.equal(f.service.status().counts.done, 1);
 });
 
 test("等待消息超时使用单一截止时间，不在空收件箱持续轮询", async () => {

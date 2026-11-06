@@ -131,14 +131,14 @@ export function addMountainBackdrop(
     colors: number[] = [],
     uvs: number[] = [],
     indices: number[] = [];
-  const palette = ["#93a8b3", "#779ca9", "#5b8fa4", "#3c849d", "#28728f"];
+  const palette = ["#b9ad97", "#a8aa94", "#909e86", "#748f7d", "#587d74"];
   const cols = light ? 240 : 480,
     rows = light ? 6 : 12;
   for (let layer = 0; layer < 5; layer++) {
     const base = positions.length / 3,
       ink = new THREE.Color(palette[layer]),
-      jade = new THREE.Color("#76a291"),
-      foot = new THREE.Color("#a8ae93"),
+      jade = new THREE.Color("#93a183"),
+      foot = new THREE.Color("#b9ab88"),
       radius = 340 - layer * 23;
     for (let row = 0; row <= rows; row++)
       for (let i = 0; i <= cols; i++) {
@@ -164,7 +164,7 @@ export function addMountainBackdrop(
           ledge;
         tint.multiplyScalar(0.94 + folds + Math.pow(1 - v, 5) * 0.11);
         // 山谷薄岚已画进山腰，远山不会变成发光的平板。
-        tint.lerp(new THREE.Color("#a2b1ad"), Math.pow(v, 3) * 0.32);
+        tint.lerp(new THREE.Color("#b7b09e"), Math.pow(v, 3) * 0.32);
         colors.push(...tint.toArray());
         uvs.push(u * 4 + layer * 0.271, v);
         if (row < rows && i < cols) {
@@ -243,8 +243,8 @@ export function addStarGround(
       elapsed,
       base: { value: new THREE.Color("#101a2d") },
       jade: { value: new THREE.Color("#1b303b") },
-      ochre: { value: new THREE.Color("#2b303c") },
-      silver: { value: new THREE.Color("#638b9b") },
+      ochre: { value: new THREE.Color("#38342d") },
+      silver: { value: new THREE.Color("#a5a58d") },
       gold: { value: new THREE.Color("#f0cd99") },
     },
     vertexShader: `varying vec3 land;

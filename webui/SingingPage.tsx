@@ -108,7 +108,7 @@ export function SingingPage(props: PageProps) {
         SoulX，再准备参考音色。可直接搜索本地曲库、B站或网易云，确认音源后入库并翻唱。音源与成品最多45秒，参考音色最多30秒；QQ也可完成同一流程，目录解析由插件处理
       </p>
       {error && <p className="inline-error">{error}</p>}
-      <Panel title="循声拾曲 · 搜索与入库">
+      <Panel title="歌曲搜索与入库">
         <form
           className="stack"
           onSubmit={async (event) => {
@@ -142,12 +142,12 @@ export function SingingPage(props: PageProps) {
             />
           </label>
           <Select
-            label="寻访渡口"
+            label="搜索平台"
             value={platform}
             onChange={setPlatform}
             options={[
-              { value: "all", label: "三川寻曲" },
-              { value: "local", label: "近处弦藏" },
+              { value: "all", label: "本地曲库＋B站＋网易云" },
+              { value: "local", label: "本地曲库" },
               { value: "bili", label: "B站" },
               { value: "netease", label: "网易云" },
             ]}
@@ -157,15 +157,15 @@ export function SingingPage(props: PageProps) {
             type="submit"
             disabled={searching || busy || !query.trim()}
           >
-            {searching ? "正在循声…" : "循声寻曲"}
+            {searching ? "正在寻找音源…" : "搜索音乐"}
           </button>
           <Select
-            label="选段心意"
+            label="片段偏好"
             value={segment}
             onChange={setSegment}
             options={[
-              { value: "chorus", label: "先取华彩" },
-              { value: "opening", label: "自序起调" },
+              { value: "chorus", label: "优先高潮 / 副歌" },
+              { value: "opening", label: "普通检索 · 从开头截取" },
             ]}
           />
           <label className="field">
@@ -200,7 +200,7 @@ export function SingingPage(props: PageProps) {
             <small>{item.artists.join(" / ") || "本地音频"}</small>
             {item.url && (
               <a href={item.url} target="_blank" rel="noreferrer">
-                寻访原调
+                查看原曲页面
               </a>
             )}
             {item.availability && <small>{item.availability}</small>}
@@ -247,7 +247,9 @@ export function SingingPage(props: PageProps) {
                 }
               }}
             >
-              {item.platform === "local" ? "择此曲成歌" : "择存片曲"}
+              {item.platform === "local"
+                ? "选为翻唱音源"
+                : "保存45秒内片段并选用"}
             </button>
           </div>
         ))}
@@ -264,7 +266,7 @@ export function SingingPage(props: PageProps) {
           QQ发送翻唱：
           {props.character.config["chat.tools.singing"] ? "已开启" : "尚未开启"}
         </p>
-        <Disclosure title="鹊桥弦歌信契">
+        <Disclosure title="QQ找歌与翻唱授权">
           <ConfigForm
             {...props}
             pages={["sing", "chat-media", "bili-actions"]}
@@ -279,7 +281,7 @@ export function SingingPage(props: PageProps) {
         <LocalModelDiscovery {...props} kind="sing" />
       </Disclosure>
       <label className="upload-button">
-        纳曲入笺<span>WAV、MP3、FLAC、Ogg，最多 15MB</span>
+        导入音源或参考音色<span>WAV、MP3、FLAC、Ogg，最多 15MB</span>
         <input
           type="file"
           disabled={busy}
@@ -316,13 +318,13 @@ export function SingingPage(props: PageProps) {
         label="要翻唱的音源"
         value={source}
         onChange={setSource}
-        options={[{ value: "", label: "择曲入笺" }, ...options]}
+        options={[{ value: "", label: "选择音源" }, ...options]}
       />
       <Select
-        label="清音底色"
+        label="参考音色"
         value={reference}
         onChange={setReference}
-        options={[{ value: "", label: "沿用常声" }, ...options]}
+        options={[{ value: "", label: "使用配置中的默认参考编号" }, ...options]}
       />
       <button
         className="primary"
@@ -352,10 +354,10 @@ export function SingingPage(props: PageProps) {
           }
         }}
       >
-        {busy ? "弦歌初成…" : "依曲成歌"}
+        {busy ? "正在处理音频…" : "生成翻唱"}
       </button>
       {message && <p role="status">{message}</p>}
-      <Disclosure title="弦歌通幽">
+      <Disclosure title="唱歌连接与推理配置">
         <ConfigForm
           {...props}
           pages={["sing"]}
@@ -366,7 +368,7 @@ export function SingingPage(props: PageProps) {
             .map((f) => f.key)}
         />
       </Disclosure>
-      <Disclosure title="弦歌栖处">
+      <Disclosure title="本地 SoulX 程序与模型">
         <ConfigForm {...props} pages={["sing-local"]} />
         <button
           className="ghost"
@@ -382,7 +384,7 @@ export function SingingPage(props: PageProps) {
             }
           }}
         >
-          弦歌暂歇
+          停止本地唱歌进程
         </button>
       </Disclosure>
       <Disclosure title={`曲库 · ${data?.songs.length || 0} 个音频`}>
@@ -400,7 +402,7 @@ export function SingingPage(props: PageProps) {
             setPending({ kind: "cache", id: "", title: "全部生成成品" })
           }
         >
-          拂去余音
+          清理生成成品
         </button>
         {data?.songs.map((song) => (
           <div className="job-error" key={song.id}>
@@ -416,18 +418,18 @@ export function SingingPage(props: PageProps) {
             )}
             {song.source_url && (
               <a href={song.source_url} target="_blank" rel="noreferrer">
-                溯光寻源
+                查看原始来源
               </a>
             )}
             <small>{(song.bytes / 1024 / 1024).toFixed(2)} MB</small>
             {song.segment && (
               <small>
-                曲起之处 {song.segment.startSeconds} 秒 · {song.segment.detail}
+                片段起点 {song.segment.startSeconds} 秒 · {song.segment.detail}
               </small>
             )}
             <code>{song.id}</code>
             {props.character.config["sing.referenceId"] === song.id && (
-              <Badge>常用清音</Badge>
+              <Badge>默认参考音色</Badge>
             )}
             <button
               className="ghost"
@@ -458,8 +460,8 @@ export function SingingPage(props: PageProps) {
               }}
             >
               {props.character.config["sing.referenceId"] === song.id
-                ? "解下常声"
-                : "择作常声"}
+                ? "取消默认参考音色"
+                : "设为默认参考音色"}
             </button>
             <button
               className="ghost danger"
@@ -480,7 +482,7 @@ export function SingingPage(props: PageProps) {
                 })
               }
             >
-              散去此音
+              删除音频
             </button>
           </div>
         ))}
@@ -522,7 +524,7 @@ export function SingingPage(props: PageProps) {
               })
             }
           >
-            {render.status === "done" ? "散去此曲" : "收去此笺"}
+            {render.status === "done" ? "删除此成品" : "移除这条记录"}
           </button>
         </div>
       ))}
