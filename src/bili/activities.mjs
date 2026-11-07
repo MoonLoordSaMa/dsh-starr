@@ -1,3 +1,4 @@
+import { taskSessionId } from "../host/task-session.mjs";
 import crypto from "node:crypto";
 import { fail } from "../starrcore/store.mjs";
 import { mediaServices } from "../runtime/media-services.mjs";
@@ -300,7 +301,7 @@ export class BiliActivities {
       );
       return;
     }
-    const sessionId = `session-starr-bili-activity-${id}`,
+    const sessionId = taskSessionId(characterId, `bili:${kind}`),
       material = [];
     let completed = false;
     this.store.conversations.ensure({

@@ -1210,10 +1210,10 @@ test("宿主适配使用 Agent 接口，回复工具固定会话，再次调用�
     attachment: { id: "synthetic-durable-ref" },
   });
   assert.equal(messages[1].content.length, 1);
-  assert.match(messages[0].content[0].text, /【本轮系统提示 · 当前角色】/);
-  assert.match(messages[0].content[0].text, /【本轮上下文 · 言外之意】/);
+  assert.match(messages[0].content[0].text, /【本轮角色与接续资料】/);
+  assert.match(messages[0].content[0].text, /【本轮角色与接续资料】/);
   assert.match(messages[0].content[0].text, /【当前状态】/);
-  assert.match(messages[0].content[0].text, /【本轮平台来信】/);
+  assert.ok(messages[0].content[0].text.startsWith("QQ 来信"));
   assert.ok(messages[1].content[0].text.includes("接着回应前文尚未回复"));
   assert.match(messages[0].content[0].text, /直接以当前角色回应/);
   assert.doesNotMatch(messages[0].content[0].text, /最终模型正文仅供宿主查看/);

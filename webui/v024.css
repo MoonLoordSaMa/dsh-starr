@@ -1,0 +1,275 @@
+/* 当前产品层：清晰层次、局部无色模糊，以及可操作的保存状态。 */
+.app-shell .page-save-bar {
+  position: sticky;
+  bottom: 10px;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  margin-top: 24px;
+  background: transparent;
+  backdrop-filter: blur(max(20px, var(--blur-panel)));
+  -webkit-backdrop-filter: blur(max(20px, var(--blur-panel)));
+  text-shadow:
+    0 1px 4px #090f16,
+    0 0 8px #090f16;
+}
+.page-save-bar > div {
+  flex: 1;
+  min-width: 0;
+}
+.page-save-bar p {
+  color: #ffd9b2;
+  overflow-wrap: anywhere;
+}
+.app-shell
+  :is(
+    button,
+    input,
+    textarea,
+    select,
+    summary,
+    a,
+    .memory-reading
+  ):focus-visible,
+.modal :is(button, input, textarea, select, summary, a):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 5px #ffe9b526,
+    0 0 26px #ffe2b230 !important;
+  text-shadow:
+    0 1px 4px #071019,
+    0 0 10px #ffe4b4;
+}
+.app-shell :is(button, [role="button"]):disabled,
+.modal button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  filter: saturate(0.35);
+}
+.app-shell
+  :is(
+    .tabs button.active,
+    .sidebar nav button[aria-current="page"],
+    .workspace-navigation button[aria-current="page"],
+    .select-options [aria-selected="true"]
+  ) {
+  color: #fff2d6;
+  font-weight: 700;
+  text-shadow:
+    0 0 14px #ffe1a47a,
+    0 1px 3px #090f16;
+}
+.app-shell .advanced-fields {
+  margin-block: 18px;
+}
+.app-shell .advanced-fields > summary {
+  cursor: pointer;
+  padding: 12px 0;
+  color: #f1e7d4;
+}
+.app-shell .advanced-fields[open] > summary {
+  margin-bottom: 12px;
+}
+.app-shell .advanced-fields .config-row {
+  padding-inline: 0;
+}
+.app-shell .configuration-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.app-shell .configuration-fields {
+  min-width: 0;
+}
+.app-shell :is(.home-at-a-glance, .quick-routes) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.app-shell .home-at-a-glance {
+  margin-block: 20px;
+}
+.home-at-a-glance button {
+  display: grid;
+  gap: 6px;
+  padding: 10px 14px;
+  backdrop-filter: blur(8px);
+}
+.home-at-a-glance small {
+  font-size: 12px;
+}
+.home-at-a-glance strong {
+  font-size: 14px;
+}
+.app-shell
+  .home-preview-page
+  :is(
+    .observatory-title,
+    .observatory-title > span,
+    .observatory-copy,
+    .observatory-kicker,
+    .home-section-links button,
+    .observatory-scroll
+  ) {
+  color: #fff3dc;
+  -webkit-text-fill-color: #fff3dc;
+  opacity: 1;
+  text-shadow:
+    0 2px 5px #111421,
+    0 0 15px #111421b8;
+}
+.app-shell .home-preview-page .observatory-title > span:last-child {
+  color: #ffe0a7;
+  -webkit-text-fill-color: #ffe0a7;
+}
+.app-shell .home-preview-page .observatory-copy {
+  font-weight: 500;
+}
+.app-shell .home-at-a-glance button {
+  text-shadow:
+    0 1px 4px #071019,
+    0 0 10px #071019;
+}
+.home-attention {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  max-width: 1180px;
+  margin: 12px auto 36px;
+  backdrop-filter: blur(12px);
+}
+.home-attention h2,
+.home-growth h3 {
+  font-size: 18px;
+}
+.home-attention button {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+.home-attention span {
+  font-size: 13px;
+}
+.home-growth {
+  margin-block: 24px;
+}
+.home-growth ol {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 16px;
+}
+.home-growth button {
+  display: block;
+  text-align: left;
+  width: 100%;
+  padding: 12px 0;
+}
+.home-growth :is(p, small) {
+  line-height: 1.8;
+}
+.home-preview-page[data-stale="true"]
+  :is(.runtime-value, .home-at-a-glance strong),
+.function-status[data-stale="true"] .runtime-value {
+  color: #e9d3ad;
+}
+.home-preview-page[data-stale="true"] .runtime-value i,
+.function-status[data-stale="true"] .runtime-value i {
+  background: #bca681;
+  box-shadow: none;
+}
+.quick-routes button {
+  min-height: 44px;
+  text-align: left;
+}
+.app-shell .function-results {
+  max-height: none;
+}
+.app-shell .function-result {
+  min-height: 64px;
+}
+.app-shell .function-result small {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.app-shell .config-row > label {
+  min-width: 0;
+}
+.app-shell .config-help {
+  overflow-wrap: anywhere;
+}
+.app-shell .filters {
+  background: transparent;
+}
+.app-shell .filters button.selected {
+  color: #fff2d6;
+  font-weight: 700;
+  text-shadow:
+    0 1px 4px #071019,
+    0 0 12px #ffe0b3;
+}
+.app-shell .memory-workspace {
+  align-items: start;
+}
+.app-shell .memory-reading {
+  min-height: 0;
+  max-height: 55dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.app-shell .memory-reading .memory-body {
+  max-height: none;
+  overflow: visible;
+}
+@media (min-width: 981px) {
+  .app-shell .memory-workspace {
+    grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.15fr);
+  }
+  .app-shell .memory-workspace .memory-primary {
+    min-width: 0;
+  }
+  .app-shell .memory-workspace .memory-detail {
+    min-width: 0;
+    min-height: 0;
+    max-height: calc(100dvh - 150px);
+    overflow-y: auto;
+    position: sticky;
+    top: 100px;
+    overscroll-behavior: contain;
+  }
+}
+@media (max-width: 700px) {
+  .app-shell .page-save-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  .page-save-bar > div {
+    flex-basis: 100%;
+  }
+  .page-save-bar button {
+    flex: 1;
+    justify-content: center;
+  }
+  .home-attention {
+    margin-inline: 14px;
+    padding: 18px;
+  }
+  .home-at-a-glance {
+    max-width: 100%;
+  }
+  .quick-routes {
+    display: grid !important;
+  }
+  .app-shell .function-result {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell *,
+  .modal * {
+    scroll-behavior: auto !important;
+  }
+}

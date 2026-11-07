@@ -53,15 +53,18 @@ const within = (a, b) => {
   const rel = path.relative(a, b);
   return !rel || (!rel.startsWith("..") && !path.isAbsolute(rel));
 };
-export const kinds = [
-  "moment",
-  "person",
-  "promise",
-  "interest",
-  "diary",
-  "summary",
-  "self",
-];
+export const kinds = ["moment", "diary"];
+// 旧版本输入仍可读取；新记录统一为自由笔记，不再要求人为分类。
+export const memoryKind = (kind = "moment") => {
+  if (kind === "diary") return "diary";
+  if (
+    ["moment", "person", "promise", "interest", "summary", "self"].includes(
+      kind,
+    )
+  )
+    return "moment";
+  throw fail("不支持的记忆类型");
+};
 
 export class StarrStore {
   constructor(dataRoot) {
@@ -391,17 +394,7 @@ export class StarrStore {
     }
     const title = text(input.title, "记忆标题", 150),
       content = text(input.content, "记忆正文", 40000);
-    const kind = input.kind ?? "moment";
-    if (!kinds.includes(kind)) throw fail("不支持的记忆类型");
-    if (
-      kind === "summary" &&
-      !/^(?:\d{4}年?|\d{4}[-/](?:0?[1-9]|1[0-2])月?|\d{4}年(?:0?[1-9]|1[0-2])月|\d{4}[- ]?W(?:0?[1-9]|[1-4]\d|5[0-3])|\d{4}年第(?:0?[1-9]|[1-4]\d|5[0-3])周)(?:\s+|$|[·：:])/.test(
-        title,
-      )
-    )
-      throw fail(
-        "概览标题请使用年份、月份或周次，例如2026 年概览、2026-11 月概览、2026-W45 周概览；自我介绍请选择自我概览",
-      );
+    const kind = memoryKind(input.kind);
     const importance = num(input.importance ?? 50),
       confidence = num(input.confidence ?? 80),
       anchor = !!input.anchor;
@@ -625,13 +618,16 @@ export class StarrStore {
     const terms = String(q).trim().split(/\s+/).filter(Boolean).slice(0, 12);
     const where = [
       "NOT EXISTS(SELECT 1 FROM record_archive a WHERE a.record_id=records.id)",
-      ...(kind ? ["kind=?"] : []),
+      ...(kind ? [kind === "moment" ? "kind<>'diary'" : "kind=?"] : []),
       ...terms.map(
         () =>
           "(instr(lower(title),lower(?))>0 OR instr(lower(content),lower(?))>0)",
       ),
     ];
-    const args = [...(kind ? [kind] : []), ...terms.flatMap((t) => [t, t])];
+    const args = [
+      ...(kind && kind !== "moment" ? [kind] : []),
+      ...terms.flatMap((t) => [t, t]),
+    ];
     const rows = db
       .prepare(
         `SELECT records.*,v.visibility,v.session_id AS visibility_session FROM records LEFT JOIN record_visibility v ON records.id=v.record_id ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY created DESC LIMIT ?`,

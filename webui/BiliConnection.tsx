@@ -49,10 +49,10 @@ const statusNames: Record<string, string> = {
 };
 const activityNames: Record<string, string> = {
   watch: "资料阅读",
-  best: "晨间精选",
-  game: "午间游戏",
-  anime: "午后二次元",
-  gaming: "晚间随记",
+  best: "旧动态记录",
+  game: "旧动态记录",
+  anime: "旧动态记录",
+  gaming: "旧动态记录",
 };
 function activityText(raw: string) {
   try {

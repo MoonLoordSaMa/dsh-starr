@@ -1,4 +1,4 @@
-import { fileWorkspace } from "./native-files.mjs";
+import { taskAgent } from "./task-session.mjs";
 import { fail } from "../starrcore/store.mjs";
 import { dynamicKinds } from "../bili/activities.mjs";
 import { UsageBudget } from "../conversation/budget.mjs";
@@ -59,47 +59,46 @@ export function createActivityDriver(ctx, store) {
           : ["publish", "skip"].includes(name),
       );
       let removers = [];
-      const { agent } = await ctx.agents.create({
+      const { agent } = await taskAgent(ctx, store, {
         sessionId,
-        agentOptions: { provider, model },
-        meta: {
-          cwd: fileWorkspace(store, characterId, { create: true }),
-          agentPreset: "starr-qqchat",
-        },
+        characterId,
+        title: `${store.character(characterId).name} · B站${kind === "watch" ? "浏览" : "动态"}`,
+        provider,
+        model,
         signal,
-        setup: async (agentCtx) => {
-          await ctx.agentPresets.mount(agentCtx, "starr-qqchat");
-          removers = definitions.map(
-            ([name, description, properties, required]) =>
-              agentCtx.tools.register({
-                name: `starr_bili_activity_${name}`,
-                description,
-                parameters: {
-                  type: "object",
-                  properties,
-                  required,
-                  additionalProperties: false,
-                },
-                output: {
-                  schema: {},
-                  render: (_args, value) => [
-                    { type: "text", text: JSON.stringify(value) },
-                  ],
-                },
-                execute: (args) => {
-                  signal.throwIfAborted();
-                  return input[name](args);
-                },
-              }),
-          );
-        },
       });
+      const attach = async (agentCtx) => {
+        removers = definitions.map(
+          ([name, description, properties, required]) =>
+            agentCtx.tools.register({
+              name: `starr_bili_activity_${name}`,
+              description,
+              parameters: {
+                type: "object",
+                properties,
+                required,
+                additionalProperties: false,
+              },
+              output: {
+                schema: {},
+                render: (_args, value) => [
+                  { type: "text", text: JSON.stringify(value) },
+                ],
+              },
+              execute: (args) => {
+                signal.throwIfAborted();
+                return input[name](args);
+              },
+            }),
+        );
+      };
       running.add(agent);
       const cancel = () =>
         agent.cancel({ kind: "hook", reason: "B站活动已暂停" });
       signal.addEventListener("abort", cancel, { once: true });
       try {
         signal.throwIfAborted();
+        await attach(agent.ctx);
         const deliveryId = crypto.randomUUID(),
           preview = store.conversations.context(sessionId);
         store.conversations.recordDelivery(sessionId, deliveryId, preview);

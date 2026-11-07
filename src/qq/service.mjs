@@ -644,11 +644,25 @@ export class QQService {
         .get(message.key)
     )
       return;
+    const c = this.policy.config(thread.character_id);
+    const canParticipate =
+      observeGroups &&
+      c["agency.groupEnabled"] &&
+      c["agency.enabled"] &&
+      !c["agency.paused"];
     const decision =
       observe ||
-      (message.type === "group" && config.requireMention && !message.mentioned)
+      (message.type === "group" &&
+        config.requireMention &&
+        !message.mentioned &&
+        !canParticipate)
         ? { wake: false, reason: "HISTORY_OBSERVED" }
-        : this.policy.incoming(message, thread.character_id, thread.session_id);
+        : this.policy.incoming(
+            message,
+            thread.character_id,
+            thread.session_id,
+            { participate: canParticipate },
+          );
     this.store.db
       .prepare(
         "INSERT OR IGNORE INTO qq_inbox(event_key,thread_key,payload,created,status,error) VALUES(?,?,?,?,?,?)",

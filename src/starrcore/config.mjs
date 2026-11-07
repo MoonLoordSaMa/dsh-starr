@@ -14,12 +14,10 @@ import { operationFields } from "../bili/operations.mjs";
 import { socialFields } from "../qq/social.mjs";
 import { autonomyFields } from "../bili/autonomy.mjs";
 import { agencyFields } from "../agency/config.mjs";
-import { browserFields } from "../browser/tabbit.mjs";
 import { fileFields } from "../host/native-files.mjs";
 import path from "node:path";
 export const fields = [
   ...fileFields,
-  ...browserFields,
   ...agencyFields,
   ...autonomyFields,
   [
@@ -245,6 +243,33 @@ export const fields = [
   default: value,
   page: key.startsWith("bili.dynamics.") ? "retired" : page,
   help,
+  advanced: !(
+    page === "permissions" ||
+    /^(tts|asr|vision|sing)\.(connection|mode|model|baseUrl|secretEnv|voice|speed|language|referenceId)$/.test(
+      key,
+    ) ||
+    /^vision\.(host\.(provider|model)|screen\.enabled|camera\.(enabled|device))$/.test(
+      key,
+    ) ||
+    /^media\.(baseUrl|secretEnv)$/.test(key) ||
+    /^(ui\.|agency\.(enabled|paused|level|observeGroups|groupEnabled|quiet|timezone)|state\.enabled|jobs\.(provider|model)|jobs\.(diaryDay|diaryNight)\.(enabled|at)|memory\.(defaultVisibility|ownerQQ|ownerBili|allowSharedWrites)|chat\.wake\.mode|chat\.reply\.(splitEnabled|groupSplit|privateSplit|style)|chat\.media\.autoTranscribe|chat\.history\.enabled|bili\.(enabled|provider|model|allowedUsers)|bili\.watch\.(enabled|windows)|bili\.share\.(enabled|target)|bridge\.enabled)/.test(
+      key,
+    ) ||
+    [
+      "chat.tools.wait",
+      "chat.wait.afterReply",
+      "chat.wait.afterReplySeconds",
+      "chat.reply.mention",
+      "chat.reply.burstEnabled",
+      "chat.reply.burstMax",
+      "agency.opportunityMinutes",
+      "agency.cooldownMinutes",
+      "memory.projectionEnabled",
+      "permissions.botMemoryArchive",
+      "sing.allowBot",
+      "sing.source.allowBot",
+    ].includes(key)
+  ),
   ...extra,
   ...([
     "memory.halfLifeDays",
@@ -278,7 +303,7 @@ export function validatePatch(patch, { bot = false, current = {} } = {}) {
     !patch ||
     typeof patch !== "object" ||
     Array.isArray(patch) ||
-    Object.keys(patch).length > 40
+    Object.keys(patch).length > (bot ? 40 : 400)
   )
     throw Object.assign(new Error("配置修改必须是字段对象"), { status: 400 });
   for (const [key, value] of Object.entries(patch)) {

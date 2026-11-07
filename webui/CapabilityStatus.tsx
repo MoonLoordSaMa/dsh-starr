@@ -14,7 +14,6 @@ export function CapabilityStatus(props: PageProps & { only?: string[] }) {
   );
   const labels: Record<string, string> = {
     hearing: "接收语音",
-    browser: "网页浏览",
     singing: "选歌与翻唱",
     files: "DSH 原生文件读写",
   };
@@ -40,7 +39,9 @@ export function CapabilityStatus(props: PageProps & { only?: string[] }) {
                         ? key === "files"
                           ? "等待角色会话加载"
                           : "需要配置"
-                        : "可尝试调用"}
+                        : v.verified
+                          ? "最近调用已验证"
+                          : "已配置 · 待验证"}
                 </Badge>
               </div>
             );

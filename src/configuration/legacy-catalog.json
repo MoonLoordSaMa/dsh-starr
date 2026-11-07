@@ -3224,12 +3224,9 @@
       "label": "收件箱整理时间",
       "group": "日常任务 · 计划",
       "help": "收件箱整理每天计划执行的本地时间，修改不会立即执行任务。",
-      "status": "mapped",
-      "target": {
-        "key": "jobs.organize.at",
-        "page": "memory-job-organize"
-      },
-      "note": "已归并到本版实际运行配置；范围、单位和作用按新字段说明重新确认，不自动导入旧值。"
+      "status": "retired",
+      "target": null,
+      "note": "固定整理与周月年回顾已退役；非日记由角色在相处中自主维护，日记继续独立定时保存。"
     },
     {
       "id": "legacy-264",
@@ -3238,12 +3235,9 @@
       "label": "整理补跑窗口（小时）",
       "group": "日常任务 · 计划",
       "help": "错过计划时间后，在多少小时内允许补跑。超过这个窗口就等下一次计划，不会一直补做旧任务。",
-      "status": "mapped",
-      "target": {
-        "key": "jobs.organize.catchUpHours",
-        "page": "memory-job-organize"
-      },
-      "note": "已归并到本版实际运行配置；范围、单位和作用按新字段说明重新确认，不自动导入旧值。"
+      "status": "retired",
+      "target": null,
+      "note": "固定整理与周月年回顾已退役；非日记由角色在相处中自主维护，日记继续独立定时保存。"
     },
     {
       "id": "legacy-265",
@@ -8254,9 +8248,9 @@
       "decision": "对接共享业务服务",
       "status": "equivalent",
       "target": {
-        "page": "memory",
-        "entry": "保存与整理 → 定时任务",
-        "note": "日记和回顾走独立 DSH 会话，按稳定事件标识真正保存记忆后才算完成。"
+        "page": "memory-care",
+        "entry": "日记与记忆设置 → 日间/夜间日记",
+        "note": "日记按角色与类型复用后台会话，真实保存后才算完成；固定整理与周月年回顾已退役。"
       }
     },
     {
@@ -8486,9 +8480,9 @@
       "decision": "对接共享业务服务",
       "status": "equivalent",
       "target": {
-        "page": "memory",
-        "entry": "保存与整理 → 定时任务",
-        "note": "日记和回顾走独立 DSH 会话，按稳定事件标识真正保存记忆后才算完成。"
+        "page": "memory-care",
+        "entry": "日记与记忆设置 → 日间/夜间日记",
+        "note": "日记按角色与类型复用后台会话，真实保存后才算完成；固定整理与周月年回顾已退役。"
       }
     },
     {
@@ -8770,9 +8764,9 @@
       "decision": "对接共享业务服务",
       "status": "equivalent",
       "target": {
-        "page": "memory",
-        "entry": "保存与整理 → 定时任务",
-        "note": "日记和回顾走独立 DSH 会话，按稳定事件标识真正保存记忆后才算完成。"
+        "page": "memory-care",
+        "entry": "日记与记忆设置 → 日间/夜间日记",
+        "note": "日记按角色与类型复用后台会话，真实保存后才算完成；固定整理与周月年回顾已退役。"
       }
     },
     {
@@ -8782,46 +8776,34 @@
       "decision": "对接共享业务服务",
       "status": "equivalent",
       "target": {
-        "page": "memory",
-        "entry": "保存与整理 → 定时任务",
-        "note": "日记和回顾走独立 DSH 会话，按稳定事件标识真正保存记忆后才算完成。"
+        "page": "memory-care",
+        "entry": "日记与记忆设置 → 日间/夜间日记",
+        "note": "日记按角色与类型复用后台会话，真实保存后才算完成；固定整理与周月年回顾已退役。"
       }
     },
     {
       "kind": "job",
       "name": "organize",
       "page": "TA/记忆",
-      "decision": "对接共享业务服务",
-      "status": "equivalent",
-      "target": {
-        "page": "memory",
-        "entry": "保存与整理 → 定时任务",
-        "note": "日记和回顾走独立 DSH 会话，按稳定事件标识真正保存记忆后才算完成。"
-      }
+      "decision": "固定整理与周期回顾已退役；自由笔记由角色自主维护",
+      "status": "retired",
+      "target": null
     },
     {
       "kind": "job",
       "name": "weeklyLayers",
       "page": "TA/记忆",
-      "decision": "对接共享业务服务",
-      "status": "equivalent",
-      "target": {
-        "page": "memory",
-        "entry": "保存与整理 → 定时任务",
-        "note": "日记和回顾走独立 DSH 会话，按稳定事件标识真正保存记忆后才算完成。"
-      }
+      "decision": "固定整理与周期回顾已退役；自由笔记由角色自主维护",
+      "status": "retired",
+      "target": null
     },
     {
       "kind": "job",
       "name": "monthlyLayers",
       "page": "TA/记忆",
-      "decision": "对接共享业务服务",
-      "status": "equivalent",
-      "target": {
-        "page": "memory",
-        "entry": "保存与整理 → 定时任务",
-        "note": "日记和回顾走独立 DSH 会话，按稳定事件标识真正保存记忆后才算完成。"
-      }
+      "decision": "固定整理与周期回顾已退役；自由笔记由角色自主维护",
+      "status": "retired",
+      "target": null
     },
     {
       "kind": "job",
@@ -8863,13 +8845,9 @@
       "kind": "job",
       "name": "yearlyLayers",
       "page": "TA/记忆",
-      "decision": "对接共享业务服务",
-      "status": "equivalent",
-      "target": {
-        "page": "memory",
-        "entry": "保存与整理 → 定时任务",
-        "note": "日记和回顾走独立 DSH 会话，按稳定事件标识真正保存记忆后才算完成。"
-      }
+      "decision": "固定整理与周期回顾已退役；自由笔记由角色自主维护",
+      "status": "retired",
+      "target": null
     }
   ],
   "notice": "本清单不包含用户配置值、令牌或角色记忆。映射不表示旧引擎完整迁入；额外声明不是额外可编辑字段。"

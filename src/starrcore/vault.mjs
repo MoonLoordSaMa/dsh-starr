@@ -2,13 +2,13 @@ import path from "node:path";
 import crypto from "node:crypto";
 
 export const noteCategories = {
-  moment: "01-经历",
-  person: "02-人物",
-  promise: "03-约定",
-  interest: "04-兴趣",
+  moment: "笔记",
+  person: "笔记",
+  promise: "笔记",
+  interest: "笔记",
   diary: "05-日记",
-  summary: "06-概览",
-  self: "07-自我概览",
+  summary: "笔记",
+  self: "笔记",
 };
 export function safeName(value, fallback = "未命名", length = 60) {
   const text = String(value || "")
@@ -50,7 +50,7 @@ export function readableNotePath(record) {
   const prefix = /^\d{4}(?:[-年]\d{1,2}|[- ]?W\d{1,2}|年|$)/.test(title)
     ? ""
     : `${date} - `;
-  return `${noteCategories[record.kind] || "08-其他"}/${prefix}${title} - ${suffix}.md`;
+  return `${noteCategories[record.kind] || "笔记"}/${prefix}${title} - ${suffix}.md`;
 }
 export function characterFolder(installation, characterId) {
   return relativePath(

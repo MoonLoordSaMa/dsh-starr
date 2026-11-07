@@ -28,7 +28,7 @@ function fixture(t, driver) {
   });
   return { store, jobs, id: character.id, root };
 }
-test("任务依角色时区判断周月年边界，只补最近一次且遵循补跑窗口", () => {
+test("任务依角色时区判断日记时段，旧回顾不再触发，只补最近一次且遵循补跑窗口", () => {
   const c = {
     ...defaults(),
     "jobs.diaryDay.at": "12:00",
@@ -42,14 +42,8 @@ test("任务依角色时区判断周月年边界，只补最近一次且遵循�
     dueSlot("diaryDay", c, Date.parse("2026-11-03T07:00:00Z")),
     null,
   );
-  assert.equal(
-    dueSlot("weekly", c, Date.parse("2026-11-01T12:00:00Z")),
-    "2026-11-01@20:00",
-  );
-  assert.equal(
-    dueSlot("monthly", c, Date.parse("2026-11-01T12:00:00Z")),
-    "2026-11-01@20:00",
-  );
+  assert.equal(dueSlot("weekly", c, Date.parse("2026-11-01T12:00:00Z")), null);
+  assert.equal(dueSlot("monthly", c, Date.parse("2026-11-01T12:00:00Z")), null);
   assert.equal(dueSlot("yearly", c, Date.parse("2026-11-01T12:00:00Z")), null);
 });
 
@@ -66,7 +60,7 @@ test("模型配置缺失会保留失败任务并提示，不对同一时段持�
     /配置 DSH/,
   );
   assert.equal(f.jobs.status(f.id).recent[0].status, "failed");
-  assert.match(f.jobs.status(f.id).configurationError, /整理模型/);
+  assert.match(f.jobs.status(f.id).configurationError, /日记模型/);
   assert.equal(
     (await f.jobs.run(f.id, "diaryDay", "missing-model")).status,
     "failed",

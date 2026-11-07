@@ -79,7 +79,7 @@ test("starr 工具只注册到已绑定会话，普通会话与全局均不暴�
     "starr_memory_archive",
     "starr_voice_list",
     "starr_link_parse",
-    "starr_browser_read",
+    "starr_memory_update",
     "starr_goal_list",
     "starr_goal_update",
   ])

@@ -25,11 +25,11 @@ import "./onboarding.css";
 const steps = [
   "连接 QQ",
   "创建角色",
-  "写下人格",
-  "安放记忆",
+  "角色设定",
+  "记忆与备份",
   "连接 B站",
-  "扩展感官",
-  "准备出发",
+  "视觉与声音（可选）",
+  "检查与完成",
 ];
 const statusNames: Record<string, string> = {
   verified: "检查通过",

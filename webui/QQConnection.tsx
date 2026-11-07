@@ -326,8 +326,12 @@ export function QQConnection(props: PageProps) {
               checked={draft.requireMention}
               onChange={(e) => update("requireMention", e.target.checked)}
             />
-            群聊仅在被 @ 时回应
+            将 @ 作为直接呼唤
           </label>
+          <p className="field-help">
+            允许自主参与群聊后，她也会留意未 @
+            的讨论，并自行选择参与或安静。接收范围仍仅限上方允许的群。
+          </p>
           <Disclosure title="更多连接选项">
             <label className="field">
               令牌环境变量名

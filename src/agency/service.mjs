@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { taskSessionId } from "../host/task-session.mjs";
 import fs from "node:fs";
 import { mediaServices } from "../runtime/media-services.mjs";
 import { RuntimeLease } from "../runtime/lease.mjs";
@@ -474,8 +475,7 @@ export class Agency {
     const plan = this.plan(characterId);
     if (plan.blockers.length) throw fail(plan.blockers.join("；"), 403);
     const goal = plan.goal;
-    const sessionId = `session-starr-agency-${plan.id.slice(0, 32)}`,
-      c = this.store.character(characterId).config;
+    const c = this.store.character(characterId).config;
     let binding = null;
     if (goal.originSession && this.groupOrigin(characterId, goal.originSession))
       binding = this.group(characterId, goal.originSession);
@@ -491,6 +491,11 @@ export class Agency {
         if (goal.action === "reach_out") throw e;
       }
     }
+    const sessionId = taskSessionId(
+      characterId,
+      "agency",
+      goal.originSession || binding?.thread.session_id || "self",
+    );
     this.store.conversations.ensure({
       sessionId,
       characterId,
@@ -505,7 +510,7 @@ export class Agency {
     const origin = goal.originSession || binding?.thread.session_id;
     if (origin)
       this.store.db
-        .prepare("INSERT INTO agency_scopes VALUES(?,?,?)")
+        .prepare("INSERT OR IGNORE INTO agency_scopes VALUES(?,?,?)")
         .run(sessionId, origin, characterId);
     const q = this.qq?.settings().config || {},
       provider = q.provider || c["bili.provider"] || c["jobs.provider"],

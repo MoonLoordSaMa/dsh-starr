@@ -1,6 +1,7 @@
 import { capabilityStatus } from "../host/capabilities.mjs";
 import { mediaServices } from "./media-services.mjs";
 import { todayOverview } from "../agency/today.mjs";
+import { jobKinds } from "../jobs/config.mjs";
 
 // 只读取已有运行回执。打开首页不登录平台、不启动模型、不外发消息。
 export function dashboardStatus(store, characterId, services = {}) {
@@ -102,7 +103,6 @@ export function dashboardStatus(store, characterId, services = {}) {
       : "以最近一次真实平台轮询为准，登录不代表所有平台操作成功",
     br?.lastPollAt || null,
   );
-  readiness("browser", "网页浏览", "browser", capabilities.browser);
   readiness("hearing", "语音识别", "hearing", capabilities.hearing);
   readiness("singing", "翻唱", "singing", capabilities.singing);
   readiness("files", "文件读写", "chat-rules", capabilities.files);
@@ -162,12 +162,12 @@ export function dashboardStatus(store, characterId, services = {}) {
       "由角色自行判断目的与时机，待机不表示故障",
   );
   const jobs = runtime.jobs?.status(characterId);
-  const jobsEnabled = Object.entries(c).some(
-    ([key, value]) => /^jobs\..+\.enabled$/.test(key) && value,
+  const jobsEnabled = Object.keys(jobKinds).some(
+    (kind) => c[`jobs.${kind}.enabled`],
   );
   add(
     "jobs",
-    "记忆整理任务",
+    "日记与备份",
     "memory-care",
     !jobsEnabled
       ? "disabled"
@@ -188,7 +188,7 @@ export function dashboardStatus(store, characterId, services = {}) {
             ? "宿主未接入"
             : "等待计划时间",
     jobs?.configurationError ||
-      "日记、整理和备份的执行结果分别保留在任务记录中",
+      "日记按计划记录，普通笔记由角色自主整理；备份与同步在后台维护",
   );
   let memory;
   try {
@@ -203,7 +203,38 @@ export function dashboardStatus(store, characterId, services = {}) {
         "SELECT id,title,kind,created,substr(content,1,220) AS preview FROM records WHERE id NOT IN(SELECT record_id FROM record_archive) ORDER BY created DESC,id DESC LIMIT 3",
       )
       .all();
-    memory = { count, recent };
+    const retained = db
+      .prepare(
+        "SELECT id,title,content,revision,created FROM records WHERE anchor=1 AND kind<>'diary' AND id NOT IN(SELECT record_id FROM record_archive) ORDER BY importance DESC,created DESC LIMIT 4",
+      )
+      .all();
+    const changes = db
+      .prepare(
+        "SELECT a.id,a.created,a.data FROM audit a WHERE a.type='memory-update' ORDER BY a.created DESC LIMIT 50",
+      )
+      .all()
+      .flatMap((row) => {
+        const event = JSON.parse(row.data);
+        const active = db
+          .prepare(
+            "SELECT id FROM records WHERE id=? AND id NOT IN(SELECT record_id FROM record_archive)",
+          )
+          .get(event.id);
+        return active && event.actor !== "user"
+          ? [
+              {
+                id: row.id,
+                memoryId: event.id,
+                title: event.after.title,
+                reason: event.reason,
+                created: row.created,
+                revision: event.after.revision,
+              },
+            ]
+          : [];
+      })
+      .slice(0, 5);
+    memory = { count, recent, retained, changes };
     add(
       "memory",
       "本地记忆库",
@@ -213,7 +244,7 @@ export function dashboardStatus(store, characterId, services = {}) {
       `已保存 ${count} 条记忆，写入状态以实际保存回执为准`,
     );
   } catch {
-    memory = { count: null, recent: [] };
+    memory = { count: null, recent: [], retained: [], changes: [] };
     add(
       "memory",
       "本地记忆库",
@@ -228,6 +259,7 @@ export function dashboardStatus(store, characterId, services = {}) {
     characterId,
     checkedAt: new Date().toISOString(),
     items,
+    attention: items.filter((item) => item.status === "error"),
     listening: listening.map(({ seconds, deadlineAt }) => ({
       seconds,
       deadlineAt,

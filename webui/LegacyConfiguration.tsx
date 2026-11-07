@@ -150,7 +150,11 @@ export function LegacyConfiguration({ go }: Pick<PageProps, "go">) {
           .map((e, i) => (
             <p key={i}>
               <code>{e.name}</code> · {e.kind} ·{" "}
-              {e.target ? "已由新入口承接" : "尚待接入"}
+              {e.target
+                ? "已由新入口承接"
+                : e.status === "retired"
+                  ? "已退役"
+                  : "尚待接入"}
               {e.target ? (
                 <>
                   {" · "}

@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { taskSessionId } from "../host/task-session.mjs";
 import { RuntimeLease } from "../runtime/lease.mjs";
 import { jobKinds } from "./config.mjs";
 import { fail } from "../starrcore/store.mjs";
@@ -28,6 +29,7 @@ const local = (date, zone) => {
   );
 };
 export function dueSlot(kind, c, now = Date.now()) {
+  if (!Object.hasOwn(jobKinds, kind)) return null;
   const lookback = c[`jobs.${kind}.catchUpHours`] * 60;
   const wantedMinute = Number(c[`jobs.${kind}.at`].split(":")[1]);
   for (let step = 0; step <= lookback;) {
@@ -39,12 +41,6 @@ export function dueSlot(kind, c, now = Date.now()) {
     }
     step += 60;
     if (`${p.hour}:${p.minute}` !== c[`jobs.${kind}.at`]) continue;
-    if (
-      (kind === "weekly" && p.weekday !== "Sun") ||
-      (kind === "monthly" && p.day !== "01") ||
-      (kind === "yearly" && (p.month !== "01" || p.day !== "01"))
-    )
-      continue;
     return `${p.year}-${p.month}-${p.day}@${p.hour}:${p.minute}`;
   }
   return null;
@@ -84,7 +80,7 @@ export class MemoryJobs {
         (!this.driver ||
           !this.store.character(characterId).config["jobs.provider"] ||
           !this.store.character(characterId).config["jobs.model"])
-          ? "已开启模型整理任务，请先填写 DSH 整理模型连接与模型"
+          ? "已开启日记任务，请先填写 DSH 日记模型连接与模型"
           : null,
       recent: this.store.db
         .prepare(
@@ -124,7 +120,7 @@ export class MemoryJobs {
     const c = this.store.character(characterId).config,
       id = `${characterId}:${kind}:${slot}`;
     if (this.running.size >= 2) throw fail("记忆任务正在运行，请稍后重试", 409);
-    const sessionId = `session-starr-job-${crypto.createHash("sha256").update(id).digest("hex").slice(0, 32)}`;
+    const sessionId = taskSessionId(characterId, `diary:${kind}`);
     const inserted = this.store.db
       .prepare(
         "INSERT OR IGNORE INTO memory_jobs VALUES(?,?,?,?,'running',?,NULL,NULL,?,?)",
@@ -142,7 +138,7 @@ export class MemoryJobs {
         !["backup", "projection"].includes(kind) &&
         (!this.driver || !c["jobs.provider"] || !c["jobs.model"])
       )
-        throw fail("请先配置 DSH 整理模型", 409);
+        throw fail("请先配置 DSH 日记模型", 409);
       let result;
       if (kind === "backup") result = await this.store.backup(characterId);
       else if (kind === "projection") {

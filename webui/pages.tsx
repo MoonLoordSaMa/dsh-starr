@@ -99,8 +99,7 @@ export function ConfigForm({
       (f) => pages.includes(f.page) && (!onlyKeys || onlyKeys.includes(f.key)),
     ),
     [draft, setDraft] = useState<Config>({ ...character.config }),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [error, setError] = useState("");
   const latest = useRef(character);
   const [modelCatalog, setModelCatalog] = useState<
     { id: string; name: string; models: { id: string; name: string }[] }[]
@@ -140,183 +139,347 @@ export function ConfigForm({
   const changed = fields.filter(
     (f) => draft[f.key] !== character.config[f.key],
   );
+  useEffect(() => {
+    const collect = (event: Event) =>
+      Object.assign(
+        (event as CustomEvent<{ patch: Config }>).detail.patch,
+        Object.fromEntries(
+          fields
+            .filter((field) => draft[field.key] !== character.config[field.key])
+            .map((field) => [field.key, draft[field.key]]),
+        ),
+      );
+    const reset = () => setDraft({ ...character.config });
+    document.addEventListener("starr-collect-config", collect);
+    document.addEventListener("starr-reset-config", reset);
+    document.dispatchEvent(new Event("starr-config-changed"));
+    return () => {
+      document.removeEventListener("starr-collect-config", collect);
+      document.removeEventListener("starr-reset-config", reset);
+    };
+  }, [draft, character.id, character.revision]);
   return (
     <form
       className="config-form"
       data-dirty={changed.length > 0}
-      onSubmit={async (e) => {
-        e.preventDefault();
-        setBusy(true);
-        setError("");
-        try {
-          await api(`/api/characters/${character.id}/config`, {
-            method: "PATCH",
-            body: json({
-              patch: Object.fromEntries(
-                changed.map((f) => [f.key, draft[f.key]]),
-              ),
-              revision: character.revision,
-            }),
-          });
-          refresh();
-          notify("配置已保存并应用到当前角色");
-        } catch (e) {
-          setError((e as Error).message);
-        } finally {
-          setBusy(false);
-        }
+      onSubmit={(event) => {
+        event.preventDefault();
+        document.dispatchEvent(new CustomEvent("starr-save-page"));
       }}
     >
       {title && <h3>{title}</h3>}
       <div className="configuration-layout">
         <div className="configuration-fields">
-          {fields.map((f) => (
-            <div
-              className={`config-row ${f.type === "boolean" ? "switch-row" : ""}`}
-              key={f.key}
-              data-config-key={f.key}
-            >
-              <label htmlFor={f.key}>
-                <strong title={f.label}>{f.label}</strong>
-                <small className="config-help" id={`${f.key}-help`}>
-                  {f.help}
-                </small>
-              </label>
-              <div className="config-control">
-                {f.type === "boolean" ? (
-                  <button
-                    id={f.key}
-                    type="button"
-                    role="switch"
-                    aria-checked={!!draft[f.key]}
-                    aria-label={f.label}
-                    aria-describedby={`${f.key}-help`}
-                    className="toggle"
-                    onClick={() =>
-                      setDraft({ ...draft, [f.key]: !draft[f.key] })
-                    }
-                  >
-                    <i />
-                  </button>
-                ) : modelCatalog.length &&
-                  [
-                    "jobs.provider",
-                    "jobs.model",
-                    "bili.provider",
-                    "bili.model",
-                  ].includes(f.key) ? (
-                  <Select
-                    label={f.label}
-                    value={String(draft[f.key] || "")}
-                    options={[
-                      {
-                        value: "",
-                        label: f.key.endsWith(".provider")
-                          ? "选择已登记的 DSH 连接"
-                          : "选择模型",
-                      },
-                      ...(draft[f.key]
-                        ? [
-                            {
-                              value: String(draft[f.key]),
-                              label: String(draft[f.key]),
-                            },
-                          ]
-                        : []),
-                      ...(f.key.endsWith(".provider")
-                        ? modelCatalog
-                        : modelCatalog.find(
-                            (p) =>
-                              p.id === draft[`${f.key.split(".")[0]}.provider`],
-                          )?.models || []
-                      )
-                        .filter((item) => item.id !== draft[f.key])
-                        .map((item) => ({
-                          value: item.id,
-                          label: item.name || item.id,
-                        })),
-                    ]}
-                    onChange={(value) =>
-                      setDraft((current) => ({
-                        ...current,
-                        [f.key]: value,
+          {fields
+            .filter((field) => !field.advanced)
+            .map((f) => (
+              <div
+                className={`config-row ${f.type === "boolean" ? "switch-row" : ""}`}
+                key={f.key}
+                data-config-key={f.key}
+              >
+                <label htmlFor={f.key}>
+                  <strong title={f.label}>{f.label}</strong>
+                  <small className="config-help" id={`${f.key}-help`}>
+                    {f.help}
+                  </small>
+                </label>
+                <div className="config-control">
+                  {f.type === "boolean" ? (
+                    <button
+                      id={f.key}
+                      type="button"
+                      role="switch"
+                      aria-checked={!!draft[f.key]}
+                      aria-label={f.label}
+                      aria-describedby={`${f.key}-help`}
+                      className="toggle"
+                      onClick={() =>
+                        setDraft({ ...draft, [f.key]: !draft[f.key] })
+                      }
+                    >
+                      <i />
+                    </button>
+                  ) : modelCatalog.length &&
+                    [
+                      "jobs.provider",
+                      "jobs.model",
+                      "bili.provider",
+                      "bili.model",
+                    ].includes(f.key) ? (
+                    <Select
+                      label={f.label}
+                      value={String(draft[f.key] || "")}
+                      options={[
+                        {
+                          value: "",
+                          label: f.key.endsWith(".provider")
+                            ? "选择已登记的 DSH 连接"
+                            : "选择模型",
+                        },
+                        ...(draft[f.key]
+                          ? [
+                              {
+                                value: String(draft[f.key]),
+                                label: String(draft[f.key]),
+                              },
+                            ]
+                          : []),
                         ...(f.key.endsWith(".provider")
-                          ? { [`${f.key.split(".")[0]}.model`]: "" }
-                          : {}),
-                      }))
-                    }
-                  />
-                ) : f.options ? (
-                  <Select
-                    label={f.label}
-                    value={String(draft[f.key])}
-                    options={f.options.map((value) => ({
-                      value,
-                      label:
-                        f.key === "memory.defaultVisibility"
-                          ? value === "shared"
-                            ? "角色各平台共享"
-                            : "仅来源会话"
-                          : ({
-                              auto: "自动选择",
-                              self: "仅自己可见",
-                              friends: "好友可见",
-                              public: "公开可见",
-                              vivid: "强动效",
-                              default: "平衡",
-                              light: "轻量",
-                              reduced: "减少动态",
-                              shared: "共用连接",
-                              conversation: "仅来源会话",
-                              custom: "独立连接",
-                              host: "使用DSH视觉模型",
-                              disabled: "停用",
-                              "breeze-local": "本地 Breeze（插件管理）",
-                              "free-local": "免费本地 Whisper",
-                              "soulx-managed": "本地 SoulX（插件管理）",
-                              "soulx-existing": "已有本地 SoulX 服务",
-                              "soulx-bytes": "远程音频字节节点",
-                              awake: "清醒",
-                              observe: "观察",
-                              sleep: "沉睡",
-                              cuda: "NVIDIA 显卡（CUDA）",
-                              cpu: "处理器（CPU）",
-                              mps: "Apple 图形处理器（MPS）",
-                            }[value] ?? value),
-                    }))}
-                    onChange={(v) => setDraft({ ...draft, [f.key]: v })}
-                  />
-                ) : (
-                  <input
-                    id={f.key}
-                    aria-describedby={`${f.key}-help`}
-                    type={
-                      f.type === "number"
-                        ? "number"
-                        : f.type === "time"
-                          ? "time"
-                          : "text"
-                    }
-                    min={f.min}
-                    max={f.max}
-                    step={f.type === "number" ? "any" : undefined}
-                    value={String(draft[f.key] ?? "")}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        [f.key]:
-                          f.type === "number"
-                            ? e.target.value === ""
-                              ? ""
-                              : Number(e.target.value)
-                            : e.target.value,
-                      })
-                    }
-                  />
-                )}
+                          ? modelCatalog
+                          : modelCatalog.find(
+                              (p) =>
+                                p.id ===
+                                draft[`${f.key.split(".")[0]}.provider`],
+                            )?.models || []
+                        )
+                          .filter((item) => item.id !== draft[f.key])
+                          .map((item) => ({
+                            value: item.id,
+                            label: item.name || item.id,
+                          })),
+                      ]}
+                      onChange={(value) =>
+                        setDraft((current) => ({
+                          ...current,
+                          [f.key]: value,
+                          ...(f.key.endsWith(".provider")
+                            ? { [`${f.key.split(".")[0]}.model`]: "" }
+                            : {}),
+                        }))
+                      }
+                    />
+                  ) : f.options ? (
+                    <Select
+                      label={f.label}
+                      value={String(draft[f.key])}
+                      options={f.options.map((value) => ({
+                        value,
+                        label:
+                          f.key === "memory.defaultVisibility"
+                            ? value === "shared"
+                              ? "角色各平台共享"
+                              : "仅来源会话"
+                            : ({
+                                auto: "自动选择",
+                                self: "仅自己可见",
+                                friends: "好友可见",
+                                public: "公开可见",
+                                vivid: "强动效",
+                                default: "平衡",
+                                light: "轻量",
+                                reduced: "减少动态",
+                                shared: "共用连接",
+                                conversation: "仅来源会话",
+                                custom: "独立连接",
+                                host: "使用DSH视觉模型",
+                                disabled: "停用",
+                                "breeze-local": "本地 Breeze（插件管理）",
+                                "free-local": "免费本地 Whisper",
+                                "soulx-managed": "本地 SoulX（插件管理）",
+                                "soulx-existing": "已有本地 SoulX 服务",
+                                "soulx-bytes": "远程音频字节节点",
+                                awake: "清醒",
+                                observe: "观察",
+                                sleep: "沉睡",
+                                cuda: "NVIDIA 显卡（CUDA）",
+                                cpu: "处理器（CPU）",
+                                mps: "Apple 图形处理器（MPS）",
+                              }[value] ?? value),
+                      }))}
+                      onChange={(v) => setDraft({ ...draft, [f.key]: v })}
+                    />
+                  ) : (
+                    <input
+                      id={f.key}
+                      aria-describedby={`${f.key}-help`}
+                      type={
+                        f.type === "number"
+                          ? "number"
+                          : f.type === "time"
+                            ? "time"
+                            : "text"
+                      }
+                      min={f.min}
+                      max={f.max}
+                      step={f.type === "number" ? "any" : undefined}
+                      value={String(draft[f.key] ?? "")}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          [f.key]:
+                            f.type === "number"
+                              ? e.target.value === ""
+                                ? ""
+                                : Number(e.target.value)
+                              : e.target.value,
+                        })
+                      }
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          {fields.some((field) => field.advanced) && (
+            <details className="advanced-settings">
+              <summary>
+                高级设置 · {fields.filter((field) => field.advanced).length} 项
+              </summary>
+              <p className="field-help">
+                默认值适合日常使用；需要调整具体行为时再展开。
+              </p>
+              {fields
+                .filter((field) => field.advanced)
+                .map((f) => (
+                  <div
+                    className={`config-row ${f.type === "boolean" ? "switch-row" : ""}`}
+                    key={f.key}
+                    data-config-key={f.key}
+                  >
+                    <label htmlFor={f.key}>
+                      <strong title={f.label}>{f.label}</strong>
+                      <small className="config-help" id={`${f.key}-help`}>
+                        {f.help}
+                      </small>
+                    </label>
+                    <div className="config-control">
+                      {f.type === "boolean" ? (
+                        <button
+                          id={f.key}
+                          type="button"
+                          role="switch"
+                          aria-checked={!!draft[f.key]}
+                          aria-label={f.label}
+                          aria-describedby={`${f.key}-help`}
+                          className="toggle"
+                          onClick={() =>
+                            setDraft({ ...draft, [f.key]: !draft[f.key] })
+                          }
+                        >
+                          <i />
+                        </button>
+                      ) : modelCatalog.length &&
+                        [
+                          "jobs.provider",
+                          "jobs.model",
+                          "bili.provider",
+                          "bili.model",
+                        ].includes(f.key) ? (
+                        <Select
+                          label={f.label}
+                          value={String(draft[f.key] || "")}
+                          options={[
+                            {
+                              value: "",
+                              label: f.key.endsWith(".provider")
+                                ? "选择已登记的 DSH 连接"
+                                : "选择模型",
+                            },
+                            ...(draft[f.key]
+                              ? [
+                                  {
+                                    value: String(draft[f.key]),
+                                    label: String(draft[f.key]),
+                                  },
+                                ]
+                              : []),
+                            ...(f.key.endsWith(".provider")
+                              ? modelCatalog
+                              : modelCatalog.find(
+                                  (p) =>
+                                    p.id ===
+                                    draft[`${f.key.split(".")[0]}.provider`],
+                                )?.models || []
+                            )
+                              .filter((item) => item.id !== draft[f.key])
+                              .map((item) => ({
+                                value: item.id,
+                                label: item.name || item.id,
+                              })),
+                          ]}
+                          onChange={(value) =>
+                            setDraft((current) => ({
+                              ...current,
+                              [f.key]: value,
+                              ...(f.key.endsWith(".provider")
+                                ? { [`${f.key.split(".")[0]}.model`]: "" }
+                                : {}),
+                            }))
+                          }
+                        />
+                      ) : f.options ? (
+                        <Select
+                          label={f.label}
+                          value={String(draft[f.key])}
+                          options={f.options.map((value) => ({
+                            value,
+                            label:
+                              f.key === "memory.defaultVisibility"
+                                ? value === "shared"
+                                  ? "角色各平台共享"
+                                  : "仅来源会话"
+                                : ({
+                                    auto: "自动选择",
+                                    self: "仅自己可见",
+                                    friends: "好友可见",
+                                    public: "公开可见",
+                                    vivid: "强动效",
+                                    default: "平衡",
+                                    light: "轻量",
+                                    reduced: "减少动态",
+                                    shared: "共用连接",
+                                    conversation: "仅来源会话",
+                                    custom: "独立连接",
+                                    host: "使用DSH视觉模型",
+                                    disabled: "停用",
+                                    "breeze-local": "本地 Breeze（插件管理）",
+                                    "free-local": "免费本地 Whisper",
+                                    "soulx-managed": "本地 SoulX（插件管理）",
+                                    "soulx-existing": "已有本地 SoulX 服务",
+                                    "soulx-bytes": "远程音频字节节点",
+                                    awake: "清醒",
+                                    observe: "观察",
+                                    sleep: "沉睡",
+                                    cuda: "NVIDIA 显卡（CUDA）",
+                                    cpu: "处理器（CPU）",
+                                    mps: "Apple 图形处理器（MPS）",
+                                  }[value] ?? value),
+                          }))}
+                          onChange={(v) => setDraft({ ...draft, [f.key]: v })}
+                        />
+                      ) : (
+                        <input
+                          id={f.key}
+                          aria-describedby={`${f.key}-help`}
+                          type={
+                            f.type === "number"
+                              ? "number"
+                              : f.type === "time"
+                                ? "time"
+                                : "text"
+                          }
+                          min={f.min}
+                          max={f.max}
+                          step={f.type === "number" ? "any" : undefined}
+                          value={String(draft[f.key] ?? "")}
+                          onChange={(e) =>
+                            setDraft({
+                              ...draft,
+                              [f.key]:
+                                f.type === "number"
+                                  ? e.target.value === ""
+                                    ? ""
+                                    : Number(e.target.value)
+                                  : e.target.value,
+                            })
+                          }
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </details>
+          )}
         </div>
       </div>
       {error && (
@@ -330,10 +493,6 @@ export function ConfigForm({
             ? `${changed.length} 项更改尚未保存`
             : "当前配置已保存"}
         </small>
-        <button className="primary" disabled={!changed.length || busy}>
-          <Save size={14} />
-          {busy ? "保存中…" : "保存"}
-        </button>
       </div>
     </form>
   );
@@ -341,7 +500,7 @@ export function ConfigForm({
 
 export function MemoryPage(props: PageProps) {
   const { character, version, refresh, notify } = props,
-    [view, setView] = useState("map"),
+    [view, setView] = useState("timeline"),
     [filter, setFilter] = useState(""),
     [query, setQuery] = useState(""),
     [selected, setSelected] = useState<string | null>(() => {
@@ -362,13 +521,15 @@ export function MemoryPage(props: PageProps) {
     () =>
       data?.nodes.filter(
         (n) =>
-          (!filter || n.kind === filter) &&
+          (!filter ||
+            (filter === "moment" ? n.kind !== "diary" : n.kind === filter)) &&
+          (view !== "continuity" || (n.anchor && n.kind !== "diary")) &&
           (!query ||
             `${n.title} ${n.content}`
               .toLowerCase()
               .includes(query.toLowerCase())),
       ) ?? [],
-    [data, filter, query],
+    [data, filter, query, view],
   );
   const current = data?.nodes.find((n) => n.id === selected),
     motion = String(character.config["ui.motion"]);
@@ -395,8 +556,9 @@ export function MemoryPage(props: PageProps) {
         value={view}
         onChange={setView}
         items={[
+          { id: "timeline", name: "笔记与日记" },
+          { id: "continuity", name: "长期理解" },
           { id: "map", name: "记忆星图" },
-          { id: "timeline", name: "时间线" },
         ]}
       />
       {view === "settings" ? (
@@ -411,7 +573,7 @@ export function MemoryPage(props: PageProps) {
               description="查看当前实现边界"
             >
               <p>
-                已实现即时保存、重要度与半衰期排序、关键词检索、真实关系边、笔记投影、外部笔记修订预览导入与定时模型整理。向量索引仍待接入。
+                日记按设置的时间保存。其他笔记由她在相处中逐步修订，重复或过时内容可以归档；归档后仍可恢复。
               </p>
               <p>外部改过的笔记会被保留并报告冲突，不会静默覆盖。</p>
             </Disclosure>
@@ -434,8 +596,11 @@ export function MemoryPage(props: PageProps) {
                     {label}
                     <span>
                       {key
-                        ? (data?.nodes.filter((n) => n.kind === key).length ??
-                          0)
+                        ? (data?.nodes.filter((n) =>
+                            key === "moment"
+                              ? n.kind !== "diary"
+                              : n.kind === key,
+                          ).length ?? 0)
                         : (data?.nodes.length ?? 0)}
                     </span>
                   </button>
@@ -464,7 +629,10 @@ export function MemoryPage(props: PageProps) {
                   >
                     {data && (
                       <StarMap
-                        nodes={data.nodes}
+                        nodes={data.nodes.map((node) => ({
+                          ...node,
+                          kind: node.kind === "diary" ? "diary" : "moment",
+                        }))}
                         links={data.links}
                         selected={selected}
                         onSelect={setSelected}
@@ -479,7 +647,7 @@ export function MemoryPage(props: PageProps) {
                       <i className="legend-line" />
                       连线来自真实关联
                     </span>
-                    <span>淡色星轨仅作装饰 · 分类保留原位</span>
+                    <span>选择星点，阅读完整笔记</span>
                   </div>
                 </>
               ) : null}
@@ -499,11 +667,15 @@ export function MemoryPage(props: PageProps) {
                     <div>
                       <strong>{m.title}</strong>
                       <small>
-                        {kindNames[m.kind]} · {date(m.created)}
+                        {kindNames[m.kind] || "笔记"} · {date(m.created)}
                       </small>
                     </div>
                     <span className="importance">
-                      {m.anchor && <StarIcon size={12} />} {m.importance}
+                      {m.anchor ? (
+                        <span title="跨会话保留的长期理解">
+                          <StarIcon size={12} />
+                        </span>
+                      ) : null}
                     </span>
                   </button>
                 ))}
@@ -533,7 +705,7 @@ export function MemoryPage(props: PageProps) {
               {current ? (
                 <>
                   <div className="detail-heading">
-                    <Badge>{kindNames[current.kind]}</Badge>
+                    <Badge>{kindNames[current.kind] || "笔记"}</Badge>
                     <button
                       aria-label="关闭记忆详情"
                       className="icon-button"
@@ -543,7 +715,11 @@ export function MemoryPage(props: PageProps) {
                     </button>
                   </div>
                   <h2>{current.title}</h2>
-                  <section className="memory-reading" aria-label="记忆完整正文">
+                  <section
+                    className="memory-reading"
+                    aria-label="记忆完整正文"
+                    tabIndex={0}
+                  >
                     <span className="detail-content-label">完整正文</span>
                     <div className="memory-body">{current.content}</div>
                   </section>
@@ -554,16 +730,19 @@ export function MemoryPage(props: PageProps) {
                     <span>
                       来源<strong>{current.source}</strong>
                     </span>
-                    <span>
-                      重要度<strong>{current.importance} / 100</strong>
-                    </span>
-                    <span>
-                      事实置信度<strong>{current.confidence} / 100</strong>
-                    </span>
-                    <span>
-                      当前召回权重<strong>{current.score}</strong>
-                    </span>
-                    {!!current.anchor && <Badge tone="good">长期锚点</Badge>}
+                    <details className="memory-recall-details">
+                      <summary>检索信息</summary>
+                      <span>
+                        重要度<strong>{current.importance} / 100</strong>
+                      </span>
+                      <span>
+                        事实置信度<strong>{current.confidence} / 100</strong>
+                      </span>
+                      <span>
+                        当前召回权重<strong>{current.score}</strong>
+                      </span>
+                    </details>
+                    {!!current.anchor && <Badge tone="good">长期理解</Badge>}
                   </div>
                   <h3 className="detail-subtitle">
                     <Link2 size={15} />

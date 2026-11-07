@@ -6,12 +6,8 @@ import { useResource, type PageProps } from "./main";
 const kinds = [
   { value: "diaryDay", label: "白天日记" },
   { value: "diaryNight", label: "晚间日记" },
-  { value: "organize", label: "记忆整理" },
-  { value: "weekly", label: "每周回顾" },
-  { value: "monthly", label: "每月回顾" },
-  { value: "yearly", label: "每年回顾" },
   { value: "backup", label: "角色备份" },
-  { value: "projection", label: "笔记同步补漏" },
+  { value: "projection", label: "笔记同步" },
 ];
 type Status = {
   hostReady: boolean;
@@ -47,28 +43,25 @@ function resultText(raw: string) {
 export function MemoryJobs(props: PageProps) {
   const root = `/api/characters/${props.character.id}/jobs`,
     { data, error } = useResource<Status>(root, props.version),
-    [kind, setKind] = useState("projection"),
+    [kind, setKind] = useState("diaryNight"),
     [busy, setBusy] = useState(false);
   return (
     <Panel
-      title="记忆保存与整理任务"
+      title="日记与自动维护"
       aside={
         <Badge>
           {data?.running
             ? `${data.running} 项执行中`
             : data?.hostReady
-              ? "调度已接入"
+              ? "已接入"
               : "需在 DSH 内运行"}
         </Badge>
       }
     >
       <p>
-        记忆写入工具会立即提交原文；这里负责定时日记、回顾、备份和笔记补漏。日记与整理会调用单独的
-        DSH 模型会话，并检查记忆确实落盘；不会把模型最终回复误当成已保存
+        日记按你选择的时间写下当天经历。其他笔记由她自己取舍和修订，不再生成固定周报、月报或年报。
       </p>
-      <p>
-        整理任务遵循记忆可见范围，不能从别人的私聊中拼接资料。原文和外部修改过的笔记会保留，冲突在维护页显示
-      </p>
+      <p>日记原文保留；同步和备份不调用模型。</p>
       {error && <p className="inline-error">{error}</p>}
       {data?.configurationError && (
         <p role="alert" className="inline-error">
@@ -76,15 +69,27 @@ export function MemoryJobs(props: PageProps) {
         </p>
       )}
       <section>
-        <h3>日记与整理模型</h3>
+        <h3>日记模型</h3>
         <ConfigForm {...props} pages={["memory-jobs"]} />
       </section>
-      {kinds.map((item) => (
-        <section key={item.value}>
-          <h3>{item.label}</h3>
-          <ConfigForm {...props} pages={[`memory-job-${item.value}`]} />
-        </section>
-      ))}
+      {kinds
+        .filter((item) => item.value.startsWith("diary"))
+        .map((item) => (
+          <section key={item.value}>
+            <h3>{item.label}</h3>
+            <ConfigForm {...props} pages={[`memory-job-${item.value}`]} />
+          </section>
+        ))}
+      <Disclosure title="自动备份与同步">
+        {kinds
+          .filter((item) => !item.value.startsWith("diary"))
+          .map((item) => (
+            <section key={item.value}>
+              <h3>{item.label}</h3>
+              <ConfigForm {...props} pages={[`memory-job-${item.value}`]} />
+            </section>
+          ))}
+      </Disclosure>
       <div className="form-footer">
         <Select
           value={kind}

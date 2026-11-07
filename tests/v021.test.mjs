@@ -10,7 +10,6 @@ import { createTools } from "../src/host/tools.mjs";
 import { animationSheet } from "../src/media/animated.mjs";
 import { createQQCapabilities } from "../src/qq/capabilities.mjs";
 import { mountMediaServices } from "../src/runtime/media-services.mjs";
-import { TabbitBrowser, allowedURL } from "../src/browser/tabbit.mjs";
 
 function fixture(t, driver) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "starr-v021-")),
@@ -73,7 +72,7 @@ function fixture(t, driver) {
   });
   return { root, store, id, patch, qq, agency, sends, event, group };
 }
-test("未被@的群消息仅观察，群自主判断在允许来源群发送且不重复插话", async (t) => {
+test("显式观察模式只留经历，群自主判断在允许来源群发送且不重复插话", async (t) => {
   let seen;
   const f = fixture(t, {
     run: async (input) => {
@@ -84,7 +83,7 @@ test("未被@的群消息仅观察，群自主判断在允许来源群发送且�
       });
     },
   });
-  f.qq.receive(f.event());
+  f.qq.receive(f.event(), { observe: true });
   assert.equal(
     f.store.db.prepare("SELECT status FROM qq_inbox").get().status,
     "observed",
@@ -115,7 +114,7 @@ test("群主动回合只继承来源群记忆，不能读取另一私聊且写�
       return { effect: true };
     },
   });
-  f.qq.receive(f.event());
+  f.qq.receive(f.event(), { observe: true });
   const source = f.group().session_id;
   f.store.saveMemory(
     f.id,
@@ -149,7 +148,7 @@ test("读取凭据期间撤销群授权阻止外发，待处理来信与暂停�
   const f = fixture(t, {
     run: (input) => input.finish({ text: "不会发出", reason: "合成" }),
   });
-  f.qq.receive(f.event());
+  f.qq.receive(f.event(), { observe: true });
   f.qq.secrets.read = async () => {
     f.patch({ "agency.groupEnabled": false });
     return "synthetic";
@@ -348,46 +347,6 @@ test("QQ原生图片通道将GIF关键帧投给视觉模型，不把原始GIF当
   assert.ok(image.startsWith("data:image/png"));
   assert.match(blocks[0].text, /动图关键帧/);
 });
-test("浏览器不限制域名并保留协议验证，分页回执读取真实结果，未授权与异常不假报成功", async (t) => {
-  const f = fixture(t);
-  f.patch({ "browser.enabled": true });
-  assert.equal(
-    allowedURL("https://example.com.evil.test/"),
-    "https://example.com.evil.test/",
-  );
-  assert.equal(
-    allowedURL("http://127.0.0.1:17922/"),
-    "http://127.0.0.1:17922/",
-  );
-  assert.throws(() => allowedURL("file:///etc/passwd"), /HTTP/);
-  assert.throws(() => allowedURL("https://user:pass@example.com/"), /凭据/);
-  const calls = [],
-    raw = JSON.stringify({
-      url: "https://example.com/",
-      title: "合成",
-      text: "真实结果",
-      links: [],
-    });
-  const browser = new TabbitBrowser(f.store, {
-    invoke: async (program, args, source) => {
-      calls.push({ args, source });
-      if (args[0] === "resource")
-        return { data: raw, nextOffset: raw.length, eof: true };
-      if (args[0] === "finish") return { forcedCleanup: false };
-      return { status: "succeeded", result: { resourceId: "resource" } };
-    },
-  });
-  const result = await browser.read(f.id, { url: "https://example.com/" });
-  assert.equal(result.text, "真实结果");
-  assert.equal(result.visualVerified, false);
-  assert.ok(calls.some((c) => c.args[0] === "resource"));
-  assert.ok(calls.some((c) => c.args[0] === "finish"));
-  f.patch({ "browser.enabled": false });
-  await assert.rejects(
-    browser.read(f.id, { url: "https://example.com/" }),
-    /未开启/,
-  );
-});
 test("分享意愿只接受共享经历，独立主人回合可发送且撤回后立即停止", async (t) => {
   const f = fixture(t, {
     run: (input) =>
@@ -409,7 +368,7 @@ test("分享意愿只接受共享经历，独立主人回合可发送且撤回�
   f.store.db
     .prepare("INSERT INTO qq_threads VALUES('owner',?,?,'private','200001',0)")
     .run(f.id, owner.session_id);
-  f.qq.receive(f.event());
+  f.qq.receive(f.event(), { observe: true });
   const group = f.group();
   const tools = createTools(f.store, {
     characterId: f.id,
@@ -480,7 +439,7 @@ test("持续目的外发后驱动报错仍保留下一步，真实回执不会�
       throw new Error("合成发送后驱动故障");
     },
   });
-  f.qq.receive(f.event());
+  f.qq.receive(f.event(), { observe: true });
   const goal = f.store.createGoal(
     f.id,
     {
@@ -505,7 +464,7 @@ test("有明确群来源的连接目的无需绑定主人，群授权仍独立�
     run: (input) =>
       input.finish({ text: "接续群话题", reason: "当前群的约定" }),
   });
-  f.qq.receive(f.event());
+  f.qq.receive(f.event(), { observe: true });
   const goal = f.store.createGoal(
     f.id,
     {
@@ -521,45 +480,4 @@ test("有明确群来源的连接目的无需绑定主人，群授权仍独立�
   const result = await f.agency.run(f.id);
   assert.equal(result.status, "sent", result.error);
   assert.equal(f.sends[0].name, "send_group_msg");
-});
-
-test("截图字节读入后先释放浏览任务，视觉空答复不标记为成功理解", async (t) => {
-  const f = fixture(t);
-  f.patch({
-    "browser.enabled": true,
-    "browser.visual": true,
-  });
-  const screenshot = path.join(f.root, "screenshot.png");
-  fs.writeFileSync(screenshot, Buffer.from("synthetic-image"));
-  let released = false;
-  const browser = new TabbitBrowser(f.store, {
-    invoke: async (program, args) => {
-      if (args[0] === "finish") {
-        released = true;
-        return { forcedCleanup: false };
-      }
-      return {
-        status: "succeeded",
-        result: {
-          value: {
-            url: "https://example.com/",
-            text: "合成网页",
-            links: [],
-            screenshot: { nextAction: { path: screenshot } },
-          },
-        },
-      };
-    },
-    understand: async () => {
-      assert.equal(released, true);
-      return { answer: "" };
-    },
-  });
-  const result = await browser.read(f.id, {
-    url: "https://example.com/",
-    visual: true,
-  });
-  assert.equal(result.textVerified, true);
-  assert.equal(result.visualVerified, false);
-  assert.equal(browser.lastCleanup.confirmed, true);
 });

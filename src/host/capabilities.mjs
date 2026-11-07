@@ -28,17 +28,6 @@ export function capabilityStatus(store, characterId, sessionId, services = {}) {
     ? fs.existsSync(python)
     : !!c["asr.model"] &&
       !!c[c["asr.connection"] === "custom" ? "asr.baseUrl" : "media.baseUrl"];
-  const launcher =
-    c["browser.launcherPath"] ||
-    (process.platform === "win32"
-      ? path.join(
-          process.env.LOCALAPPDATA || "",
-          "Tabbit",
-          "LocalAgent",
-          "bin",
-          "tabbit-cli.exe",
-        )
-      : path.join(process.env.HOME || "", ".local", "bin", "tabbit-cli"));
   const files = runtime.nativeFiles?.(sessionId, characterId);
   const hasFiles = ["read", "write", "edit"].every((name) => files?.[name]);
   return {
@@ -51,13 +40,6 @@ export function capabilityStatus(store, characterId, sessionId, services = {}) {
         : local
           ? "本地听写环境未准备完成"
           : "当前听写模型或服务地址未配置完整，请到语音识别页检查",
-    ),
-    browser: entry(
-      c["browser.enabled"],
-      !!runtime.browser && fs.existsSync(launcher),
-      c["browser.interact"]
-        ? "可在自己的页面中继续阅读、点击链接、输入搜索词、滚动和返回"
-        : "可阅读网页正文、链接与截图；连续交互尚未开启",
     ),
     singing: entry(
       c["sing.allowBot"],
@@ -88,7 +70,6 @@ export function capabilityPrompt(store, id, sessionId) {
     "【当前能力实况】" +
     Object.entries({
       hearing: "听写",
-      browser: "网页",
       singing: "翻唱",
       files: "原生文件读写",
     })

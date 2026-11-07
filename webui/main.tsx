@@ -68,23 +68,8 @@ import {
   ConfigForm,
 } from "./pages";
 import { OnboardingWizard } from "./OnboardingWizard";
-import "./style.css";
-import "./threeui-theme.css";
-import "./kage-theme.css";
-import "./organism.css";
-import "./liquid-metal.css";
-import "./v015.css";
-import "./v019.css";
-import "./v019-redesign.css";
-import "./v019-surfaces.css";
-import "./v019-journey.css";
-import "./foundation.css";
-import "./v019-glass.css";
-import "./v020.css";
-import "./v021.css";
-import "./v021-fix.css";
-import "./v022.css";
-import "./v023.css";
+import "./design.css";
+import "./v024.css";
 import { RuntimeStatus } from "./RuntimeStatus";
 import { PageContents } from "./PageContents";
 import { CompanionOverview } from "./CompanionOverview";
@@ -92,6 +77,7 @@ import { ObservatoryOverview } from "./ObservatoryOverview";
 import { resolvePage, navigation, workspaces, commonPages } from "./navigation";
 import { RelatedRoutes, WorkspacePage } from "./WorkspacePages";
 import { Today } from "./Today";
+import { PageSaveBar } from "./PageSaveBar";
 
 export const StarMap = lazy(() => import("./StarMap"));
 export function useResource<T>(url: string, version = 0) {
@@ -333,7 +319,11 @@ function Overview({
                   </button>
                 </div>
                 <h2>{selectedMemory.title}</h2>
-                <section className="memory-reading" aria-label="记忆完整正文">
+                <section
+                  className="memory-reading"
+                  aria-label="记忆完整正文"
+                  tabIndex={0}
+                >
                   <span className="detail-content-label">完整正文</span>
                   <div className="memory-body">{selectedMemory.content}</div>
                 </section>
@@ -597,41 +587,44 @@ export function MemoryModal({
             onChange={(e) => setForm({ ...form, content: e.target.value })}
           />
         </label>
-        <div className="form-columns">
-          <label className="field">
-            重要度 <span>{form.importance}</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={form.importance}
-              onChange={(e) =>
-                setForm({ ...form, importance: +e.target.value })
-              }
-            />
-            <small>影响检索顺序，不会删除原文</small>
-          </label>
-          <label className="field">
-            事实置信度 <span>{form.confidence}</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={form.confidence}
-              onChange={(e) =>
-                setForm({ ...form, confidence: +e.target.value })
-              }
-            />
-            <small>对内容可靠程度的判断</small>
-          </label>
-        </div>
+        <details className="advanced-fields">
+          <summary>检索参数（可保留默认值）</summary>
+          <div className="form-columns">
+            <label className="field">
+              重要度 <span>{form.importance}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={form.importance}
+                onChange={(e) =>
+                  setForm({ ...form, importance: +e.target.value })
+                }
+              />
+              <small>影响检索顺序，不会删除原文</small>
+            </label>
+            <label className="field">
+              事实置信度 <span>{form.confidence}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={form.confidence}
+                onChange={(e) =>
+                  setForm({ ...form, confidence: +e.target.value })
+                }
+              />
+              <small>对内容可靠程度的判断</small>
+            </label>
+          </div>
+        </details>
         <label className="checkbox-row">
           <input
             type="checkbox"
             checked={form.anchor}
             onChange={(e) => setForm({ ...form, anchor: e.target.checked })}
           />
-          作为长期锚点，不降低召回优先级
+          作为长期理解，在新会话中优先想起
         </label>
         {error && (
           <p className="inline-error" role="alert">
@@ -639,7 +632,7 @@ export function MemoryModal({
           </p>
         )}
         <div className="form-footer">
-          <small>提交后立即保存，再输出笔记</small>
+          <small>笔记会立即保存，日记原文受保护</small>
           <button className="primary" disabled={busy}>
             {busy ? "保存中…" : "记录记忆"}
             <Check size={15} />
@@ -797,6 +790,7 @@ function App() {
     [toast, setToast] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
     main = useRef<HTMLElement>(null);
+  const routeRef = useRef(page);
   const load = useCallback(() => {
     api<Bootstrap>("/api/bootstrap")
       .then((data) => {
@@ -811,6 +805,16 @@ function App() {
       .catch((e) => setBootError(e.message));
   }, []);
   useEffect(load, [load]);
+  useEffect(() => {
+    const leave = (event: BeforeUnloadEvent) => {
+      if (main.current?.querySelector('[data-dirty="true"]')) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    addEventListener("beforeunload", leave);
+    return () => removeEventListener("beforeunload", leave);
+  }, []);
   useEffect(() => {
     const media = matchMedia("(max-width: 980px)");
     const change = () => setCompact(media.matches);
@@ -837,7 +841,17 @@ function App() {
   }, [menu, compact]);
   useEffect(() => {
     const handler = () => {
-      const next = resolvePage(location.hash.slice(1));
+      const raw = location.hash.slice(1);
+      const next = raw === "onboarding" ? "onboarding" : resolvePage(raw);
+      if (
+        next !== routeRef.current &&
+        main.current?.querySelector('[data-dirty="true"]') &&
+        !window.confirm("当前页面有尚未保存的修改。确定离开吗？")
+      ) {
+        history.replaceState(null, "", `#${routeRef.current}`);
+        return;
+      }
+      routeRef.current = next;
       setPage(next);
       main.current?.scrollTo({ top: 0, behavior: "instant" });
       if (next === "onboarding") {
@@ -858,7 +872,9 @@ function App() {
     [],
   );
   const { data: overview, error } = useResource<OverviewData>(
-    id ? `/api/characters/${id}/overview` : "",
+    id && bootstrap?.characters.some((character) => character.id === id)
+      ? `/api/characters/${id}/overview`
+      : "",
     version,
   );
   const notify = useCallback((message: string) => {
@@ -882,6 +898,7 @@ function App() {
     main.current?.scrollTo({ top: 0, behavior: "instant" });
     if (page !== next) {
       playRouteTransition();
+      routeRef.current = next;
       setPage(next);
       location.hash = next;
     }
@@ -980,6 +997,11 @@ function App() {
               label="切换观察角色"
               value={id}
               onChange={(next) => {
+                if (
+                  main.current?.querySelector('[data-dirty="true"]') &&
+                  !window.confirm("当前页面有尚未保存的修改。确定切换角色吗？")
+                )
+                  return;
                 setId(next);
                 setModal("");
                 setMenu(false);
@@ -1004,9 +1026,19 @@ function App() {
               .map((n) => (
                 <React.Fragment key={n.id}>
                   <button
-                    aria-current={page === n.id ? "page" : undefined}
+                    aria-current={
+                      page === n.id ||
+                      (n.id === "bili" && page.startsWith("bili-"))
+                        ? "page"
+                        : undefined
+                    }
                     aria-label={`${n.label} · ${n.name}`}
-                    className={page === n.id ? "active" : ""}
+                    className={
+                      page === n.id ||
+                      (n.id === "bili" && page.startsWith("bili-"))
+                        ? "active"
+                        : ""
+                    }
                     onClick={() => go(n.id)}
                   >
                     <n.icon size={17} strokeWidth={1.6} />
@@ -1100,7 +1132,7 @@ function App() {
                   load();
                 }}
               >
-                新手调试
+                初次设置
               </button>
               {
                 <div className="home-character-switch">
@@ -1108,6 +1140,13 @@ function App() {
                     label="切换观察角色"
                     value={id}
                     onChange={(next) => {
+                      if (
+                        main.current?.querySelector('[data-dirty="true"]') &&
+                        !window.confirm(
+                          "当前页面有尚未保存的修改。确定切换角色吗？",
+                        )
+                      )
+                        return;
                       setId(next);
                       setModal("");
                     }}
@@ -1133,7 +1172,7 @@ function App() {
               <span className="preview-label">{bootstrap.version}</span>
               <span className="saved-indicator">
                 <CheckCheck size={14} />
-                本地持久化
+                本地保存
               </span>
               <button
                 className="icon-button"
@@ -1148,7 +1187,7 @@ function App() {
             {!bootstrap.onboarding.completedAt && (
               <div className="guide-reminder" role="status">
                 <p>
-                  先完成新手调试，检查角色、记忆目录与平台连接。未验证的能力会保留待接入状态
+                  先完成初次设置，检查角色、记忆目录与平台连接。未验证的能力会保留待接入状态
                 </p>
                 <button
                   className="ghost"
@@ -1157,17 +1196,14 @@ function App() {
                     load();
                   }}
                 >
-                  继续新手调试
+                  继续初次设置
                 </button>
               </div>
             )}
 
             <div className="page-title">
               <div>
-                <h1>
-                  {nav.label}
-                  <small className="page-purpose">{nav.purpose}</small>
-                </h1>
+                <h1>{nav.label}</h1>
                 <p>
                   {page === "overview"
                     ? "连接与最近近况的独立预览"
@@ -1199,7 +1235,6 @@ function App() {
                   {[
                     "qq",
                     "bili",
-                    "browser",
                     "hearing",
                     "vision",
                     "singing",
@@ -1223,6 +1258,7 @@ function App() {
                     <WorkspacePage {...activeProps} page={page} />
                   )}
                   <RelatedRoutes page={page} go={go} />
+                  <PageSaveBar {...activeProps} />
                 </Boundary>
               </div>
             )}

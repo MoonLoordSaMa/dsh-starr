@@ -14,7 +14,6 @@ import { BiliService } from "../src/bili/service.mjs";
 import { readableNotePath } from "../src/starrcore/vault.mjs";
 import { createTools } from "../src/host/tools.mjs";
 import { Singing } from "../src/media/singing.mjs";
-import { periodTitle } from "../src/host/job-driver.mjs";
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "starr-v017-")),
@@ -295,38 +294,38 @@ test("QQ空间没有编号的回执保持待核对，同批不可再次外发", 
   );
   assert.equal(posted, 1);
 });
-test("自我概览独立目录，周期概览拒绝日级流水，日记日期不重复", (t) => {
-  const f = fixture(t);
-  const base = {
-    id: "memory-test",
-    title: "2026-11-04 夜记",
-    created: "2026-11-04T00:00:00Z",
-    kind: "diary",
-  };
+test("自由笔记兼容旧类别和自然标题，日记日期与目录保持", (t) => {
+  const f = fixture(t),
+    base = {
+      id: "memory-test",
+      title: "2026-11-04 夜记",
+      created: "2026-11-04T00:00:00Z",
+      kind: "diary",
+    };
   assert.match(readableNotePath(base), /^05-日记\/2026-11-04 夜记/);
   assert.match(
     readableNotePath({ ...base, kind: "self", title: "我是谁" }),
-    /^07-自我概览\//,
+    /^笔记\//,
   );
-  assert.throws(
-    () =>
-      f.store.saveMemory(f.id, {
-        kind: "summary",
-        title: "2026-11-04 日整理",
-        content: "流水",
-      }),
-    /年.*月.*周/,
-  );
-  for (const title of ["2026 年概览", "2026-11 月概览", "2026-W45 周概览"])
+  for (const kind of [
+    "person",
+    "promise",
+    "interest",
+    "summary",
+    "self",
+    "moment",
+  ]) {
     assert.equal(
-      f.store.saveMemory(f.id, { kind: "summary", title, content: "真实周期" })
-        .kind,
-      "summary",
+      f.store.saveMemory(f.id, {
+        kind,
+        title: "自由的理解 " + kind,
+        content: "不按周期凑流水",
+      }).kind,
+      "moment",
     );
-  assert.equal(periodTitle("monthly", "2027-01-01@08:00"), "2026-12 月概览");
-  assert.equal(periodTitle("yearly", "2027-01-01@08:00"), "2026 年概览");
-  assert.equal(periodTitle("weekly", "2027-01-03@20:00"), "2026-W53 周概览");
+  }
 });
+
 test("系统加密媒体密钥不落明文、角色隔离；bot不能修改凭据和新增授权", async (t) => {
   const f = fixture(t),
     bench = new MediaWorkbench(f.store);

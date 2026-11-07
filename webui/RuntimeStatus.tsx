@@ -27,7 +27,23 @@ export type Dashboard = {
       created: string;
       preview: string;
     }[];
+    retained: {
+      id: string;
+      title: string;
+      content: string;
+      revision: number;
+      created: string;
+    }[];
+    changes: {
+      id: string;
+      memoryId: string;
+      title: string;
+      reason: string;
+      revision: number;
+      created: string;
+    }[];
   };
+  attention: RuntimeItem[];
   recent: {
     id: string;
     time: number;
@@ -62,11 +78,11 @@ export function useDashboard(characterId: string, version: number) {
           setResult({ id: characterId, data, error: "" });
       } catch {
         if (controller === request)
-          setResult({
+          setResult((previous) => ({
             id: characterId,
-            data: null,
-            error: "状态读取失败，请重试。",
-          });
+            data: previous.id === characterId ? previous.data : null,
+            error: "状态刷新失败；如有旧数据，以下显示上次成功读取的状态。",
+          }));
       } finally {
         clearTimeout(timeout);
         busy = false;
@@ -138,7 +154,11 @@ export function RuntimeStatus(props: PageProps & { page: string }) {
   const items = data?.items.filter((item) => item.page === props.page) || [];
   if (!items.length && !error && data) return null;
   return (
-    <section className="function-status" aria-label="当前功能状态">
+    <section
+      className="function-status"
+      aria-label="当前功能状态"
+      data-stale={!!error}
+    >
       <div className="runtime-caption">
         <span>{error || (data ? "当前运行状态" : "正在读取运行状态…")}</span>
         <button

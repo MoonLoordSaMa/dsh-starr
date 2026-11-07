@@ -1,12 +1,8 @@
 export const jobKinds = {
   diaryDay: "白天日记",
   diaryNight: "晚间日记",
-  organize: "记忆整理",
-  weekly: "每周回顾",
-  monthly: "每月回顾",
-  yearly: "每年回顾",
   backup: "角色备份",
-  projection: "笔记同步补漏",
+  projection: "笔记同步",
 };
 const f = (key, label, type, value, help, extra = {}) => [
   key,
@@ -22,14 +18,14 @@ const f = (key, label, type, value, help, extra = {}) => [
 export const jobFields = [
   f(
     "jobs.provider",
-    "整理模型连接",
+    "日记模型连接",
     "text",
     "",
-    "填写 DSH 已登记的连接标识；日记与回顾在独立角色会话内完成，不改聊天默认模型。",
+    "填写 DSH 已登记的连接标识；日记使用角色自己的后台会话，不改变聊天模型。",
   ),
   f(
     "jobs.model",
-    "整理模型",
+    "日记模型",
     "text",
     "",
     "填写该连接中的模型标识；备份和同步补漏不调用模型。",
@@ -46,10 +42,8 @@ export const jobFields = [
       `jobs.${key}.at`,
       `${label} · 本地时间`,
       "time",
-      ["12:00", "23:00", "03:00", "20:00", "20:00", "20:00", "04:00", "05:00"][
-        index
-      ],
-      "使用角色作息时区；周回顾在周日，月回顾在每月1日，年回顾在1月1日。",
+      ["12:00", "23:00", "04:00", "05:00"][index],
+      "使用角色作息时区。",
     ),
     f(
       `jobs.${key}.catchUpHours`,

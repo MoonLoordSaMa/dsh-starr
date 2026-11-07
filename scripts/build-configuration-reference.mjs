@@ -4,7 +4,6 @@ const { version } = JSON.parse(
   fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 );
 const titles = {
-  browser: "Tabbit网页浏览与画面理解",
   agency: "主动范围、预算与暂停",
   bridge: "B站到 QQ 分享",
   "bili-actions": "B站公开内容管理",
@@ -24,7 +23,7 @@ const titles = {
   "chat-access": "拒收与刷屏保护",
   "chat-tools": "基础会话工具",
   "chat-media": "QQ 图片、语音、表情与历史",
-  "memory-jobs": "日记与整理模型",
+  "memory-jobs": "日记模型",
   bili: "B站模型与互动对象",
   "bili-dm": "B站私信",
   "bili-comment": "B站评论",
@@ -75,7 +74,7 @@ lines.push(
   "| httpPort / wsPort | 3000 / 3001 | SnowLuma 正向 HTTP / WebSocket，仅本机 |",
   "| tokenEnv | SNOWLUMA_TOKEN | 启动环境变量名；也可 Windows 系统加密保存令牌原文 |",
   "| privateUsers / groups | 空 | 允许对象；空列表不开放 |",
-  "| requireMention | true | 群聊先要求 @，再判断角色唤醒 |",
+  "| requireMention | true | 通常要求群内 @；明确开启群观察、自主参与及自主总开关且未暂停时，清醒状态也可由模型判断普通群消息 |",
   "| provider / model | 空 | DSH 已登记的模型连接与模型 |",
   "| characterId | 空 | 固定角色编号，不随网页当前角色切换 |",
   "| mergeMs | 1200 | 合并短消息，200–5000 毫秒 |",

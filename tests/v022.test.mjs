@@ -10,7 +10,7 @@ import {
   migrateFileWorkspace,
 } from "../src/host/native-files.mjs";
 import { agencyToolAllowed } from "../src/host/agency-driver.mjs";
-import { BrowserSessions } from "../src/browser/session.mjs";
+
 import { createTools } from "../src/host/tools.mjs";
 import { mountMediaServices } from "../src/runtime/media-services.mjs";
 import { createQQCapabilities } from "../src/qq/capabilities.mjs";
@@ -48,66 +48,6 @@ function fixture(t) {
   });
   return { root, store, id, patch, session };
 }
-test("连续浏览复用自己的页面，作用域隔离，待定回执只查原请求，关闭及撤销权限生效", async (t) => {
-  const f = fixture(t);
-  f.patch({ "browser.enabled": true, "browser.interact": true });
-  const calls = [];
-  let pending = true;
-  const browser = new BrowserSessions(f.store, {
-    invoke: async (program, args, source) => {
-      calls.push({ args, source });
-      if (args[0] === "tabs") return { tabs: [{ tabId: 77 }] };
-      if (args[0] === "finish") return { forcedCleanup: false };
-      if (source?.includes("await page.close"))
-        return { status: "succeeded", result: { value: { closed: true } } };
-      if (pending) {
-        pending = false;
-        return { status: "running" };
-      }
-      return {
-        status: "succeeded",
-        result: {
-          value: {
-            url: "https://example.test/",
-            title: "合成页面",
-            text: "已观察",
-            controls: [{ ref: "r1", name: "下一页" }],
-          },
-        },
-      };
-    },
-  });
-  const first = await browser.act(
-    f.id,
-    { action: "open", url: "https://example.test/" },
-    { sessionId: "owner" },
-  );
-  assert.equal(first.persistent, true);
-  await browser.act(
-    f.id,
-    { action: "click", ref: "r1" },
-    { sessionId: "owner" },
-  );
-  const nodes = calls.filter((c) => c.args[0] === "nodejs");
-  assert.equal(nodes.length, 2);
-  assert.equal(nodes[0].args[2], nodes[1].args[2]);
-  assert.ok(nodes[1].args.includes("77"));
-  await assert.rejects(
-    browser.act(f.id, { action: "observe" }, { sessionId: "other" }),
-    /没有打开/,
-  );
-  await browser.act(f.id, { action: "close" }, { sessionId: "owner" });
-  assert.equal(browser.sessions.size, 0);
-  f.patch({ "browser.interact": false });
-  await assert.rejects(
-    browser.act(
-      f.id,
-      { action: "open", url: "https://example.test/" },
-      { sessionId: "owner" },
-    ),
-    /尚未开启/,
-  );
-});
 test("QQ语音先转写并缓存，桥接转换WAV，失败具体说明，撤销权限不再读取", async (t) => {
   const f = fixture(t);
   f.patch({ "chat.tools.audio": true, "asr.connection": "free-local" });
@@ -348,6 +288,7 @@ test("目录迁移通过可选服务查询，未注入或缺少目录服务不�
   let directoryService;
   const ctx = {
     get(name) {
+      if (name === "sessionTitle") return undefined;
       assert.equal(name, "workingDirectory");
       return directoryService;
     },
@@ -405,6 +346,7 @@ test("QQ恢复旧会话不依赖目录服务注入，迁移后实际提交来信
   };
   const ctx = {
     get(name) {
+      if (name === "sessionTitle") return undefined;
       assert.equal(name, "workingDirectory");
       return {
         get: () => cwd,

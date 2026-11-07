@@ -39,7 +39,7 @@ export function ObservatoryOverview(props: PageProps) {
           : "smooth",
     });
   return (
-    <div className="observatory-page home-preview-page">
+    <div className="observatory-page home-preview-page" data-stale={!!error}>
       <section className="observatory-hero" aria-label="首页预览">
         <header className="observatory-heading">
           <div className="observatory-heading-copy">
@@ -56,6 +56,14 @@ export function ObservatoryOverview(props: PageProps) {
               <span>星海有声</span>
             </h2>
             <p className="observatory-copy">循光而来，让每一颗星都有回响。</p>
+            <div className="home-at-a-glance" aria-label="此刻近况">
+              {items(["qq", "agency"]).map((item) => (
+                <button key={item.id} onClick={() => go(item.page)}>
+                  <small>{item.label}</small>
+                  <strong>{item.text}</strong>
+                </button>
+              ))}
+            </div>
             <nav className="home-section-links" aria-label="首页预览分段">
               {steps.map(([id, label], i) => (
                 <button key={id} onClick={() => scroll(id)}>
@@ -87,6 +95,22 @@ export function ObservatoryOverview(props: PageProps) {
           刷新状态
         </button>
       </div>
+      {!!data?.attention.length && (
+        <section className="home-attention" aria-label="需要处理的事">
+          <h2>有件事需要看一眼</h2>
+          {data.attention.map((item) => (
+            <button key={item.id} onClick={() => go(item.page)}>
+              <strong>
+                {item.label} · {item.text}
+              </strong>
+              <span>{item.detail}</span>
+              <span>
+                打开检查 <ArrowUpRight size={14} />
+              </span>
+            </button>
+          ))}
+        </section>
+      )}
       <section
         id="home-connections"
         className="home-preview-section"
@@ -164,7 +188,7 @@ export function ObservatoryOverview(props: PageProps) {
           </button>
         </div>
         <div className="home-preview-surface">
-          <StatusCards items={items(["agency", "browser", "files"])} go={go} />
+          <StatusCards items={items(["agency"])} go={go} />
           <h3>最近 24 小时</h3>
           {data?.recent.length ? (
             <ol className="home-recent-events">
@@ -173,9 +197,7 @@ export function ObservatoryOverview(props: PageProps) {
                   <span className="recent-event-mark" />
                   <div>
                     <strong>{event.title}</strong>
-                    <small>
-                      {event.kind} · {eventStates[event.status] || "已记录"}
-                    </small>
+                    <small>{eventStates[event.status] || "已记录"}</small>
                   </div>
                   <time>
                     {new Date(event.time).toLocaleTimeString("zh-CN", {
@@ -215,6 +237,42 @@ export function ObservatoryOverview(props: PageProps) {
         </div>
         <div className="home-preview-surface">
           <StatusCards items={items(["memory", "jobs"])} go={go} />
+          <section className="home-growth" aria-label="长期理解的真实变化">
+            <h3>相处中，慢慢留下的理解</h3>
+            {data?.memory.changes.length ? (
+              <ol>
+                {data.memory.changes.slice(0, 3).map((change) => (
+                  <li key={change.id}>
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem(
+                          `starr-memory-selection:${character.id}`,
+                          change.memoryId,
+                        );
+                        go("memory");
+                      }}
+                    >
+                      <strong>{change.title}</strong>
+                      <p>{change.reason}</p>
+                      <small>
+                        {date(change.created)} · 第 {change.revision} 次修订
+                      </small>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p>
+                长期理解来自她实际保存和修订的笔记。新会话仍可延续，暂时没有修订记录也不代表故障。
+              </p>
+            )}
+            {!!data?.memory.retained.length && (
+              <small>
+                最近保留的 {data.memory.retained.length}{" "}
+                篇长期理解；全文可在记忆页阅读。
+              </small>
+            )}
+          </section>
           <div className="home-recent-memories">
             {data?.memory.recent.map((memory) => (
               <button

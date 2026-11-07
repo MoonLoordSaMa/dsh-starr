@@ -17,7 +17,7 @@ export function ChatSettings(
     return (
       <div className="settings-stack">
         <CapabilityStatus {...props} only={["files"]} />
-        <Panel title="上下文、工作区与记忆召回">
+        <Panel title="长期记忆与会话接续">
           <ConfigForm {...props} pages={["chat-context"]} />
         </Panel>
       </div>
@@ -33,13 +33,13 @@ export function ChatSettings(
       <Panel title="上下文、工作区与记忆召回">
         <ConfigForm {...props} pages={["chat-context"]} />
       </Panel>
-      <Panel title="会话工具与媒体">
+      <Panel title="消息与媒体">
         <ConfigForm
           {...props}
           pages={["chat-tools", "chat-media", "chat-slang"]}
         />
       </Panel>
-      <Panel title="模型用量">
+      <Panel title="用量与节奏">
         <ConfigForm {...props} pages={["chat-budget"]} />
       </Panel>
     </div>

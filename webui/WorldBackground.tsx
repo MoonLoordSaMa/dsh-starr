@@ -606,7 +606,9 @@ export default function WorldBackground({
       );
     }
     const frameInterval = () =>
-      light || quality === "low" ? 1000 / 30 - 0.5 : 1000 / 60 - 0.5;
+      sceneRef.current !== "overview" || light || quality === "low"
+        ? 1000 / 30 - 0.5
+        : 1000 / 60 - 0.5;
     let adaptiveChecks = 0;
     const tick = (t: number) => {
       frame = 0;

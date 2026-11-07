@@ -40,7 +40,7 @@ test("可读笔记路径保留稳定编号，重名可区分、外部正文不�
   const first = store.saveMemory(a, input),
     second = store.saveMemory(a, { ...input, content: "另一段正文" });
   const file = store.noteFile(a, first);
-  assert.match(file, /01-合成角色.*记忆笔记.*03-约定/);
+  assert.match(file, /01-合成角色.*记忆笔记.*笔记/);
   assert.notEqual(file, store.noteFile(a, second));
   assert.ok(fs.existsSync(file));
   assert.match(

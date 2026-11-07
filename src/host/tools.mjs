@@ -24,24 +24,6 @@ export function createTools(store, trustedContext) {
     sessionId ? store.goalsForSession(sessionId) : [];
   return {
     starr_capabilities: () => capabilityStatus(store, characterId, sessionId),
-    starr_browser: (input) => {
-      if (!sessionId) throw fail("缺少可信会话", 403);
-      const browser = mediaServices(store).browserSessions;
-      if (!browser) throw fail("连续浏览服务尚未接入", 409);
-      return browser.act(characterId, input, {
-        sessionId,
-        signal: trustedContext.signal,
-      });
-    },
-    starr_browser_read: (input) => {
-      if (!sessionId) throw fail("缺少可信会话", 403);
-      const browser = mediaServices(store).browser;
-      if (!browser) throw fail("浏览器服务尚未接入DSH", 409);
-      return browser.read(characterId, input, {
-        sessionId,
-        signal: trustedContext.signal,
-      });
-    },
     starr_song_search: (input) => {
       const runtime = mediaServices(store);
       const music =
@@ -251,6 +233,10 @@ export function createTools(store, trustedContext) {
           : undefined,
       );
       return result;
+    },
+    starr_memory_update: (input) => {
+      if (!sessionId) throw fail("缺少可信角色会话", 403);
+      return new MemoryMaintenance(store).update(characterId, input, sessionId);
     },
     starr_memory_search: (input) => {
       const rows = store.db

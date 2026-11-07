@@ -6,6 +6,7 @@ import {
   biliMappings,
   mappingNote,
   capabilityTargets,
+  retiredCapabilities,
 } from "./legacy-mappings.mjs";
 const [inventoryFile, migrationFile] = process.argv.slice(2);
 if (!inventoryFile || !migrationFile)
@@ -47,7 +48,7 @@ const mappings = {
 const hostKeys =
   /^(dsh\.(baseUrl|authToken|allowRemote|reasoningEffort)|agentPreset|socialV2\.agentPreset|workspaceTitle|sessionCwd|webSearch\.|pricing\.)/;
 const retiredKeys =
-  /^(social\.|qq\.(engine|mode|ingest)|socialV2\.proactive\.|media\.svc\.(remoteBaseUrl|pollMs|jobTimeoutMs|secretRef)|guard\.|consolePort|consoleToken|allowAllWhenEmpty|qq\.rules\.allowAllWhenEmpty|notify\.(cmd|args)|toolsPath)/;
+  /^(jobs\.(organize|weekly|monthly|yearly)|social\.|qq\.(engine|mode|ingest)|socialV2\.proactive\.|media\.svc\.(remoteBaseUrl|pollMs|jobTimeoutMs|secretRef)|guard\.|consolePort|consoleToken|allowAllWhenEmpty|qq\.rules\.allowAllWhenEmpty|notify\.(cmd|args)|toolsPath)/;
 const entries = inventory.fields.map((f, index) => {
   const mappedKey =
     f.scope === "bili"
@@ -116,8 +117,14 @@ const result = {
     kind: c.kind,
     name: c.name,
     page: c.proposedPage,
-    decision: c.decision,
-    status: capabilityTargets[c.name] ? "equivalent" : "planned",
+    decision: retiredCapabilities.has(c.name)
+      ? "固定整理与周期回顾已退役；自由笔记由角色自主维护"
+      : c.decision,
+    status: retiredCapabilities.has(c.name)
+      ? "retired"
+      : capabilityTargets[c.name]
+        ? "equivalent"
+        : "planned",
     target: capabilityTargets[c.name] || null,
   })),
   notice:

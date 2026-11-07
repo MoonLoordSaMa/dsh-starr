@@ -99,7 +99,7 @@ test("浏览窗口支持跨午夜，兴趣排序有真实消费者，阅读才�
     { selfId: "100001" },
     new AbortController().signal,
   );
-  assert.equal(f.store.listMemory(f.id)[0].kind, "interest");
+  assert.equal(f.store.listMemory(f.id)[0].kind, "moment");
   assert.equal(f.service.activities.list(f.id)[0].status, "done");
 });
 

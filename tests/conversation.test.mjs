@@ -685,7 +685,10 @@ test("简单叫名字不按角色名泛召回，不相干锚点不占话题线�
     store.conversations.context("owner").text,
     /已由管理员绑定确认的主人/,
   );
-  assert.match(store.conversations.context("qq-b").text, /未通过主人身份绑定/);
+  assert.match(
+    store.conversations.context("qq-b").text,
+    /主人操作权限只由可信账号绑定决定/,
+  );
 });
 
 test("自动来信完整展示注入快照，只有可信投递去重；工具修改资料后重新注入", (t) => {

@@ -479,7 +479,7 @@ export class ChatPolicy {
       );
     return this.runtime(sessionId);
   }
-  incoming(message, characterId, sessionId) {
+  incoming(message, characterId, sessionId, { participate = false } = {}) {
     const c = this.config(characterId),
       runtime = this.runtime(sessionId),
       mode = runtime?.mode || c["chat.wake.mode"];
@@ -492,7 +492,8 @@ export class ChatPolicy {
     const wake =
       direct ||
       (mode !== "sleep" &&
-        (keyword ||
+        ((participate && mode === "awake" && message.type === "group") ||
+          keyword ||
           (c["chat.wake.questions"] && /[?？]/.test(message.text)) ||
           (mode === "awake" && Math.random() < c["chat.wake.probability"])));
     if (direct && runtime && c["chat.wake.directBypass"])

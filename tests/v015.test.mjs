@@ -501,7 +501,7 @@ test("曲库移除保留回收音源与元数据，默认参考受保护，跨�
   );
   assert.equal(singing.clearCache(f.a).originalsPreserved, true);
 });
-test("全部有效配置均有实际功能路由，四个工作区完整覆盖且左栏没有隐藏功能", () => {
+test("全部有效配置均有实际功能路由，四个工作区完整覆盖且 B站子页在统一入口内可达", () => {
   for (const field of fields.filter((field) => field.page !== "retired")) {
     const route = fieldRoute(field.page);
     assert.notEqual(route, "settings", field.key);
@@ -515,7 +515,7 @@ test("全部有效配置均有实际功能路由，四个工作区完整覆盖�
   assert.ok(chatWorkspace?.pages.includes("chat-rules"));
   assert.equal(chatWorkspace?.pages.includes("host-chat"), false);
   for (const workspace of workspaces)
-    assert.deepEqual(workspace.primary, workspace.pages);
+    assert.ok(workspace.primary.every((id) => workspace.pages.includes(id)));
   for (const item of navigation) {
     assert.equal(
       workspaces.filter((w) => w.pages.includes(item.id)).length,
@@ -530,7 +530,11 @@ test("全部有效配置均有实际功能路由，四个工作区完整覆盖�
         : 1,
       item.id,
     );
-    if (item.id !== "overview")
+    if (
+      !["overview", "bili-activities", "bili-publish", "bridge"].includes(
+        item.id,
+      )
+    )
       assert.ok(poems[item.id]?.every(Boolean), item.id);
   }
 });

@@ -381,6 +381,8 @@ export function createServer({
           );
         if (action === "memories" && method === "POST")
           return send(store.saveMemory(characterId, await body(req)), 201);
+        if (action === "memory-workshop/update" && method === "POST")
+          return send(memoryMaintenance.update(characterId, await body(req)));
         if (action === "graph" && method === "GET")
           return send(store.graph(characterId));
         if (action === "links" && method === "POST")

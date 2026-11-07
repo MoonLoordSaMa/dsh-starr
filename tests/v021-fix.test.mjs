@@ -8,7 +8,7 @@ import { Agency } from "../src/agency/service.mjs";
 import { QQService } from "../src/qq/service.mjs";
 import { createTools } from "../src/host/tools.mjs";
 import { jsonResult } from "../src/host/json-result.mjs";
-import { TabbitBrowser } from "../src/browser/tabbit.mjs";
+
 import { BiliActivities } from "../src/bili/activities.mjs";
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "starr-fix-"));
@@ -184,42 +184,6 @@ test("宿主同步及异步结果均可无损JSON往返，缺省值不再携带u
   });
   assert.equal(jsonResult(undefined), null);
   assert.deepEqual(await jsonResult(Promise.resolve(input)), jsonResult(input));
-});
-test("浏览器不限制域名和跳转域名，结果严格JSON，失败保留真实错误", async (t) => {
-  const f = fixture(t);
-  f.patch({ "browser.enabled": true });
-  let failed = false;
-  const browser = new TabbitBrowser(f.store, {
-    invoke: async (_program, args, source) => {
-      if (args[0] === "finish") return { finished: true };
-      if (source?.includes("page.close"))
-        return { status: "succeeded", result: { value: { closed: true } } };
-      if (failed)
-        return { status: "failed", error: { message: "合成导航错误" } };
-      return {
-        status: "succeeded",
-        result: {
-          value: {
-            url: "https://another.test/",
-            text: "真实模拟结果",
-            links: [
-              { text: "其他站点", url: "https://third.test/" },
-              { url: "javascript:alert(1)" },
-            ],
-          },
-        },
-      };
-    },
-  });
-  const result = await browser.read(f.id, { url: "https://arbitrary.test/" });
-  assert.deepEqual(JSON.parse(JSON.stringify(result)), result);
-  assert.equal(result.links.length, 1);
-  assert.equal(result.vision, null);
-  failed = true;
-  await assert.rejects(
-    browser.read(f.id, { url: "https://arbitrary.test/" }),
-    /合成导航错误/,
-  );
 });
 test("旧固定动态栏目即使保留启用值也不再定时触发", async (t) => {
   const f = fixture(t);

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
-import { nativeFileTools, fileWorkspace } from "./native-files.mjs";
+import { nativeFileTools } from "./native-files.mjs";
+import { taskAgent } from "./task-session.mjs";
 import { UsageBudget } from "../conversation/budget.mjs";
 import { conversationDelivery } from "./chat-delivery.mjs";
 import { agencyRank } from "../agency/config.mjs";
@@ -11,6 +12,7 @@ const baseTools = new Set([
   "starr_memory_search",
   "starr_memory_read",
   "starr_memory_write",
+  "starr_memory_update",
   "starr_memory_link",
   "starr_memory_archive",
   "starr_state_read",
@@ -38,8 +40,6 @@ export function agencyToolAllowed(name, level) {
       "starr_bili_watch",
       "starr_song_source",
       "starr_sing",
-      "starr_browser_read",
-      "starr_browser",
     ].includes(name)
   )
     return agencyRank(level) >= 2;
@@ -59,111 +59,116 @@ export function createAgencyDriver(ctx, store) {
       let result,
         failure,
         effect = false;
-      const { agent } = await ctx.agents.create({
+      const { agent } = await taskAgent(ctx, store, {
         sessionId,
-        meta: {
-          cwd: fileWorkspace(store, characterId, { create: true }),
-          agentPreset: "starr-qqchat",
-        },
-        agentOptions: { provider, model },
+        characterId,
+        title: `${store.character(characterId).name} · 自主活动`,
+        provider,
+        model,
         signal,
-        setup: async (scope) => {
-          await ctx.agentPresets.mount(scope, "starr-qqchat");
-          if (!scope.tools?.guard) throw new Error("DSH缺少主动工具约束接口");
-          removers.push(
-            scope.tools.guard((exec) => {
-              signal.throwIfAborted();
-              const c = input.check();
-              if (!agencyToolAllowed(exec.name, c["agency.level"]))
-                return "此工具不在当前主动范围内；管理、屏幕与摄像头不能由后台目的触发";
-              if (
-                exec.name === "starr_bili_social" &&
-                ["private", "group"].includes(
-                  store.conversations.get(sessionId).type,
-                )
-              )
-                return "这一轮携带主人私聊接续，只可向主人回复；公开互动应另由公开资料目的触发";
-              input.reserve("tool");
-              if (exec.name === "starr_bili_social") input.reserve("action");
-              return undefined;
-            }),
-          );
-          removers.push(
-            scope.on("agent/request", async (_payload, next) => {
-              budget.capture(characterId, ctx.agents.get(sessionId));
-              input.reserve("request");
-              return next();
-            }),
-          );
-          removers.push(
-            scope.on("agent/error", ({ error }) => {
-              failure = modelFailure(error);
-            }),
-          );
-          removers.push(
-            scope.tools.register({
-              name: "starr_agency_finish",
-              description:
-                "结束本次主动机会。当前为群会话时text仅发往来源群，否则联系管理员绑定的主人；不填text保持安静。持续目的用completed=false、progress和nextAt保存进展，等待下次继续。reason记录选择理由。",
-              parameters: {
-                type: "object",
-                properties: {
-                  text: { type: "string" },
-                  songRenderId: {
-                    type: "string",
-                    description:
-                      "可选本角色已完成的翻唱成品编号；向当前可信对象单独发送语音，text作为进展保存，不混入语音消息",
-                  },
-                  reason: { type: "string" },
-                  goalId: {
-                    type: ["string", "null"],
-                    description:
-                      "本次决定作用于哪个可见目的；null仅结束唤醒，不修改目的",
-                  },
-                  goalStatus: {
-                    type: "string",
-                    enum: ["waiting", "completed", "cancelled"],
-                    description: "自行决定继续、完成或放下",
-                  },
-                  completed: {
-                    type: "boolean",
-                    description:
-                      "持续目的是否已完成；false保存进展后等待下次继续",
-                  },
-                  progress: { type: "string" },
-                  nextAt: { type: "string", description: "可选ISO接续时间" },
-                },
-                required: ["reason"],
-                additionalProperties: false,
-              },
-              output: {
-                schema: {},
-                render: (_args, value) => [
-                  { type: "text", text: JSON.stringify(value) },
-                ],
-              },
-              execute: async (args) => {
-                try {
-                  result = await input.finish(args);
-                  return JSON.parse(JSON.stringify(result));
-                } catch (e) {
-                  failure = e;
-                  throw e;
-                }
-              },
-            }),
-          );
-        },
       });
+      const attach = async (scope) => {
+        if (!scope.tools?.guard) throw new Error("DSH缺少主动工具约束接口");
+        removers.push(
+          scope.tools.guard((exec) => {
+            signal.throwIfAborted();
+            const c = input.check();
+            if (!agencyToolAllowed(exec.name, c["agency.level"]))
+              return "此工具不在当前主动范围内；管理、屏幕与摄像头不能由后台目的触发";
+            if (
+              exec.name === "starr_bili_social" &&
+              ["private", "group"].includes(
+                store.conversations.get(sessionId).type,
+              )
+            )
+              return "这一轮携带主人私聊接续，只可向主人回复；公开互动应另由公开资料目的触发";
+            input.reserve("tool");
+            if (exec.name === "starr_bili_social") input.reserve("action");
+            return undefined;
+          }),
+        );
+        removers.push(
+          scope.on("agent/request", async (_payload, next) => {
+            budget.capture(characterId, ctx.agents.get(sessionId));
+            input.reserve("request");
+            return next();
+          }),
+        );
+        removers.push(
+          scope.on("agent/error", ({ error }) => {
+            failure = modelFailure(error);
+          }),
+        );
+        removers.push(
+          scope.tools.register({
+            name: "starr_agency_finish",
+            description:
+              "结束本次主动机会。当前为群会话时text仅发往来源群，否则联系管理员绑定的主人；不填text保持安静。持续目的用completed=false、progress和nextAt保存进展，等待下次继续。reason记录选择理由。",
+            parameters: {
+              type: "object",
+              properties: {
+                text: { type: "string" },
+                songRenderId: {
+                  type: "string",
+                  description:
+                    "可选本角色已完成的翻唱成品编号；向当前可信对象单独发送语音，text作为进展保存，不混入语音消息",
+                },
+                reason: { type: "string" },
+                goalId: {
+                  type: ["string", "null"],
+                  description:
+                    "本次决定作用于哪个可见目的；null仅结束唤醒，不修改目的",
+                },
+                goalStatus: {
+                  type: "string",
+                  enum: ["waiting", "completed", "cancelled"],
+                  description: "自行决定继续、完成或放下",
+                },
+                completed: {
+                  type: "boolean",
+                  description:
+                    "持续目的是否已完成；false保存进展后等待下次继续",
+                },
+                progress: { type: "string" },
+                nextAt: { type: "string", description: "可选ISO接续时间" },
+              },
+              required: ["reason"],
+              additionalProperties: false,
+            },
+            output: {
+              schema: {},
+              render: (_args, value) => [
+                { type: "text", text: JSON.stringify(value) },
+              ],
+            },
+            execute: async (args) => {
+              try {
+                result = await input.finish(args);
+                return JSON.parse(JSON.stringify(result));
+              } catch (e) {
+                failure = e;
+                throw e;
+              }
+            },
+          }),
+        );
+      };
       active.add(agent);
       const cancel = () =>
         agent.cancel({ kind: "hook", reason: "主动活动已暂停或超时" });
       signal.addEventListener("abort", cancel, { once: true });
       try {
         signal.throwIfAborted();
+        await attach(agent.ctx);
         const preview = store.conversations.context(sessionId),
           deliveryId = crypto.randomUUID();
         store.conversations.recordDelivery(sessionId, deliveryId, preview);
+        const beforeEdits = store
+          .memory(characterId)
+          .prepare(
+            "SELECT count(*) n FROM audit WHERE type IN ('memory-update','memory-archive') AND json_extract(data,'$.actor')=?",
+          )
+          .get(sessionId).n;
         const before = store
           .memory(characterId)
           .prepare("SELECT count(*) n FROM records WHERE source=?")
@@ -177,7 +182,7 @@ export function createAgencyDriver(ctx, store) {
               type: "text",
               text: conversationDelivery(
                 preview,
-                "这是一次自主唤醒。你可以自己选歌、搜索音源、生成翻唱，用starr_agency_finish的songRenderId发送实际成品；也可使用 DSH 原生 read/write/edit/glob/grep 读取资料、写文字、修改文档或持续浏览网页。相对路径使用当前工作区，遵循其中的 AGENTS.md；正常创作无需另开便笺工具。目的与行动由你管理，插件不提供预设任务或情绪评分门槛。当前唤醒缘由：" +
+                "这是一次自主唤醒。你可以自己选歌、搜索音源、生成翻唱，用starr_agency_finish的songRenderId发送实际成品；也可使用 DSH 原生 read/write/edit/glob/grep 读取资料、写文字、修改文档。相对路径使用当前工作区，遵循其中的 AGENTS.md；正常创作无需另开便笺工具。目的与行动由你管理，插件不提供预设任务或情绪评分门槛。当前唤醒缘由：" +
                   JSON.stringify(input.goal) +
                   "。真实会话接续（资料）：" +
                   (input.pending || "无") +
@@ -198,7 +203,13 @@ export function createAgencyDriver(ctx, store) {
           store
             .memory(characterId)
             .prepare("SELECT count(*) n FROM records WHERE source=?")
-            .get(`DSH 会话 ${sessionId}`).n > before;
+            .get(`DSH 会话 ${sessionId}`).n > before ||
+          store
+            .memory(characterId)
+            .prepare(
+              "SELECT count(*) n FROM audit WHERE type IN ('memory-update','memory-archive') AND json_extract(data,'$.actor')=?",
+            )
+            .get(sessionId).n > beforeEdits;
         return { ...result, effect };
       } finally {
         if (!store.closed) budget.capture(characterId, agent);

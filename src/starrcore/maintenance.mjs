@@ -10,6 +10,101 @@ export class MemoryMaintenance {
   db(characterId) {
     return this.store.memory(characterId);
   }
+  update(characterId, input, sessionId) {
+    if (
+      !input ||
+      typeof input !== "object" ||
+      typeof input.id !== "string" ||
+      !Number.isInteger(input.revision)
+    )
+      throw fail("请提供笔记编号和读到的修订号");
+    const db = this.db(characterId);
+    if (
+      sessionId &&
+      this.store.conversations.get(sessionId).character_id !== characterId
+    )
+      throw fail("会话与角色不匹配", 403);
+    const row = db
+      .prepare(
+        "SELECT * FROM records WHERE id=? AND id NOT IN (SELECT record_id FROM record_archive)",
+      )
+      .get(input.id);
+    if (
+      !row ||
+      (sessionId &&
+        !this.store.conversations.visibleMemories(sessionId, {
+          id: input.id,
+          limit: 1,
+        })[0])
+    )
+      throw fail("当前会话无法修改这条记忆", 404);
+    if (row.kind === "diary") throw fail("日记原文受保护，请另写笔记补充", 403);
+    if (row.revision !== input.revision)
+      throw fail("记忆已变化，请读回最新修订后再修改", 409);
+    const title = input.title ?? row.title,
+      content = input.content ?? row.content;
+    const reason = input.reason;
+    if (
+      typeof title !== "string" ||
+      !title.trim() ||
+      title.length > 150 ||
+      typeof content !== "string" ||
+      !content.trim() ||
+      content.length > 40000
+    )
+      throw fail("请填写有效的笔记标题和正文");
+    if (typeof reason !== "string" || !reason.trim() || reason.length > 500)
+      throw fail("请简短说明修改依据");
+    if (input.anchor !== undefined && typeof input.anchor !== "boolean")
+      throw fail("长期保留标记无效");
+    const anchor =
+      input.anchor === undefined ? row.anchor : Number(input.anchor);
+    const created = new Date().toISOString();
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      const result = db
+        .prepare(
+          "UPDATE records SET title=?,content=?,anchor=?,revision=revision+1 WHERE id=? AND revision=?",
+        )
+        .run(title.trim(), content.trim(), anchor, row.id, row.revision);
+      if (!result.changes) throw fail("记忆已变化，请刷新后重试", 409);
+      db.prepare("INSERT INTO audit(id,type,data,created) VALUES(?,?,?,?)").run(
+        crypto.randomUUID(),
+        "memory-update",
+        JSON.stringify({
+          id: row.id,
+          reason: reason.trim(),
+          actor: sessionId || "user",
+          before: row,
+          after: {
+            title: title.trim(),
+            content: content.trim(),
+            anchor,
+            revision: row.revision + 1,
+          },
+        }),
+        created,
+      );
+      db.prepare("INSERT INTO outbox(id,record_id,created) VALUES(?,?,?)").run(
+        crypto.randomUUID(),
+        row.id,
+        created,
+      );
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+    this.store.flushProjection(characterId);
+    return {
+      id: row.id,
+      title: title.trim(),
+      content: content.trim(),
+      revision: row.revision + 1,
+      anchor,
+      originalPreserved: true,
+    };
+  }
   status(characterId) {
     const db = this.db(characterId);
     return {
@@ -25,7 +120,7 @@ export class MemoryMaintenance {
         .get(),
       recent: db
         .prepare(
-          "SELECT type,data,created FROM audit WHERE type IN ('memory-archive','memory-restore','memory-import','memory-reindex') ORDER BY created DESC LIMIT 20",
+          "SELECT type,data,created FROM audit WHERE type IN ('memory-update','memory-archive','memory-restore','memory-import','memory-reindex') ORDER BY created DESC LIMIT 20",
         )
         .all(),
     };

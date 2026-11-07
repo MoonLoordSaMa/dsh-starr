@@ -191,6 +191,12 @@ export function mappingNote(oldKey, newKey) {
 
 // 业务等价入口不表示兼容旧命令名，也不代表真实平台已通过验收。
 export const capabilityTargets = {};
+export const retiredCapabilities = new Set([
+  "organize",
+  "weeklyLayers",
+  "monthlyLayers",
+  "yearlyLayers",
+]);
 function equivalents(names, page, entry, note) {
   for (const name of names.split(" "))
     capabilityTargets[name] = { page, entry, note };
@@ -418,8 +424,8 @@ equivalents(
   "仅在配置直播间的实际收件会话中回应；受理不等于已验证画面送达。",
 );
 equivalents(
-  "diaryDay diaryNight organize weeklyLayers monthlyLayers yearlyLayers diary starr_run_job",
-  "memory",
-  "保存与整理 → 定时任务",
-  "日记和回顾走独立 DSH 会话，按稳定事件标识真正保存记忆后才算完成。",
+  "diaryDay diaryNight diary starr_run_job",
+  "memory-care",
+  "日记与记忆设置 → 日间/夜间日记",
+  "日记按角色与类型复用后台会话，真实保存后才算完成；固定整理与周月年回顾已退役。",
 );

@@ -75,6 +75,7 @@ export type Field = {
   max?: number;
   options?: string[];
   bot?: boolean;
+  advanced?: boolean;
 };
 export type Bootstrap = {
   version: string;
@@ -131,13 +132,8 @@ export type Expression = {
   created: string;
 };
 export const kindNames: Record<string, string> = {
-  moment: "经历",
-  person: "人物",
-  promise: "约定",
-  interest: "兴趣",
+  moment: "笔记",
   diary: "日记",
-  summary: "总结",
-  self: "自我认识",
 };
 export const kindColors: Record<string, string> = {
   moment: "#8fbaff",

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUpRight, Search } from "lucide-react";
-import { Panel, Badge, Disclosure, TextLink } from "./components";
+import { Panel, Badge, Disclosure, TextLink, Tabs } from "./components";
 import { ConfigForm, CharacterPage, MediaPage, MaintenancePage } from "./pages";
 import { ChatSettings as StarrChat } from "./ChatSettings";
 import { BiliConnection } from "./BiliConnection";
@@ -16,12 +16,12 @@ import { Today } from "./Today";
 
 const relations: Record<string, [string, string][]> = {
   character: [
-    ["chat-context", "人设如何进入会话"],
+    ["chat-rules", "说话方式与接续设置"],
     ["state", "此刻情绪与体感"],
   ],
   "memory-care": [
     ["memory", "回到记忆星图"],
-    ["memory-sync", "双链与同步"],
+    ["memory-care", "日记与笔记设置"],
   ],
   "chat-context": [
     ["character", "编辑人设与提示词"],
@@ -34,7 +34,7 @@ const relations: Record<string, [string, string][]> = {
   ],
   "chat-sharing": [
     ["memory", "查看记忆全文"],
-    ["chat-context", "检查实际注入"],
+    ["chat-rules", "记忆召回与接续设置"],
   ],
   qq: [
     ["chat-rules", "唤醒与回复节奏"],
@@ -80,6 +80,47 @@ export function RelatedRoutes({
 
 export function FunctionIndex(props: PageProps) {
   const [query, setQuery] = useState("");
+  const tasks = [
+    {
+      page: "qq",
+      title: "她没有收到或回复 QQ 消息",
+      words: "没反应 不回复 不回应 收不到 群聊 连接 断线",
+    },
+    {
+      page: "intentions",
+      title: "让她主动聊天、参与群聊",
+      words: "主动 主动性 无聊 找事 自主 群里",
+    },
+    {
+      page: "chat-sharing",
+      title: "换会话以后仍记得我们的相处",
+      words: "忘记 记住 习惯 成长 new 私聊群聊 互通 共享",
+    },
+    {
+      page: "chat-rules",
+      title: "分段回复，回复后继续接听",
+      words: "分段 一条一条 等待 接听 消息 太长",
+    },
+    {
+      page: "memory-care",
+      title: "设置日记时间与记忆保存",
+      words: "日记 笔记 定时 记忆 保存 整理 同步",
+    },
+    {
+      page: "appearance",
+      title: "调整画面，减少卡顿",
+      words: "卡顿 模糊 看不清 性能 动效 背景 字体",
+    },
+  ];
+  const taskResults = query.trim()
+    ? tasks.filter((task) => {
+        const text = query.trim().toLowerCase();
+        return (
+          `${task.title} ${task.words}`.includes(text) ||
+          task.words.split(" ").some((word) => text.includes(word))
+        );
+      })
+    : tasks;
   const results = useMemo(
     () =>
       props.bootstrap.fields
@@ -87,33 +128,14 @@ export function FunctionIndex(props: PageProps) {
         .filter((field) =>
           `${field.label} ${field.page} ${field.help} ${field.key}`
             .toLowerCase()
-            .includes(query.toLowerCase()),
-        )
-        .slice(0, 60),
+            .includes(query.trim().toLowerCase()),
+        ),
     [props.bootstrap.fields, query],
   );
   return (
     <div className="settings-stack">
-      <Panel
-        title="全部功能与配置"
-        aside={<Badge>{props.bootstrap.fields.length} 项角色配置</Badge>}
-      >
-        <div className="quick-routes">
-          {[
-            ["intentions", "主动性与群聊参与"],
-            ["chat-sharing", "私聊群聊记忆互通"],
-            ["chat-rules", "分段回复与唤醒"],
-            ["browser", "浏览器与画面理解"],
-            ["vision", "图片和动图理解"],
-          ].map(([id, label]) => (
-            <button key={id} className="ghost" onClick={() => props.go(id)}>
-              {label}
-            </button>
-          ))}
-        </div>
-        <p>
-          从功能出发寻找配置。人设影响所有角色会话；连接决定能做什么；授权决定可以对谁做；记忆共享决定哪些经历能够相通
-        </p>
+      <Panel title="全部功能与配置">
+        <p>搜索想做的事，或选择下方常用入口。日常设置在对应功能页直接修改。</p>
         <label className="search-box function-search">
           <Search size={16} />
           <input
@@ -123,6 +145,17 @@ export function FunctionIndex(props: PageProps) {
             aria-label="搜索全部功能配置"
           />
         </label>
+        <div className="quick-routes">
+          {taskResults.map((task) => (
+            <button
+              key={task.page}
+              className="ghost"
+              onClick={() => props.go(task.page)}
+            >
+              {task.title}
+            </button>
+          ))}
+        </div>
         {query ? (
           <div className="function-results">
             {results.map((field) => (
@@ -145,14 +178,16 @@ export function FunctionIndex(props: PageProps) {
                   {
                     navigation.find(
                       (item) => item.id === fieldRoute(field.page),
-                    )?.name
+                    )?.label
                   }
                   <ArrowUpRight size={13} />
                 </span>
               </button>
             ))}
-            {!results.length && (
-              <p>没有找到匹配配置，试试功能名或到旧版迁入清单查看</p>
+            {!results.length && !taskResults.length && (
+              <p>
+                没有找到匹配设置。试试“群聊”“主动聊天”“记住习惯”或“日记”等说法。
+              </p>
             )}
           </div>
         ) : (
@@ -161,15 +196,15 @@ export function FunctionIndex(props: PageProps) {
               .filter((workspace) => workspace.id !== "home")
               .map((workspace) => (
                 <section key={workspace.id}>
-                  <h3>{workspace.name}</h3>
+                  <h3>{workspace.label}</h3>
                   <p>{workspace.caption}</p>
                   {navigation
-                    .filter((item) => workspace.pages.includes(item.id))
+                    .filter((item) => workspace.primary.includes(item.id))
                     .map((item) => (
                       <button key={item.id} onClick={() => props.go(item.id)}>
                         <item.icon size={16} />
                         <span>
-                          <strong>{item.name}</strong>
+                          <strong>{item.label}</strong>
                           <small>{item.purpose}</small>
                         </span>
                         <ArrowUpRight size={14} />
@@ -195,22 +230,52 @@ export function FunctionIndex(props: PageProps) {
   );
 }
 
+function BiliWorkspace(props: PageProps & { page: string }) {
+  const view =
+    props.page === "bili-activities"
+      ? "activities"
+      : props.page === "bili-publish"
+        ? "publish"
+        : "connection";
+  return (
+    <div className="settings-stack">
+      <Tabs
+        value={view}
+        onChange={(next) =>
+          props.go(
+            next === "activities"
+              ? "bili-activities"
+              : next === "publish"
+                ? "bili-publish"
+                : "bili",
+          )
+        }
+        items={[
+          { id: "connection", name: "账号与接收消息" },
+          { id: "activities", name: "浏览与分享" },
+          { id: "publish", name: "发布与互动" },
+        ]}
+      />
+      <BiliConnection {...props} view={view} />
+    </div>
+  );
+}
 export function WorkspacePage(props: PageProps & { page: string }) {
   const { page } = props;
-  if (page === "qq") return <InteractionPage {...props} page={page} />;
-  if (page === "character") return <CharacterPage {...props} />;
-  if (page === "browser")
+  if (page === "qq")
     return (
       <div className="settings-stack">
-        <Panel title="网页浏览与画面理解">
-          <p>
-            角色可以阅读网页、沿链接继续探索，并按需分析当前页面截图。使用本机
-            Tabbit 稳定启动器；画面理解沿用视觉页的模型设置。
-          </p>
-          <ConfigForm {...props} pages={["browser"]} />
+        <InteractionPage {...props} page={page} />
+        <Panel title="群内自主参与">
+          <ConfigForm
+            {...props}
+            pages={["agency"]}
+            onlyKeys={["agency.observeGroups", "agency.groupEnabled"]}
+          />
         </Panel>
       </div>
     );
+  if (page === "character") return <CharacterPage {...props} />;
   if (
     [
       "conversation",
@@ -238,18 +303,7 @@ export function WorkspacePage(props: PageProps & { page: string }) {
       />
     );
   if (["bili", "bili-activities", "bili-publish"].includes(page))
-    return (
-      <BiliConnection
-        {...props}
-        view={
-          page === "bili"
-            ? "connection"
-            : page === "bili-activities"
-              ? "activities"
-              : "publish"
-        }
-      />
-    );
+    return <BiliWorkspace {...props} page={page} />;
   if (["media", "hearing", "vision", "singing"].includes(page))
     return (
       <MediaPage
@@ -283,10 +337,12 @@ export function WorkspacePage(props: PageProps & { page: string }) {
           <ConfigForm {...props} pages={["memory"]} />
         </Panel>
         <MemoryJobs {...props} />
-        <MemoryWorkshop {...props} />
+        <Disclosure title="笔记同步、归档与恢复">
+          <MemoryWorkshop {...props} />
+        </Disclosure>
       </div>
     );
-  if (page === "memory-sync") return <MemoryWorkshop {...props} sync />;
+
   if (page === "bridge") return <PlatformBridge {...props} />;
   if (page === "maintenance") return <MaintenancePage {...props} />;
   if (page === "appearance")
