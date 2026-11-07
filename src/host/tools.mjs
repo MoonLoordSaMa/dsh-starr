@@ -5,6 +5,7 @@ import { MusicCatalog } from "../media/music.mjs";
 import { mediaServices } from "../runtime/media-services.mjs";
 import { MemoryMaintenance } from "../starrcore/maintenance.mjs";
 import fs from "node:fs";
+import { capabilityStatus } from "./capabilities.mjs";
 
 // 这是内部可信宿主契约，非臆造的 DSH SDK。正式适配器只在绑定会话后创建此上下文。
 export function createTools(store, trustedContext) {
@@ -22,6 +23,16 @@ export function createTools(store, trustedContext) {
   const visibleGoals = () =>
     sessionId ? store.goalsForSession(sessionId) : [];
   return {
+    starr_capabilities: () => capabilityStatus(store, characterId, sessionId),
+    starr_browser: (input) => {
+      if (!sessionId) throw fail("缺少可信会话", 403);
+      const browser = mediaServices(store).browserSessions;
+      if (!browser) throw fail("连续浏览服务尚未接入", 409);
+      return browser.act(characterId, input, {
+        sessionId,
+        signal: trustedContext.signal,
+      });
+    },
     starr_browser_read: (input) => {
       if (!sessionId) throw fail("缺少可信会话", 403);
       const browser = mediaServices(store).browser;

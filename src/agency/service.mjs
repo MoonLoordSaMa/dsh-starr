@@ -1,4 +1,6 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
+import { mediaServices } from "../runtime/media-services.mjs";
 import { RuntimeLease } from "../runtime/lease.mjs";
 import { UsageBudget } from "../conversation/budget.mjs";
 import { ChatPolicy } from "../conversation/policy.mjs";
@@ -586,6 +588,7 @@ export class Agency {
     };
     const finish = async ({
       text = "",
+      songRenderId,
       reason,
       completed = true,
       progress,
@@ -626,7 +629,19 @@ export class Agency {
             Date.parse(nextAt) > this.clock() + 30 * 86400000))
       )
         throw fail("接续时间须在5分钟至30天之间，进展最多4000字符");
-      if (!text.trim()) {
+      let songFile;
+      if (songRenderId !== undefined) {
+        if (
+          typeof songRenderId !== "string" ||
+          !c["chat.tools.singing"] ||
+          !c["sing.allowBot"]
+        )
+          throw fail("角色翻唱外发尚未开启", 403);
+        const singing = mediaServices(this.store).singing;
+        if (!singing) throw fail("唱歌服务尚未就绪", 409);
+        songFile = singing.file(characterId, songRenderId, true).file;
+      }
+      if (!text.trim() && !songFile) {
         finished = true;
         return (decision = {
           status: "silent",
@@ -677,6 +692,20 @@ export class Agency {
       }
       if (JSON.stringify(owner.settings) !== JSON.stringify(latest.settings))
         throw fail("QQ连接在发送前发生变化");
+      const message = [];
+      if (text.trim() && !songFile)
+        message.push({ type: "text", data: { text: text.trim() } });
+      if (songFile) {
+        const current = this.store.character(characterId).config;
+        if (!current["sing.allowBot"] || !current["chat.tools.singing"])
+          throw fail("翻唱外发已关闭", 403);
+        message.push({
+          type: "record",
+          data: {
+            file: `base64://${fs.readFileSync(songFile).toString("base64")}`,
+          },
+        });
+      }
       // 持久记录发送已开始。回执不明时不重复执行此目的。
       this.store.db.prepare("UPDATE agency_runs SET result=? WHERE id=?").run(
         JSON.stringify({
@@ -693,7 +722,7 @@ export class Agency {
           owner.group ? "send_group_msg" : "send_private_msg",
           {
             [owner.group ? "group_id" : "user_id"]: owner.target,
-            message: [{ type: "text", data: { text: text.trim() } }],
+            message,
           },
         );
         if (!sent?.message_id)
@@ -710,12 +739,13 @@ export class Agency {
         .run(
           String(sent.message_id),
           owner.thread.key,
-          text.trim(),
+          songFile ? "[主动翻唱]" : text.trim(),
           this.clock(),
         );
       const receipt = {
         status: "sent",
         messageId: String(sent.message_id),
+        ...(songRenderId ? { songRenderId } : {}),
         reason,
         text: text.trim(),
         target: owner.group ? "group" : "owner",

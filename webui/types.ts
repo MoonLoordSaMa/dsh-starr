@@ -131,13 +131,13 @@ export type Expression = {
   created: string;
 };
 export const kindNames: Record<string, string> = {
-  moment: "浮生一刻",
-  person: "故人星影",
-  promise: "星下之约",
-  interest: "心向之光",
-  diary: "朝暮手札",
-  summary: "流年回眸",
-  self: "照见此身",
+  moment: "经历",
+  person: "人物",
+  promise: "约定",
+  interest: "兴趣",
+  diary: "日记",
+  summary: "总结",
+  self: "自我认识",
 };
 export const kindColors: Record<string, string> = {
   moment: "#8fbaff",

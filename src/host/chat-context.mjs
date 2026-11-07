@@ -1,4 +1,5 @@
 import { roleContract } from "./role-contract.mjs";
+import { capabilityPrompt } from "./capabilities.mjs";
 
 export function installChatContext(
   ctx,
@@ -69,7 +70,9 @@ export function installChatContext(
         const text = ctx.systemPrompt.context
           ? preview.sections[0]?.text || ""
           : preview.text;
-        return roleConversation ? `${text}\n\n${roleContract}` : text;
+        return roleConversation
+          ? `${text}\n\n${roleContract}\n${capabilityPrompt(store, resolveCharacter(context.scope?.id).id, context.scope?.id)}`
+          : text;
       },
     }),
   ];

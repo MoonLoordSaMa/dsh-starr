@@ -70,7 +70,7 @@ export function RelatedRoutes({
       <span>相关功能</span>
       {items.map(([id, label]) => (
         <button key={id} onClick={() => go(id)} title={label}>
-          {navigation.find((item) => item.id === id)?.name || label}
+          {navigation.find((item) => item.id === id)?.label || label}
           <ArrowUpRight size={13} />
         </button>
       ))}
@@ -85,7 +85,7 @@ export function FunctionIndex(props: PageProps) {
       props.bootstrap.fields
         .filter((field) => field.page !== "retired")
         .filter((field) =>
-          `${field.label} ${field.label} ${field.help} ${field.key}`
+          `${field.label} ${field.page} ${field.help} ${field.key}`
             .toLowerCase()
             .includes(query.toLowerCase()),
         )
@@ -129,7 +129,13 @@ export function FunctionIndex(props: PageProps) {
               <button
                 key={field.key}
                 className="function-result"
-                onClick={() => props.go(fieldRoute(field.page))}
+                onClick={() => {
+                  sessionStorage.setItem(
+                    `starr-config-focus:${props.character.id}`,
+                    field.key,
+                  );
+                  props.go(fieldRoute(field.page));
+                }}
               >
                 <div>
                   <strong title={field.label}>{field.label}</strong>
@@ -195,14 +201,15 @@ export function WorkspacePage(props: PageProps & { page: string }) {
   if (page === "character") return <CharacterPage {...props} />;
   if (page === "browser")
     return (
-      <Panel title="网页浏览与画面理解">
-        <p>
-          角色可以阅读网页、沿链接继续探索，并按需分析当前页面截图。使用本机
-          Tabbit 稳定启动器；画面理解沿用视觉页的模型设置。
-        </p>
-        <ConfigForm {...props} pages={["browser"]} />
-        <RelatedRoutes page="media" go={props.go} />
-      </Panel>
+      <div className="settings-stack">
+        <Panel title="网页浏览与画面理解">
+          <p>
+            角色可以阅读网页、沿链接继续探索，并按需分析当前页面截图。使用本机
+            Tabbit 稳定启动器；画面理解沿用视觉页的模型设置。
+          </p>
+          <ConfigForm {...props} pages={["browser"]} />
+        </Panel>
+      </div>
     );
   if (
     [

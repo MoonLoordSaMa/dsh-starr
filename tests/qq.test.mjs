@@ -299,22 +299,44 @@ test("引用验证会拒绝另一位好友会话里的真实消息编号", async
   assert.equal(f.sends.at(-1).params.message[0].data.text, "乙的正常回复");
 });
 
-test("回复后等待一次接管新批次，不额外消耗唤醒额度", async (t) => {
+test("连续回复后可多次接管新批次，不额外消耗唤醒额度，也不领取其他会话", async (t) => {
   let f;
   f = await fixture(t, async ({ input, reply, waitMessage }) => {
     if (input.messages[0].messageId === "wait-first") {
+      await assert.rejects(waitMessage({ seconds: 120 }), { status: 409 });
       await reply("我在听");
+      await assert.rejects(waitMessage({ seconds: 119 }), /120–180/);
       const arrived = new Promise((resolve) =>
         setTimeout(() => {
           f.incoming(event("wait-second", "再补充一句"));
           resolve();
         }, 0),
       );
-      const result = await waitMessage({ seconds: 30 });
+      const result = await waitMessage({ seconds: 120 });
       await arrived;
       assert.equal(result.status, "received");
       assert.equal(result.messages[0].messageId, "wait-second");
       await reply("我接着听");
+      f.incoming(
+        event("foreign-group", "其他群消息", {
+          message_type: "group",
+          group_id: 300001,
+        }),
+      );
+      f.incoming(event("wait-third", "还有第三句"));
+      const third = await waitMessage({ seconds: 120 });
+      assert.equal(third.status, "received");
+      assert.equal(third.messages[0].messageId, "wait-third");
+      await reply("第三句也在听");
+      const canceled = new AbortController();
+      const listening = waitMessage({}, canceled.signal);
+      const status = f.service.status().runtime.listening;
+      assert.equal(status.length, 1);
+      assert.equal(status[0].seconds, 150);
+      assert.equal(status[0].deadlineAt - status[0].startedAt, 150000);
+      canceled.abort();
+      await assert.rejects(listening, { name: "AbortError" });
+      assert.equal(f.service.status().runtime.listening.length, 0);
     }
   });
   f.store.configure(
@@ -324,7 +346,7 @@ test("回复后等待一次接管新批次，不额外消耗唤醒额度", async
   );
   f.incoming(event("wait-first", "先说一句"));
   await f.flush();
-  assert.equal(f.sends.length, 2);
+  assert.equal(f.sends.length, 3);
   assert.equal(
     f.store.db
       .prepare("SELECT count(*) n FROM chat_rates WHERE kind='wake'")
@@ -336,7 +358,7 @@ test("回复后等待一次接管新批次，不额外消耗唤醒额度", async
       .prepare("SELECT status FROM qq_inbox ORDER BY seq")
       .all()
       .map((row) => row.status),
-    ["done", "done"],
+    ["done", "done", "done"],
   );
 });
 

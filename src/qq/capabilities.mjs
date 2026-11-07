@@ -15,6 +15,13 @@ const field = (key, label, type, value, help, extra = {}) => [
 ];
 export const qqCapabilityFields = [
   field(
+    "chat.media.autoTranscribe",
+    "收到语音时自动转写",
+    "boolean",
+    true,
+    "已开启听写权限时，在交给角色回复之前转写语音；失败明确提示原因，不用占位文字猜内容。",
+  ),
+  field(
     "chat.tools.images",
     "读取本会话图片",
     "boolean",
@@ -159,7 +166,9 @@ export async function downloadAttachment(attachment, maxBytes, signal) {
   }
   return {
     bytes: Buffer.concat(chunks),
-    mime: (response.headers.get("content-type") || "").split(";")[0],
+    mime: (response.headers.get("content-type") || "")
+      .split(";")[0]
+      .toLowerCase(),
   };
 }
 
@@ -174,6 +183,7 @@ export function createQQCapabilities({
   modelSelection,
   decodeAnimation = animationSheet,
 }) {
+  const audioCache = new Map();
   const config = () => store.character(characterId).config;
   const allow = (key) => {
     signal.throwIfAborted();
@@ -184,12 +194,101 @@ export function createQQCapabilities({
       item = message.attachments?.[index];
     if (!Number.isInteger(index) || index < 0 || !item)
       throw fail("本会话没有这个附件", 404);
-    return {
-      item,
-      ...(await download(item, config()["chat.media.maxBytes"], signal)),
-    };
+    let data;
+    if (item.type === "record") {
+      try {
+        data = await download(item, config()["chat.media.maxBytes"], signal);
+      } catch (e) {
+        signal.throwIfAborted();
+        if (!action) throw e;
+      }
+      if (
+        !data ||
+        ![
+          "audio/wav",
+          "audio/x-wav",
+          "audio/mpeg",
+          "audio/mp4",
+          "audio/webm",
+          "audio/ogg",
+        ].includes(data.mime)
+      ) {
+        if (!action)
+          throw fail("语音格式需要QQ桥接转换为WAV，请检查get_record支持", 409);
+        const converted = await action("get_record", {
+          file: item.file || item.url,
+          out_format: "wav",
+        });
+        if (converted?.url)
+          data = await download(
+            { url: converted.url, type: "record" },
+            config()["chat.media.maxBytes"],
+            signal,
+          );
+        else if (
+          converted?.file &&
+          fs.statSync(converted.file, { throwIfNoEntry: false })?.isFile()
+        ) {
+          if (
+            fs.statSync(converted.file).size > config()["chat.media.maxBytes"]
+          )
+            throw fail("转换语音超过大小限制", 413);
+          data = { bytes: fs.readFileSync(converted.file), mime: "audio/wav" };
+        } else
+          throw fail("QQ桥接没有返回可读取的转换语音，请检查get_record", 409);
+      }
+      if (data.mime === "audio/x-wav") data = { ...data, mime: "audio/wav" };
+    } else data = await download(item, config()["chat.media.maxBytes"], signal);
+    return { item, ...data };
   };
   return {
+    async audioMessages(messages) {
+      if (
+        !config()["chat.tools.audio"] ||
+        config()["chat.media.autoTranscribe"] === false
+      )
+        return messages;
+      const result = [];
+      let count = 0;
+      for (const message of messages) {
+        const segments = [];
+        const source = lookup(message.messageId);
+        for (
+          let index = 0;
+          index < (source.attachments?.length || 0);
+          index++
+        ) {
+          if (source.attachments[index].type !== "record") continue;
+          if (count++ >= 3) {
+            segments.push("[本轮其余语音尚未转写，可调用starr_qq_audio]");
+            continue;
+          }
+          try {
+            const transcription = await this.inspect({
+              messageId: message.messageId,
+              index,
+            });
+            const text = transcription.text?.trim();
+            segments.push(
+              text
+                ? `[语音转写：${text.slice(0, 6000)}]`
+                : "[语音未识别到可辨认文字，不能猜测内容]",
+            );
+          } catch (e) {
+            signal.throwIfAborted();
+            segments.push(
+              `[语音转写失败：${String(e.message).slice(0, 250)}，尚不知道内容]`,
+            );
+          }
+        }
+        result.push(
+          segments.length
+            ? { ...message, text: message.text + "\n" + segments.join("\n") }
+            : message,
+        );
+      }
+      return result;
+    },
     async imageBlocks(messages, selection = modelSelection) {
       const runtime = mediaServices(store),
         c = config();
@@ -263,6 +362,9 @@ export function createQQCapabilities({
         item = message.attachments?.[index];
       if (!item) throw fail("本会话没有这个附件", 404);
       allow(item.type === "image" ? "chat.tools.images" : "chat.tools.audio");
+      const cacheKey = `${messageId}:${index}`;
+      if (item.type === "record" && audioCache.has(cacheKey))
+        return audioCache.get(cacheKey);
       const data = await attachment(messageId, index);
       if (item.type === "image" && isGIF(data.bytes)) {
         const sheet = await decodeAnimation(config(), data.bytes, { signal });
@@ -304,11 +406,14 @@ export function createQQCapabilities({
             modelSelection,
           },
         );
-      return hear(config(), data.bytes, data.mime, {
+      const result = await hear(config(), data.bytes, data.mime, {
         signal,
         characterId,
         secrets: mediaServices(store).workbench,
       });
+      allow("chat.tools.audio");
+      audioCache.set(cacheKey, result);
+      return result;
     },
     forward: async ({ messageId }) => {
       allow("chat.tools.forward");

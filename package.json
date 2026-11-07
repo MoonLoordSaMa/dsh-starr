@@ -1,6 +1,6 @@
 {
   "name": "dsh-starr",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "license": "MIT",
   "description": "以角色为中心的 DSH 记忆、状态与会话插件",
   "type": "module",

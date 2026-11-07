@@ -15,7 +15,10 @@ import { socialFields } from "../qq/social.mjs";
 import { autonomyFields } from "../bili/autonomy.mjs";
 import { agencyFields } from "../agency/config.mjs";
 import { browserFields } from "../browser/tabbit.mjs";
+import { fileFields } from "../host/native-files.mjs";
+import path from "node:path";
 export const fields = [
+  ...fileFields,
   ...browserFields,
   ...agencyFields,
   ...autonomyFields,
@@ -344,6 +347,14 @@ export function validatePatch(patch, { bot = false, current = {} } = {}) {
       });
   }
   const merged = { ...defaults(), ...current, ...patch };
+  if (
+    merged["files.workspaceRoot"] &&
+    !path.isAbsolute(merged["files.workspaceRoot"])
+  )
+    throw Object.assign(
+      new Error("角色文件工作区必须填写绝对路径，或留空使用默认目录"),
+      { status: 400 },
+    );
   if (!!merged["vision.host.provider"] !== !!merged["vision.host.model"])
     throw Object.assign(
       new Error("DSH视觉服务与模型需要成对选择，或一起留空自动沿用"),

@@ -174,6 +174,7 @@ export function ConfigForm({
             <div
               className={`config-row ${f.type === "boolean" ? "switch-row" : ""}`}
               key={f.key}
+              data-config-key={f.key}
             >
               <label htmlFor={f.key}>
                 <strong title={f.label}>{f.label}</strong>
@@ -343,7 +344,12 @@ export function MemoryPage(props: PageProps) {
     [view, setView] = useState("map"),
     [filter, setFilter] = useState(""),
     [query, setQuery] = useState(""),
-    [selected, setSelected] = useState<string | null>(null),
+    [selected, setSelected] = useState<string | null>(() => {
+      const key = `starr-memory-selection:${character.id}`;
+      const value = sessionStorage.getItem(key);
+      sessionStorage.removeItem(key);
+      return value;
+    }),
     [modal, setModal] = useState(false),
     [target, setTarget] = useState(""),
     [linkBusy, setLinkBusy] = useState(false);
@@ -366,6 +372,15 @@ export function MemoryPage(props: PageProps) {
   );
   const current = data?.nodes.find((n) => n.id === selected),
     motion = String(character.config["ui.motion"]);
+  useEffect(() => {
+    if (!current || !matchMedia("(max-width: 980px)").matches) return;
+    const frame = requestAnimationFrame(() =>
+      document
+        .querySelector(".memory-detail")
+        ?.scrollIntoView({ block: "start" }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [current?.id]);
   const changeCategory = useCallback((kind: string) => {
     setSelected(null);
     setFilter(kind);
@@ -622,7 +637,7 @@ export function MemoryPage(props: PageProps) {
               ) : (
                 <div className="detail-placeholder">
                   <OrbitIllustration />
-                  <h3>让一颗星，讲讲它的故事</h3>
+                  <h3>选择一条记忆查看全文</h3>
                   <p>
                     在星图或列表中选择记忆，查看来源、重要度，以及与其他记忆的联系
                   </p>
@@ -741,8 +756,7 @@ export function CharacterPage(props: PageProps) {
               placeholder="她的偏好、说话方式、自己的想法与边界……"
             />
             <small>
-              这里保存完整人设，影响后续所有绑定此角色的会话。注入预算与实际裁剪可在“言外之意
-              · 上下文注入”检查
+              这里保存完整人设，影响后续所有绑定此角色的会话。注入预算可在“回复规则与节奏”的“上下文、工作区与记忆召回”中设置。
             </small>
           </label>
           {error && (
@@ -836,6 +850,19 @@ export function MediaPage(props: PageProps & { view?: string }) {
         kind={kind}
       />
       <Panel title={titles[kind]}>
+        {kind === "asr" && (
+          <>
+            <p>
+              QQ
+              语音会在回复前自动转写，转写失败时显示具体原因。当前只识别说话内容，不表示能持续监听麦克风或识别完整语气。
+            </p>
+            <ConfigForm
+              {...props}
+              pages={["chat-media"]}
+              onlyKeys={["chat.tools.audio", "chat.media.autoTranscribe"]}
+            />
+          </>
+        )}
         <ConfigForm {...props} pages={[kind, `${kind}-local`]} />
       </Panel>
       <Panel title="共用媒体连接">
@@ -1010,9 +1037,7 @@ export function ExpressionsPage(props: PageProps) {
           </div>
         ) : (
           <Empty
-            title={
-              query || favorite ? "没有符合条件的表情" : "把她的表情带回来"
-            }
+            title={query || favorite ? "没有符合条件的表情" : "暂无表情包"}
             description="导入 PNG、JPEG、GIF 或 WebP。收藏、备注与图片按角色独立保存，文件缺失不会清空记录"
             action={
               <label className="button ghost">

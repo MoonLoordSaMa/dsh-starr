@@ -157,7 +157,7 @@ export function Select({
         disabled={disabled}
         onClick={() => setOpen(!open)}
       >
-        {options.find((o) => o.value === value)?.label ?? "择一星途"}
+        {options.find((o) => o.value === value)?.label ?? "请选择"}
         <ChevronDown size={14} className={open ? "rotated" : ""} />
       </button>
       {(open || present) && (

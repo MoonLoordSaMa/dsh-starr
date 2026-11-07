@@ -5,6 +5,7 @@ import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { StarrStore, fail } from "./starrcore/store.mjs";
 import { fields } from "./starrcore/config.mjs";
+import { capabilityStatus } from "./host/capabilities.mjs";
 import { speak, see, hear } from "./media/compatible.mjs";
 import { Onboarding } from "./onboarding/service.mjs";
 import { discoverLocalModels, discoveryDefaults } from "./media/discovery.mjs";
@@ -17,6 +18,7 @@ import { MediaWorkbench } from "./media/workbench.mjs";
 import { VisionCapture } from "./media/vision.mjs";
 import { Agency } from "./agency/service.mjs";
 import { todayOverview } from "./agency/today.mjs";
+import { dashboardStatus } from "./runtime/dashboard.mjs";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const { version } = JSON.parse(
@@ -216,6 +218,16 @@ export function createServer({
           return send(store.updateCharacter(characterId, await body(req)));
         if (action === "overview" && method === "GET")
           return send(store.overview(characterId));
+        if (action === "dashboard" && method === "GET")
+          return send(
+            dashboardStatus(store, characterId, {
+              ...onboardingHost,
+              agency,
+              singing,
+              workbench,
+              host: hostStatus(),
+            }),
+          );
         if (action === "bridge" && method === "GET")
           return send(
             onboardingHost?.bridge?.status(characterId) || {
@@ -253,6 +265,13 @@ export function createServer({
             onboardingHost?.bili?.invalidate(characterId);
           return send(updated);
         }
+        if (action === "capabilities" && method === "GET")
+          return send(
+            capabilityStatus(store, characterId, undefined, {
+              singing,
+              workbench,
+            }),
+          );
         if (action === "bili" && method === "GET")
           return send(
             onboardingHost?.bili?.status(characterId) || {

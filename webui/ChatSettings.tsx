@@ -1,5 +1,6 @@
 import { Panel } from "./components";
 import { ConfigForm } from "./pages";
+import { CapabilityStatus } from "./CapabilityStatus";
 import type { PageProps } from "./main";
 
 // 页面展示角色配置，后台会话仍由原服务保存。
@@ -14,9 +15,12 @@ export function ChatSettings(
     );
   if (props.view === "context")
     return (
-      <Panel title="上下文与记忆召回">
-        <ConfigForm {...props} pages={["chat-context"]} />
-      </Panel>
+      <div className="settings-stack">
+        <CapabilityStatus {...props} only={["files"]} />
+        <Panel title="上下文、工作区与记忆召回">
+          <ConfigForm {...props} pages={["chat-context"]} />
+        </Panel>
+      </div>
     );
   return (
     <div className="settings-stack">
@@ -26,7 +30,7 @@ export function ChatSettings(
       <Panel title="唤醒与接收范围">
         <ConfigForm {...props} pages={["chat-wake", "chat-access"]} />
       </Panel>
-      <Panel title="上下文与记忆召回">
+      <Panel title="上下文、工作区与记忆召回">
         <ConfigForm {...props} pages={["chat-context"]} />
       </Panel>
       <Panel title="会话工具与媒体">

@@ -502,7 +502,7 @@ test("曲库移除保留回收音源与元数据，默认参考受保护，跨�
   assert.equal(singing.clearCache(f.a).originalsPreserved, true);
 });
 test("全部有效配置均有实际功能路由，四个工作区完整覆盖且左栏没有隐藏功能", () => {
-  for (const field of fields.filter(field=>field.page!=="retired")) {
+  for (const field of fields.filter((field) => field.page !== "retired")) {
     const route = fieldRoute(field.page);
     assert.notEqual(route, "settings", field.key);
     assert.ok(
@@ -519,7 +519,15 @@ test("全部有效配置均有实际功能路由，四个工作区完整覆盖�
   for (const item of navigation) {
     assert.equal(
       workspaces.filter((w) => w.pages.includes(item.id)).length,
-      ["settings","permissions","appearance","maintenance"].includes(item.id) ? 0 : 1,
+      [
+        "overview",
+        "settings",
+        "permissions",
+        "appearance",
+        "maintenance",
+      ].includes(item.id)
+        ? 0
+        : 1,
       item.id,
     );
     if (item.id !== "overview")

@@ -16,6 +16,13 @@ const field = (key, label, type, value, help) => [
 ];
 export const browserFields = [
   field(
+    "browser.interact",
+    "允许连续浏览与网页交互",
+    "boolean",
+    false,
+    "角色可保持自己的页面，观察后点击链接、输入搜索词、滚动和返回；结束时关闭。登录与验证码由用户在浏览器中处理。",
+  ),
+  field(
     "browser.enabled",
     "允许角色浏览网页",
     "boolean",

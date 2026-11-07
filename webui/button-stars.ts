@@ -3,7 +3,7 @@
  * https://uiverse.io/MuhammadHasann/silent-lizard-44
  * 使用独立装饰层与 transform 动画，避免改变按钮尺寸或被按钮内部裁切。
  */
-export function scatterButtonStars(button: HTMLElement) {
+export function scatterButtonStars(button: HTMLElement, reduced = false) {
   const bounds = button.getBoundingClientRect();
   const layer = document.createElement("span");
   layer.className = "button-star-field";
@@ -50,6 +50,11 @@ export function scatterButtonStars(button: HTMLElement) {
       12 - startY,
       Math.min(innerHeight - 12 - startY, flight.dy),
     );
+    if (reduced) {
+      star.style.transform = `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+      star.style.opacity = "0.85";
+      return;
+    }
     animations.push(
       star.animate(
         [
@@ -75,6 +80,10 @@ export function scatterButtonStars(button: HTMLElement) {
   document.body.append(layer);
   return () => {
     if (!layer.isConnected) return;
+    if (reduced) {
+      layer.remove();
+      return;
+    }
     layer.getAnimations().forEach((animation) => animation.cancel());
     layer
       .animate([{ opacity: 1 }, { opacity: 0 }], {

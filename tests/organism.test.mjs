@@ -83,10 +83,18 @@ test("身体与心理状态仅供参考，不生成预设目的或否决自主�
   );
   const evaluated = evaluateIntentions(state, quietConfig, [], time);
   assert.deepEqual(evaluated.candidates, []);
-  assert.equal(evaluated.execution, 'bot-managed');
-  const goal = {id:'chosen',title:'自己决定的事',status:'waiting',due:null,drive:'connection'};
-  assert.deepEqual(evaluateIntentions(state,quietConfig,[goal],time).goals[0].blockers,[]);
-
+  assert.equal(evaluated.execution, "bot-managed");
+  const goal = {
+    id: "chosen",
+    title: "自己决定的事",
+    status: "waiting",
+    due: null,
+    drive: "connection",
+  };
+  assert.deepEqual(
+    evaluateIntentions(state, quietConfig, [goal], time).goals[0].blockers,
+    [],
+  );
 });
 test("关闭主动性、跨午夜安静时段、冷却与未来约定均可解释地等待", () => {
   const night = Date.parse("2026-11-03T16:15:00Z");
@@ -118,7 +126,7 @@ test("关闭主动性、跨午夜安静时段、冷却与未来约定均可解�
   const result = evaluateIntentions(s, quietConfig, goals, night);
   assert.equal(result.quiet, true);
   assert.equal(result.cooldown, true);
-  assert.deepEqual(result.candidates,[]);
+  assert.deepEqual(result.candidates, []);
   assert.match(
     result.goals.find((g) => g.id === "future").blockers.join(" "),
     /时间还没到/,

@@ -50,10 +50,10 @@ export function usePageEntrance(
             gsap.fromTo(
               sceneRoot,
               {
-                "--world-overlay-opacity": 0.12,
+                "--world-overlay-opacity": 0,
               },
               {
-                "--world-overlay-opacity": 0.24,
+                "--world-overlay-opacity": 0,
                 ease: "none",
                 scrollTrigger: {
                   trigger: root,
@@ -69,7 +69,7 @@ export function usePageEntrance(
           const targets = root.querySelectorAll(
             home
               ? ".observatory-heading-copy,.observatory-actions,.observatory-scene-note,.observatory-scroll"
-              : ".prelude-verse h2 span,.prelude-verse p,.prelude-caption,.prelude-continue",
+              : ".page-title",
           );
           gsap.from(targets, {
             y: 30,
@@ -112,7 +112,7 @@ export function usePageEntrance(
           }
           const groups = root.querySelectorAll(
             home
-              ? ".journey-stop>*,.observatory-metrics,.observatory-grid,.companion-overview,.observatory-today"
+              ? ".home-section-intro,.home-preview-surface"
               : ".page-title,.page-content>.settings-stack>.panel,.page-content>.panel,.related-routes",
           );
           const observer = new IntersectionObserver(

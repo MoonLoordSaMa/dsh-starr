@@ -1,10 +1,12 @@
 import crypto from "node:crypto";
+import { nativeFileTools, fileWorkspace } from "./native-files.mjs";
 import { UsageBudget } from "../conversation/budget.mjs";
 import { conversationDelivery } from "./chat-delivery.mjs";
 import { agencyRank } from "../agency/config.mjs";
 import { modelFailure } from "./model-failure.mjs";
 
 const baseTools = new Set([
+  "starr_capabilities",
   "starr_memory_status",
   "starr_memory_search",
   "starr_memory_read",
@@ -28,7 +30,7 @@ const baseTools = new Set([
   "starr_agency_finish",
 ]);
 export function agencyToolAllowed(name, level) {
-  if (baseTools.has(name)) return true;
+  if (baseTools.has(name) || nativeFileTools.has(name)) return true;
   if (
     [
       "starr_bili_read",
@@ -37,6 +39,7 @@ export function agencyToolAllowed(name, level) {
       "starr_song_source",
       "starr_sing",
       "starr_browser_read",
+      "starr_browser",
     ].includes(name)
   )
     return agencyRank(level) >= 2;
@@ -58,7 +61,10 @@ export function createAgencyDriver(ctx, store) {
         effect = false;
       const { agent } = await ctx.agents.create({
         sessionId,
-        meta: { cwd: store.dataRoot, agentPreset: "starr-qqchat" },
+        meta: {
+          cwd: fileWorkspace(store, characterId, { create: true }),
+          agentPreset: "starr-qqchat",
+        },
         agentOptions: { provider, model },
         signal,
         setup: async (scope) => {
@@ -103,6 +109,11 @@ export function createAgencyDriver(ctx, store) {
                 type: "object",
                 properties: {
                   text: { type: "string" },
+                  songRenderId: {
+                    type: "string",
+                    description:
+                      "可选本角色已完成的翻唱成品编号；向当前可信对象单独发送语音，text作为进展保存，不混入语音消息",
+                  },
                   reason: { type: "string" },
                   goalId: {
                     type: ["string", "null"],
@@ -166,7 +177,7 @@ export function createAgencyDriver(ctx, store) {
               type: "text",
               text: conversationDelivery(
                 preview,
-                "这是一次自主唤醒。目的与行动由你管理，插件不提供预设任务或情绪评分门槛。当前唤醒缘由：" +
+                "这是一次自主唤醒。你可以自己选歌、搜索音源、生成翻唱，用starr_agency_finish的songRenderId发送实际成品；也可使用 DSH 原生 read/write/edit/glob/grep 读取资料、写文字、修改文档或持续浏览网页。相对路径使用当前工作区，遵循其中的 AGENTS.md；正常创作无需另开便笺工具。目的与行动由你管理，插件不提供预设任务或情绪评分门槛。当前唤醒缘由：" +
                   JSON.stringify(input.goal) +
                   "。真实会话接续（资料）：" +
                   (input.pending || "无") +

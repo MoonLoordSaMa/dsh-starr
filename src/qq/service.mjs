@@ -216,6 +216,10 @@ export function normalizeQQEvent(
       .map((segment) => ({
         type: segment.type,
         url: typeof segment.data?.url === "string" ? segment.data.url : "",
+        file:
+          typeof segment.data?.file === "string"
+            ? segment.data.file.slice(0, 1000)
+            : "",
       })),
     forwardId: String(
       segments.find((segment) => segment.type === "forward")?.data?.id || "",
@@ -249,6 +253,7 @@ export class QQService {
     this.download = download;
     this.closed = false;
     this.running = new Map();
+    this.listening = new Map();
     this.lastReceivedAt = null;
     this.state = { status: "stopped", code: null };
     this.generation = 0;
@@ -282,6 +287,7 @@ export class QQService {
         hostReady: Boolean(this.driver),
         lastReceivedAt: this.lastReceivedAt,
         activeThreads: this.running.size,
+        listening: [...this.listening.values()],
       },
       secret: this.secrets.status(),
       counts: Object.fromEntries(
@@ -790,10 +796,16 @@ export class QQService {
       db.exec("ROLLBACK");
       throw error;
     }
-    const signal = AbortSignal.any([
-      this.abort.signal,
-      AbortSignal.timeout(300000),
-    ]);
+    // 每批来信保留五分钟处理时限；接到下一批后续期，连续聊天不按整轮五分钟截断。
+    const deadlineAbort = new AbortController();
+    let deadlineTimer;
+    const renewDeadline = () => {
+      clearTimeout(deadlineTimer);
+      deadlineTimer = setTimeout(() => deadlineAbort.abort(), 300000);
+      deadlineTimer.unref?.();
+    };
+    renewDeadline();
+    const signal = AbortSignal.any([this.abort.signal, deadlineAbort.signal]);
     let settled = false,
       sending = false,
       sendFailure;
@@ -1099,10 +1111,21 @@ export class QQService {
       settled = true;
       return { status: "silent" };
     };
-    let waited = false,
+    let waitedBatch = "",
       waiting = false;
-    const waitMessage = async ({ seconds = 45 } = {}) => {
+    const waitMessage = async (
+      {
+        seconds = this.policy.config(thread.character_id)[
+          "chat.wait.afterReplySeconds"
+        ],
+      } = {},
+      callerSignal,
+    ) => {
       signal.throwIfAborted();
+      const listeningSignal = callerSignal
+        ? AbortSignal.any([signal, callerSignal])
+        : signal;
+      listeningSignal.throwIfAborted();
       const c = this.policy.config(thread.character_id);
       if (!c["chat.wait.afterReply"]) throw fail("管理员已关闭回复后等待", 403);
       if (
@@ -1111,17 +1134,27 @@ export class QQService {
           ?.status !== "sent"
       )
         throw fail("请先成功回复本批消息，再等待下一句", 409);
-      if (!Number.isInteger(seconds) || seconds < 30 || seconds > 60)
-        throw fail("等待应为 30–60 秒");
-      if (waiting || waited) throw fail("本轮已等待过下一句，请自然结束", 409);
+      if (!Number.isInteger(seconds) || seconds < 120 || seconds > 180)
+        throw fail("回复后接听应为 120–180 秒（2–3 分钟）");
+      if (waiting || waitedBatch === batchId)
+        throw fail("本批已等待过下一句，请先回应新来信", 409);
       waiting = true;
-      waited = true;
+      waitedBatch = batchId;
+      renewDeadline();
+      const startedAt = Date.now();
+      const listeningState = {
+        sessionId: thread.session_id,
+        seconds,
+        startedAt,
+        deadlineAt: startedAt + seconds * 1000,
+      };
+      this.listening.set(thread.session_id, listeningState);
       mark("done");
       try {
         let nextBatchId = "";
         const next = await waitForMessages({
           milliseconds: seconds * 1000,
-          signal,
+          signal: listeningSignal,
           read: () => {
             const latest = this.policy.config(thread.character_id);
             if (
@@ -1178,6 +1211,7 @@ export class QQService {
         if (!next.length) return { status: "timeout", messages: [] };
         rows = next;
         batchId = nextBatchId;
+        renewDeadline();
         settled = false;
         sendFailure = undefined;
         const messages = rows.map((row) =>
@@ -1195,6 +1229,8 @@ export class QQService {
         };
       } finally {
         waiting = false;
+        if (this.listening.get(thread.session_id) === listeningState)
+          this.listening.delete(thread.session_id);
       }
     };
     try {
@@ -1326,10 +1362,13 @@ export class QQService {
         code,
         retry ? Date.now() + 5000 * (rows[0].attempts + 1) : 0,
       );
+    } finally {
+      clearTimeout(deadlineTimer);
     }
   }
   stop() {
     this.generation++;
+    this.listening.clear();
     clearInterval(this.timer);
     this.connection?.close();
     this.abort?.abort();

@@ -31,6 +31,12 @@ type Status = {
     lastReplyAt?: string;
     lastReceivedAt?: string;
     hostReady: boolean;
+    listening?: {
+      sessionId: string;
+      seconds: number;
+      startedAt: number;
+      deadlineAt: number;
+    }[];
   };
   secret: { saved: boolean; storage: string };
   counts: Record<string, number>;
@@ -153,12 +159,27 @@ export function QQConnection(props: PageProps) {
   };
   if (!status || !draft)
     return (
-      <Panel title="QQ 连接设置">
-        <p>{error || "正在读取 QQ 连接…"}</p>
-      </Panel>
+      <div className="settings-stack">
+        <Panel title="QQ 连接设置">
+          <p role={error ? "alert" : "status"}>
+            {error || "正在读取 QQ 连接…"}
+          </p>
+          {error && (
+            <button className="ghost" onClick={() => run(() => load(true))}>
+              重新读取连接
+            </button>
+          )}
+        </Panel>
+        <Panel title="QQ 工具与社交授权">
+          <ConfigForm {...props} pages={["chat-social"]} />
+        </Panel>
+      </div>
     );
   return (
-    <div className="content-with-rail qq-connection">
+    <div
+      className="content-with-rail qq-connection"
+      data-dirty={dirty || !!token}
+    >
       <div>
         <Panel
           title="QQ 连接设置"
@@ -179,6 +200,12 @@ export function QQConnection(props: PageProps) {
               <MessagesSquare size={16} />
               {status.runtime.account.nickname} ·{" "}
               {status.runtime.account.selfId}
+            </p>
+          )}
+          {!!status.runtime.listening?.length && (
+            <p role="status" className="backup-result">
+              正在原回合接听下一句 · {status.runtime.listening.length} 个对话，
+              等待窗口 {status.runtime.listening[0].seconds} 秒
             </p>
           )}
           {(status.runtime.lastError || status.runtime.code) && (

@@ -57,7 +57,7 @@ export function MemoryWorkshop(props: PageProps & { sync?: boolean }) {
   return (
     <div className="settings-stack">
       <Panel
-        title={props.sync ? "双链同源，修改有据" : "整理往事，保留来处"}
+        title={props.sync ? "笔记同步与修改核对" : "记忆整理工具"}
         aside={<Badge>{data?.counts.total ?? 0} 段原文</Badge>}
       >
         <p>

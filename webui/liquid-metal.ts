@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { scatterButtonStars } from "./button-stars";
 
 // 共享一份 GPU 程序；只为当前交互的控件绘制，不为每个按钮建立 WebGL 上下文。
@@ -25,21 +25,25 @@ void main(){
  vec3 rim=mix(vec3(.25,.37,.58),vec3(.94,.77,.52),.5+.5*sin(angle+time*.24));
  face+=rim*edge*(.6+hot*1.5+press*.5);
  float alpha=(1.-smoothstep(-.5,.5,sd))*(.9+edge*.1);
- gl_FragColor=vec4(face,alpha*strength);
+ float shine=clamp(max(max(bands.r,bands.g),bands.b)*fill+well*.14+abs(crease)*.15,0.,1.);
+ gl_FragColor=vec4(mix(vec3(.69,.84,.94),vec3(1.,.88,.66),uv.y),alpha*strength*shine);
 }`;
 
 export function useLiquidMetal(mode: string) {
+  const [systemReduced, setSystemReduced] = useState(
+    () => matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
   useEffect(() => {
-    const reduced =
-      mode === "reduced" ||
-      matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const selector =
-      "button:not(.toggle):not(.world-brand):not([role=switch]),a.button";
-    const plain =
-      ".workspace-navigation>button,.sidebar nav>button,.page-continuation button,.memory-row,.chat-session,.disclosure-trigger,.select-trigger,.select-options>button,.chapter-navigation>button,.relation-row,.expression-preview,.hero-scroll,.function-result,.function-groups button,.related-routes button,.prelude-continue,.observatory-metrics button,.observatory-scroll";
+    const media = matchMedia("(prefers-reduced-motion: reduce)");
+    const change = () => setSystemReduced(media.matches);
+    media.addEventListener("change", change);
+    return () => media.removeEventListener("change", change);
+  }, []);
+  useEffect(() => {
+    const reduced = mode === "reduced" || systemReduced;
+    const selector = "button:not(.nav-shade),a.button,[role=button]";
     const markButton = (button: HTMLElement) => {
-      if (button.closest(".sr-only") || button.matches(plain))
-        button.removeAttribute("data-liquid");
+      if (button.closest(".sr-only")) button.removeAttribute("data-liquid");
       else button.dataset.liquid = "";
     };
     const mark = (root: ParentNode) =>
@@ -48,6 +52,7 @@ export function useLiquidMetal(mode: string) {
       });
     mark(document);
     const observer = new MutationObserver((records) => {
+      if (target && !target.isConnected) clear();
       for (const record of records)
         for (const node of record.addedNodes)
           if (
@@ -146,6 +151,7 @@ export function useLiquidMetal(mode: string) {
       }
       surface = null;
       target?.removeAttribute("data-liquid-active");
+      target?.removeAttribute("data-button-hover");
       target = null;
     }
     function draw(now: number) {
@@ -214,11 +220,13 @@ export function useLiquidMetal(mode: string) {
       clear();
       if (
         !element ||
+        element.closest(".sr-only,[inert]") ||
         element.matches(":disabled") ||
         element.getAttribute("aria-disabled") === "true"
       )
         return;
       target = element;
+      target.dataset.buttonHover = "";
       const appearance = getComputedStyle(element);
       metalStrength =
         parseFloat(appearance.getPropertyValue("--metal-strength")) || 0.3;
@@ -228,14 +236,8 @@ export function useLiquidMetal(mode: string) {
       );
       px = py = 0.5;
       target.dataset.liquidActive = "";
-      if (
-        !reduced &&
-        element.matches(
-          ".primary:not(.danger),.hero-write,.journey-footnote>button",
-        )
-      )
-        clearStars = scatterButtonStars(element);
-      if (!reduced && gl && program) {
+      clearStars = scatterButtonStars(element, reduced);
+      if (!reduced && gl && program && element.hasAttribute("data-liquid")) {
         surface = document.createElement("canvas");
         surface.dataset.liquidFx = "";
         surface.ariaHidden = "true";
@@ -252,7 +254,9 @@ export function useLiquidMetal(mode: string) {
     }
     const identify = (event: Event) =>
       event.target instanceof Element
-        ? event.target.closest<HTMLElement>("[data-liquid]")
+        ? event.target.closest<HTMLElement>(
+            "button:not(.nav-shade),a.button,[role=button]",
+          )
         : null;
     const move = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return;
@@ -288,10 +292,16 @@ export function useLiquidMetal(mode: string) {
       visible = !document.hidden;
       if (!visible) clear();
     };
+    const focus = (event: FocusEvent) => {
+      const button = identify(event);
+      if (button?.matches(":focus-visible")) activate(button);
+    };
     document.addEventListener("pointermove", move, { passive: true });
     document.addEventListener("pointerdown", press, { passive: true });
 
     document.addEventListener("pointerout", leave);
+    document.addEventListener("focusin", focus);
+    document.addEventListener("focusout", clear);
     document.addEventListener("scroll", clear, true);
     document.addEventListener("visibilitychange", visibility);
     addEventListener("blur", clear);
@@ -303,6 +313,8 @@ export function useLiquidMetal(mode: string) {
       document.removeEventListener("pointerdown", press);
 
       document.removeEventListener("pointerout", leave);
+      document.removeEventListener("focusin", focus);
+      document.removeEventListener("focusout", clear);
       document.removeEventListener("scroll", clear, true);
       document.removeEventListener("visibilitychange", visibility);
       removeEventListener("blur", clear);
@@ -314,5 +326,5 @@ export function useLiquidMetal(mode: string) {
         gl.getExtension("WEBGL_lose_context")?.loseContext();
       }
     };
-  }, [mode]);
+  }, [mode, systemReduced]);
 }

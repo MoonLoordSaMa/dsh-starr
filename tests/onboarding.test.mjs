@@ -165,6 +165,12 @@ test("预设自动注册、可审计且卸载清理，异步加载期间卸载�
   );
   assert.equal(definition.id, "starr-qqchat");
   assert.equal(definition.plugins[0].name, "dsh-starr/qq-session");
+  for (const name of [
+    "@deepseek-ai/dsh-tool-fs",
+    "@deepseek-ai/dsh-tool-fs-search",
+    "@deepseek-ai/dsh-agent-instructions",
+  ])
+    assert.ok(definition.plugins.some((plugin) => plugin.name === name));
   preset.close();
   resolveRegistration(() => {
     removed++;
@@ -215,7 +221,10 @@ test("QQ 预设保留普通工具、约束管理操作，按真实会话固定�
   t.after(close);
   assert.equal(mode, "native");
   assert.equal(filter, undefined);
-  assert.match(guard({ name: "exec_command" }), /不能编写插件/);
+  assert.match(guard({ name: "exec_command" }), /不执行终端/);
+  for (const name of ["read", "write", "edit", "glob", "grep", "read_image"])
+    assert.equal(guard({ name }), undefined);
+  assert.match(guard({ name: "Config" }), /宿主配置/);
   assert.equal(guard({ name: "starr_memory_search" }), undefined);
   assert.equal(guard({ name: "web_search" }), undefined);
   assert.equal(guard({ name: "browser_navigate" }), undefined);

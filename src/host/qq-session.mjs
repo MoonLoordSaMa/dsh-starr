@@ -83,20 +83,13 @@ export function apply(ctx, config) {
       "terminal_send",
       "terminal_signal",
       "terminal_close",
-      "apply_patch",
-      "write_file",
-      "edit_file",
-      "delete_file",
-      "move_file",
-      "write",
-      "edit",
       "Config",
       ...(config.managementTools ?? []),
     ]);
     dispose.push(
       ctx.tools.guard((exec) =>
         management.has(exec.name)
-          ? "此管理操作请在 DSH 管理会话执行；QQ 角色会话不能编写插件、执行终端或修改宿主配置"
+          ? "此管理操作请在 DSH 管理会话执行；QQ 角色会话不执行终端或修改宿主配置；普通文件读写使用 DSH 原生文件工具"
           : undefined,
       ),
     );

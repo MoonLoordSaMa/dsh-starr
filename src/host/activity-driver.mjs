@@ -1,3 +1,4 @@
+import { fileWorkspace } from "./native-files.mjs";
 import { fail } from "../starrcore/store.mjs";
 import { dynamicKinds } from "../bili/activities.mjs";
 import { UsageBudget } from "../conversation/budget.mjs";
@@ -61,7 +62,10 @@ export function createActivityDriver(ctx, store) {
       const { agent } = await ctx.agents.create({
         sessionId,
         agentOptions: { provider, model },
-        meta: { cwd: store.dataRoot, agentPreset: "starr-qqchat" },
+        meta: {
+          cwd: fileWorkspace(store, characterId, { create: true }),
+          agentPreset: "starr-qqchat",
+        },
         signal,
         setup: async (agentCtx) => {
           await ctx.agentPresets.mount(agentCtx, "starr-qqchat");

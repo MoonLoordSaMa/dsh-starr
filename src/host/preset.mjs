@@ -11,6 +11,20 @@ export function qqPreset(dataRoot) {
         name: "dsh-starr/qq-session",
         config: { dataRoot },
       },
+      {
+        id: "starr-native-files",
+        name: "@deepseek-ai/dsh-tool-fs",
+      },
+      {
+        id: "starr-native-file-search",
+        name: "@deepseek-ai/dsh-tool-fs-search",
+        config: { sampleOverCapGlobResults: false },
+      },
+      {
+        id: "starr-workspace-instructions",
+        name: "@deepseek-ai/dsh-agent-instructions",
+        config: { maxBytes: 65536 },
+      },
     ],
   };
 }

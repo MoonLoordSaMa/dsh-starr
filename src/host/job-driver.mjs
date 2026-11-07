@@ -1,3 +1,4 @@
+import { fileWorkspace } from "./native-files.mjs";
 import { fail } from "../starrcore/store.mjs";
 import { jobKinds } from "../jobs/config.mjs";
 import { UsageBudget } from "../conversation/budget.mjs";
@@ -53,7 +54,10 @@ export function createJobDriver(ctx, store) {
         .run(sessionId, characterId);
       const { agent } = await ctx.agents.create({
         sessionId,
-        meta: { cwd: store.dataRoot, agentPreset: "starr-qqchat" },
+        meta: {
+          cwd: fileWorkspace(store, characterId, { create: true }),
+          agentPreset: "starr-qqchat",
+        },
         agentOptions: { provider, model },
         setup: async (agentCtx) => {
           await ctx.agentPresets.mount(agentCtx, "starr-qqchat");

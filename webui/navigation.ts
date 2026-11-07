@@ -244,7 +244,7 @@ export const workspaces = [
     name: "回廊共语",
     label: "基础会话",
     entry: "chat-rules",
-    pages: ["overview", "character", "chat-rules", "qq", "expressions"],
+    pages: ["character", "chat-rules", "qq", "expressions"],
     caption: "角色人设、回复设置与QQ连接",
   },
   {

@@ -351,10 +351,16 @@ test("QQ原生图片通道将GIF关键帧投给视觉模型，不把原始GIF当
 test("浏览器不限制域名并保留协议验证，分页回执读取真实结果，未授权与异常不假报成功", async (t) => {
   const f = fixture(t);
   f.patch({ "browser.enabled": true });
-  assert.equal(allowedURL('https://example.com.evil.test/'),'https://example.com.evil.test/');
-  assert.equal(allowedURL('http://127.0.0.1:17922/'),'http://127.0.0.1:17922/');
-  assert.throws(()=>allowedURL('file:///etc/passwd'),/HTTP/);
-  assert.throws(()=>allowedURL('https://user:pass@example.com/'),/凭据/);
+  assert.equal(
+    allowedURL("https://example.com.evil.test/"),
+    "https://example.com.evil.test/",
+  );
+  assert.equal(
+    allowedURL("http://127.0.0.1:17922/"),
+    "http://127.0.0.1:17922/",
+  );
+  assert.throws(() => allowedURL("file:///etc/passwd"), /HTTP/);
+  assert.throws(() => allowedURL("https://user:pass@example.com/"), /凭据/);
   const calls = [],
     raw = JSON.stringify({
       url: "https://example.com/",

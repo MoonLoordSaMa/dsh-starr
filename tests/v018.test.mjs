@@ -195,9 +195,13 @@ test("旧目的不再受生理紧迫度评分限制，可由角色重新评估",
     reason: "先前留下的待评估需要",
     drive: "rest",
   });
-  assert.equal(f.store.intentions(f.character.id).goals.find(g=>g.id===old.id).blockers.length,0);
+  assert.equal(
+    f.store.intentions(f.character.id).goals.find((g) => g.id === old.id)
+      .blockers.length,
+    0,
+  );
   const plan = f.agency.plan(f.character.id);
-  assert.match(plan.goal.id,/^routine:/);
+  assert.match(plan.goal.id, /^routine:/);
   assert.equal(plan.blockers.length, 0);
   const result = await f.agency.run(f.character.id);
   assert.equal(result.status, "silent", result.error);
@@ -435,9 +439,9 @@ test("请求与工具预算有硬上限，未知模型用量停止下一次自�
   f.store.db
     .prepare("INSERT INTO chat_usage VALUES('missing',?,?,0,0,0,1,0,?)")
     .run(f.character.id, result.session_id, Date.now());
-  assert.doesNotMatch(f.agency.blockers(f.character.id).join(' '), /未报告/);
-  f.patch({'chat.budget.enabled':true,'chat.budget.requireUsage':true});
-  assert.match(f.agency.blockers(f.character.id).join(' '),/未报告/);
+  assert.doesNotMatch(f.agency.blockers(f.character.id).join(" "), /未报告/);
+  f.patch({ "chat.budget.enabled": true, "chat.budget.requireUsage": true });
+  assert.match(f.agency.blockers(f.character.id).join(" "), /未报告/);
 });
 test("另一个角色的主动目的和时间线始终隔离", async (t) => {
   const f = fixture(t, {

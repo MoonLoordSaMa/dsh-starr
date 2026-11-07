@@ -83,10 +83,13 @@ import "./v019-glass.css";
 import "./v020.css";
 import "./v021.css";
 import "./v021-fix.css";
-import { PageContinuation } from "./PageContinuation";
+import "./v022.css";
+import "./v023.css";
+import { RuntimeStatus } from "./RuntimeStatus";
+import { PageContents } from "./PageContents";
 import { CompanionOverview } from "./CompanionOverview";
 import { ObservatoryOverview } from "./ObservatoryOverview";
-import { resolvePage, navigation, workspaces } from "./navigation";
+import { resolvePage, navigation, workspaces, commonPages } from "./navigation";
 import { RelatedRoutes, WorkspacePage } from "./WorkspacePages";
 import { Today } from "./Today";
 
@@ -869,6 +872,12 @@ function App() {
   }, [load]);
   const go = (next: string) => {
     next = resolvePage(next);
+    if (
+      page !== next &&
+      main.current?.querySelector('[data-dirty="true"]') &&
+      !window.confirm("当前页面有尚未保存的修改。确定离开吗？")
+    )
+      return;
     setMenu(false);
     main.current?.scrollTo({ top: 0, behavior: "instant" });
     if (page !== next) {
@@ -933,8 +942,12 @@ function App() {
         }
       : null;
   const nav = navigation.find((n) => n.id === page) ?? navigation[0],
-    section =
-      workspaces.find((group) => group.pages.includes(page)) ?? workspaces[0],
+    section = workspaces.find((group) => group.pages.includes(page)) ?? {
+      id: page === "overview" ? "home" : "common",
+      name: page === "overview" ? "首页概览" : "通用设置",
+      caption: "查找功能、权限、外观与维护",
+      primary: commonPages,
+    },
     activeProps = props;
   return (
     <>
@@ -999,7 +1012,7 @@ function App() {
                     <n.icon size={17} strokeWidth={1.6} />
                     <span>
                       <strong>{n.name}</strong>
-                      <small>{n.purpose}</small>
+                      <small>{n.label}</small>
                     </span>
                     {page === n.id && (
                       <span className="nav-active-star" aria-hidden="true">
@@ -1011,6 +1024,13 @@ function App() {
               ))}
           </nav>
           <div className="sidebar-bottom">
+            <button
+              className="ghost function-finder"
+              onClick={() => go("settings")}
+            >
+              查找功能与配置
+              <ArrowUpRight size={15} />
+            </button>
             <span>
               <i className="live-dot" />
               独立核心运行中
@@ -1023,6 +1043,15 @@ function App() {
             </small>
           </div>
         </aside>
+        {page === "overview" && (
+          <button
+            className="ghost function-finder home-function-dock"
+            onClick={() => go("settings")}
+          >
+            查找功能与配置
+            <ArrowUpRight size={15} />
+          </button>
+        )}
         <div className="workspace" inert={compact && menu}>
           <header className="topbar">
             <button
@@ -1034,6 +1063,14 @@ function App() {
               <span>starr</span>
             </button>
             <nav className="workspace-navigation" aria-label="工作区导航">
+              <button
+                aria-current={page === "overview" ? "page" : undefined}
+                onClick={() => go("overview")}
+              >
+                <span>观星台</span>
+                <small>首页概览</small>
+                <i />
+              </button>
               {workspaces.map((group) => (
                 <button
                   key={group.id}
@@ -1056,12 +1093,6 @@ function App() {
                   <Menu size={20} />
                 </button>
               )}
-              <button
-                className="ghost function-finder"
-                onClick={() => go("settings")}
-              >
-                查找功能
-              </button>
               <button
                 className="ghost guide-reopen"
                 onClick={() => {
@@ -1139,18 +1170,8 @@ function App() {
                 </h1>
                 <p>
                   {page === "overview"
-                    ? "记得的事、此刻心潮，以及想慢慢完成的约定"
-                    : page === "memory"
-                      ? "经历并非散落的碎片，它们在同一片星空相遇"
-                      : page === "state"
-                        ? "让情绪有来源，让主动有缘由"
-                        : page === "media"
-                          ? "说、唱、听、看，各有清楚的能力与连接"
-                          : page === "conversation"
-                            ? "在不同的窗口相逢，让记忆回到同一片星空"
-                            : page === "expressions"
-                              ? "每一种情绪，都可以有自己的表情"
-                              : "让每一项能力，都有恰当的位置"}
+                    ? "连接与最近近况的独立预览"
+                    : nav.purpose}
                 </p>
               </div>
               {page === "memory" ? (
@@ -1172,12 +1193,26 @@ function App() {
             {activeProps && (
               <div className="page-content" key={`${id}:${page}`}>
                 <Boundary>
+                  {page !== "overview" && (
+                    <PageContents identity={`${id}:${page}`} />
+                  )}
+                  {[
+                    "qq",
+                    "bili",
+                    "browser",
+                    "hearing",
+                    "vision",
+                    "singing",
+                    "media",
+                    "intentions",
+                    "memory-care",
+                    "maintenance",
+                    "chat-rules",
+                  ].includes(page) && (
+                    <RuntimeStatus {...activeProps} page={page} />
+                  )}
                   {page === "overview" ? (
-                    <ObservatoryOverview
-                      {...activeProps}
-                      onMemory={() => setModal("memory")}
-                      onGoal={() => setModal("goal")}
-                    />
+                    <ObservatoryOverview {...activeProps} />
                   ) : page === "memory" ? (
                     <MemoryPage {...activeProps} />
                   ) : page === "state" ? (
@@ -1198,9 +1233,6 @@ function App() {
                 {bootstrap.host?.connected ? "DSH 控制台" : "独立预览"}
               </span>
             </footer>
-            {activeProps && (
-              <PageContinuation key={page} page={page} main={main} go={go} />
-            )}
           </main>
         </div>
       </div>
