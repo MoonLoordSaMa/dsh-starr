@@ -861,11 +861,12 @@ export class StarrStore {
         applyExperience(state, input.kind, intensity, evidence, time, timezone),
     );
   }
-  intentions(characterId) {
+  intentions(characterId, time = Date.now()) {
     return evaluateIntentions(
       this.getState(characterId),
       this.character(characterId).config,
       this.goals(characterId),
+      time,
     );
   }
   stateHistory(characterId) {
@@ -903,16 +904,69 @@ export class StarrStore {
     const data = drive
       ? { drive: drive.id, action: drive.action, external: drive.external }
       : { drive: null, action: "consider", external: false };
+    data.ongoing = input.ongoing === true;
+    data.progress = "";
+    data.step = 0;
     if (trusted.sessionId) {
       const session = this.conversations.get(trusted.sessionId);
       if (session.character_id !== characterId)
         throw fail("目的来源与角色不匹配", 403);
       data.originSession = session.session_id;
     }
+    if (trusted.shareMemoryId) {
+      const shared = db
+        .prepare(
+          "SELECT r.id FROM records r JOIN record_visibility v ON v.record_id=r.id WHERE r.id=? AND v.visibility='shared' AND NOT EXISTS(SELECT 1 FROM record_archive a WHERE a.record_id=r.id)",
+        )
+        .get(trusted.shareMemoryId);
+      if (!shared) throw fail("只能为仍在共享范围内的记忆形成分享目的", 403);
+      delete data.originSession;
+      data.shareMemoryId = shared.id;
+      data.action = "reach_out";
+      data.external = true;
+    }
     db.prepare(
       "INSERT INTO goals(id,title,reason,status,due,created,updated,data) VALUES(?,?,?,?,?,?,?,?)",
     ).run(...Object.values(goal), JSON.stringify(data));
     return { ...goal, ...data };
+  }
+  advanceGoal(
+    characterId,
+    { id: goalId, step, progress, nextAt, status = "waiting" },
+    sessionId,
+  ) {
+    const db = this.memory(characterId);
+    const row = db.prepare("SELECT * FROM goals WHERE id=?").get(goalId);
+    if (!row) throw fail("目的不存在", 404);
+    const goal = { ...row, ...parse(row.data) };
+    if (sessionId && goal.originSession !== sessionId)
+      throw fail("只能推进当前会话形成的目的", 403);
+    if ((goal.step || 0) !== step)
+      throw fail("目的进度已变化，请重新读取", 409);
+    if (goal.status !== "waiting") throw fail("目的已结束", 409);
+    if (!["waiting", "completed", "cancelled"].includes(status))
+      throw fail("目的状态无效");
+    if (nextAt && !Number.isFinite(Date.parse(nextAt)))
+      throw fail("下次接续时间无效");
+    const data = {
+      ...parse(row.data),
+      progress: text(progress, "实际进展与下一步", 4000),
+      step: step + 1,
+    };
+    const result = db
+      .prepare(
+        "UPDATE goals SET data=?,status=?,due=?,updated=? WHERE id=? AND data=? AND status='waiting'",
+      )
+      .run(
+        JSON.stringify(data),
+        status,
+        nextAt || null,
+        now(),
+        goalId,
+        row.data,
+      );
+    if (!result.changes) throw fail("目的进度已变化，请重新读取", 409);
+    return this.goals(characterId).find((g) => g.id === goalId);
   }
   updateGoal(characterId, goalId, status) {
     if (!["waiting", "completed", "cancelled"].includes(status))

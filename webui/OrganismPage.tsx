@@ -556,6 +556,11 @@ export function OrganismPage(props: PageProps & { view?: string }) {
                       <div>
                         <h3>{g.title}</h3>
                         <p>{g.reason}</p>
+                        {g.progress && (
+                          <p className="activity-progress">
+                            最近进展：{g.progress}
+                          </p>
+                        )}
                         <small>
                           {g.status === "completed"
                             ? "已完成"

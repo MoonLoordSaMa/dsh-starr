@@ -9,6 +9,36 @@ const field = (key, label, type, value, help, extra = {}) => [
 ];
 export const agencyFields = [
   field(
+    "agency.observeGroups",
+    "观察允许群的日常消息",
+    "boolean",
+    false,
+    "将未被 @ 的普通群消息保存为观察记录，不立即唤醒模型；主动评估只读取近期真实消息。仍受 QQ 群允许名单及会话黑名单约束。",
+  ),
+  field(
+    "agency.groupEnabled",
+    "允许自主参与群聊",
+    "boolean",
+    false,
+    "还需社交级主动范围与 QQ 群允许名单；只在已有群会话发言，不向陌生群发送。",
+  ),
+  field(
+    "agency.groupGapMinutes",
+    "同一群主动发言间隔（分钟）",
+    "number",
+    60,
+    "没有新群消息或仍有待处理来信时不另起一轮。",
+    { min: 5, max: 1440, integer: true },
+  ),
+  field(
+    "agency.groupRecentMinutes",
+    "参与最近多少分钟的群话题",
+    "number",
+    30,
+    "只从近期有新消息的群里选择话题，避免接续过时讨论。",
+    { min: 1, max: 1440, integer: true },
+  ),
+  field(
     "agency.opportunityMinutes",
     "日常主动评估间隔（分钟）",
     "number",

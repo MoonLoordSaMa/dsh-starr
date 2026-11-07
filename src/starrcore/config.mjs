@@ -14,7 +14,9 @@ import { operationFields } from "../bili/operations.mjs";
 import { socialFields } from "../qq/social.mjs";
 import { autonomyFields } from "../bili/autonomy.mjs";
 import { agencyFields } from "../agency/config.mjs";
+import { browserFields } from "../browser/tabbit.mjs";
 export const fields = [
+  ...browserFields,
   ...agencyFields,
   ...autonomyFields,
   [
@@ -222,7 +224,7 @@ export const fields = [
     "boolean",
     false,
     "permissions",
-    "原文可恢复，不能清空全库，不能归档其他对象的私密记忆。",
+    "角色自主决定记什么、关联什么、淡忘什么；归档保留可恢复原文。日记受保护，不能归档其他对象的私密记忆或清空全库。",
   ],
   [
     "ui.quality",

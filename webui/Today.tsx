@@ -95,7 +95,7 @@ export function Today(props: PageProps & { compact?: boolean }) {
         <>
           <p>
             {data.day} · {data.timezone}。留下 {data.counts.memories}{" "}
-            段记忆，写了 {data.counts.diary} 篇日记，主动私聊{" "}
+            段记忆，写了 {data.counts.diary} 篇日记，主动发言{" "}
             {data.counts.proactive} 次
           </p>
           <p className="footnote">
@@ -151,10 +151,28 @@ export function Today(props: PageProps & { compact?: boolean }) {
                   { value: "observe", label: "L0 · 只观察" },
                   { value: "owner", label: "L1 · 主人的QQ私聊" },
                   { value: "browse", label: "L2 · 加上已授权的公开资料浏览" },
-                  { value: "social", label: "L3 · 加上逐项授权的B站社交" },
+                  {
+                    value: "social",
+                    label: "L3 · 加上逐项授权的群聊与B站社交",
+                  },
                 ]}
               />
               <div className="form-footer">
+                <button
+                  className="ghost"
+                  disabled={busy}
+                  onClick={() =>
+                    save({
+                      "agency.opportunityMinutes": 20,
+                      "agency.cooldownMinutes": 10,
+                      "agency.dailyDecisions": 48,
+                      "agency.dailyActions": 8,
+                      "agency.maxTokens": 120000,
+                    })
+                  }
+                >
+                  采用活跃探索频率
+                </button>
                 <button
                   className="ghost"
                   disabled={busy}

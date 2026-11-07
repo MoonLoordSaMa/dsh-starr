@@ -249,7 +249,19 @@ export class Conversations {
     );
   }
   memoryAccess(sessionId) {
-    const session = this.get(sessionId),
+    const actual = this.get(sessionId);
+    const scoped =
+      this.store.db
+        .prepare(
+          "SELECT 1 FROM sqlite_master WHERE type='table' AND name='agency_scopes'",
+        )
+        .get() &&
+      this.store.db
+        .prepare(
+          "SELECT origin_session_id FROM agency_scopes WHERE session_id=? AND character_id=?",
+        )
+        .get(sessionId, actual.character_id);
+    const session = scoped ? this.get(scoped.origin_session_id) : actual,
       c = this.store.character(session.character_id).config;
     const owner =
       (session.platform === "qq" &&
@@ -262,7 +274,15 @@ export class Conversations {
         session.target === c["memory.ownerBili"]);
     const management =
       session.platform === "web" && session.purpose === "management";
-    return { session, owner, management, legacy: owner || management };
+    if (session.character_id !== actual.character_id)
+      throw fail("自主会话来源与角色不匹配", 403);
+    return {
+      session,
+      owner,
+      management,
+      legacy: owner || management,
+      scopeSessionId: session.session_id,
+    };
   }
   memoryStatus(sessionId, { check = false } = {}) {
     const access = this.memoryAccess(sessionId),
@@ -271,7 +291,7 @@ export class Conversations {
       .prepare(
         `SELECT r.kind,count(*) n FROM records r LEFT JOIN record_visibility v ON r.id=v.record_id WHERE NOT EXISTS(SELECT 1 FROM record_archive a WHERE a.record_id=r.id) AND (v.visibility='shared' OR v.session_id=? ${access.legacy ? "OR v.record_id IS NULL OR (v.visibility='unclassified' AND coalesce(v.session_id,'')='')" : ""}) GROUP BY r.kind`,
       )
-      .all(sessionId);
+      .all(access.scopeSessionId);
     return {
       database: check
         ? db.prepare("PRAGMA quick_check").get().quick_check
@@ -364,7 +384,7 @@ export class Conversations {
       )
       .all(
         ...terms,
-        sessionId,
+        access.scopeSessionId,
         ...(id ? [id] : []),
         ...(kind ? [kind] : []),
         ...(days ? [Math.max(1, Math.min(3650, Number(days) || 14))] : []),

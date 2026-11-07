@@ -735,8 +735,10 @@ export function evaluateIntentions(state, config, goals, time = Date.now()) {
         g.status !== "waiting"
           ? [g.status === "completed" ? "已经完成" : "已经取消"]
           : [
-              ...(candidate?.blockers ??
-                (!enabled ? ["主动目的评估尚未开启"] : [])),
+              ...(candidate?.blockers.filter(
+                (reason) =>
+                  !g.ongoing || reason !== "需求还不急，可以安静地等待",
+              ) ?? (!enabled ? ["主动目的评估尚未开启"] : [])),
             ];
       if (g.due && Date.parse(g.due) > time) blockers.push("约定的时间还没到");
       return {

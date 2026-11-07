@@ -10,11 +10,15 @@ const baseTools = new Set([
   "starr_memory_read",
   "starr_memory_write",
   "starr_memory_link",
+  "starr_memory_archive",
   "starr_state_read",
   "starr_state_update",
   "starr_experience_record",
   "starr_intention_evaluate",
   "starr_goal_create",
+  "starr_share_intention",
+  "starr_goal_list",
+  "starr_goal_update",
   "starr_chat_note",
   "starr_config_read",
   "starr_config_update",
@@ -32,6 +36,7 @@ export function agencyToolAllowed(name, level) {
       "starr_bili_watch",
       "starr_song_source",
       "starr_sing",
+      "starr_browser_read",
     ].includes(name)
   )
     return agencyRank(level) >= 2;
@@ -67,7 +72,9 @@ export function createAgencyDriver(ctx, store) {
                 return "此工具不在当前主动范围内；管理、屏幕与摄像头不能由后台目的触发";
               if (
                 exec.name === "starr_bili_social" &&
-                store.conversations.get(sessionId).type === "private"
+                ["private", "group"].includes(
+                  store.conversations.get(sessionId).type,
+                )
               )
                 return "这一轮携带主人私聊接续，只可向主人回复；公开互动应另由公开资料目的触发";
               input.reserve("tool");
@@ -91,12 +98,19 @@ export function createAgencyDriver(ctx, store) {
             scope.tools.register({
               name: "starr_agency_finish",
               description:
-                "结束本次主动机会。仅在确有内容时填写text联系管理员绑定的主人QQ；不填text表示保持安静，不发送消息。reason记录做或不做的理由。不要汇报工具过程。",
+                "结束本次主动机会。当前为群会话时text仅发往来源群，否则联系管理员绑定的主人；不填text保持安静。持续目的用completed=false、progress和nextAt保存进展，等待下次继续。reason记录选择理由。",
               parameters: {
                 type: "object",
                 properties: {
                   text: { type: "string" },
                   reason: { type: "string" },
+                  completed: {
+                    type: "boolean",
+                    description:
+                      "持续目的是否已完成；false保存进展后等待下次继续",
+                  },
+                  progress: { type: "string" },
+                  nextAt: { type: "string", description: "可选ISO接续时间" },
                 },
                 required: ["reason"],
                 additionalProperties: false,
@@ -142,7 +156,7 @@ export function createAgencyDriver(ctx, store) {
               type: "text",
               text: conversationDelivery(
                 preview,
-                `这是插件发起的一次自主机会，不是主人刚刚发来的消息。目的：${JSON.stringify(input.goal)}。主人上次会话接续（仅有关时自然提起）：${input.pending || "无"}。平静、低落和愉快都有主动性，不必等到强烈情绪才行动：平静时可接续约定、提出真实问题或探索兴趣，低落时可反思整理或向可信主人简短表达，愉快时可分享发现。情绪决定语气与负担，不作为能否行动的门槛。先检查最近的真实记忆和未完事项，再选择有依据的一小步；没有合适内容或对方可能忙时安静即可，不为了完成任务硬找话。允许范围以工具实际权限为准；读到标题简介不等于看过完整视频。身体状态是角色内部模拟，不代表真的吃饭睡觉。阅读或反思得到真实新内容时可保存记忆；需要跨平台自然接续时仅在已授权的共享范围保存。最后调用starr_agency_finish记录理由：有值得分享的话再填写text；保持安静则不填写text。最多一次主动外发，不能修改自己的授权、编写脚本、监视屏幕或主动联系陌生人。`,
+                `这是插件发起的一次自主机会，不是主人刚刚发来的消息。目的：${JSON.stringify(input.goal)}。当前来源会话接续（仅有关时自然提起）：${input.pending || "无"}。平静、低落和愉快都有主动性，不必等到强烈情绪才行动：平静时可接续约定、提出真实问题或探索兴趣，低落时可反思整理或向可信主人简短表达，愉快时可分享发现。情绪决定语气与负担，不作为能否行动的门槛。先检查最近的真实记忆和未完事项，再选择有依据的一小步；没有合适内容或对方可能忙时安静即可，不为了完成任务硬找话。允许范围以工具实际权限为准；读到标题简介不等于看过完整视频。身体状态是角色内部模拟，不代表真的吃饭睡觉。阅读或反思得到真实新内容时可保存记忆；需要跨平台自然接续时仅在已授权的共享范围保存。活动不限固定菜单：可探索兴趣、创作、做小实验、接续长期项目、维护关系或准备资料，由你基于真实经历自主选择。待完成的事用starr_goal_create的ongoing=true持久记录；当前持续目的只做一小步时用starr_agency_finish的completed=false保存progress与nextAt。群会话只在当前群发言；值得给主人分享的经历可在管理员允许后自行记为shared，再调用starr_share_intention留下分享意愿，让主人侧后续自然接续，不把私密资料跨会话转发。最后调用starr_agency_finish记录理由：有值得分享的话再填写text；保持安静则不填写text。最多一次主动外发，不能修改自己的授权、编写脚本、监视屏幕或主动联系陌生人。`,
               ),
             },
           ],

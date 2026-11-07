@@ -51,6 +51,9 @@ export type Goal = {
   drive?: string | null;
   action?: string;
   external?: boolean;
+  ongoing?: boolean;
+  progress?: string;
+  step?: number;
   updated?: string;
   created: string;
 };

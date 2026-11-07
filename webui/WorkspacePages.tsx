@@ -148,6 +148,19 @@ export function FunctionIndex(props: PageProps) {
         title="全部功能与配置"
         aside={<Badge>{props.bootstrap.fields.length} 项角色配置</Badge>}
       >
+        <div className="quick-routes">
+          {[
+            ["intentions", "主动性与群聊参与"],
+            ["chat-sharing", "私聊群聊记忆互通"],
+            ["chat-rules", "分段回复与唤醒"],
+            ["browser", "浏览器与画面理解"],
+            ["vision", "图片和动图理解"],
+          ].map(([id, label]) => (
+            <button key={id} className="ghost" onClick={() => props.go(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
         <p>
           从功能出发寻找配置。人设影响所有角色会话；连接决定能做什么；授权决定可以对谁做；记忆共享决定哪些经历能够相通
         </p>
@@ -235,6 +248,17 @@ export function WorkspacePage(props: PageProps & { page: string }) {
   )
     return <InteractionPage {...props} page={page} />;
   if (page === "character") return <CharacterPage {...props} />;
+  if (page === "browser")
+    return (
+      <Panel title="网页浏览与画面理解">
+        <p>
+          角色可以从允许的网站阅读资料、沿页面链接继续探索，并按需分析当前网页截图。使用本机
+          Tabbit 稳定启动器；画面理解沿用视觉页的模型设置。
+        </p>
+        <ConfigForm {...props} pages={["browser"]} />
+        <RelatedRoutes page="media" go={props.go} />
+      </Panel>
+    );
   if (
     [
       "conversation",
@@ -296,7 +320,7 @@ export function WorkspacePage(props: PageProps & { page: string }) {
         <Today {...props} />
         <OrganismPage {...props} view="goals" />
         <Panel title="主动行为与节律">
-          <Disclosure title="高级预算、作息与失败恢复">
+          <Disclosure title="主动频率、群聊参与与预算设置" initialOpen>
             <ConfigForm {...props} pages={["state", "agency"]} />
           </Disclosure>
         </Panel>

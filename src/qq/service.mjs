@@ -77,7 +77,12 @@ function validate(value) {
   return value;
 }
 
-export function normalizeQQEvent(event, settings, selfId) {
+export function normalizeQQEvent(
+  event,
+  settings,
+  selfId,
+  { observeGroups = false } = {},
+) {
   selfId = String(selfId);
   const poke =
     event.post_type === "notice" &&
@@ -157,7 +162,13 @@ export function normalizeQQEvent(event, settings, selfId) {
       (segment) => segment.type === "at" && String(segment.data?.qq) === selfId,
     ) ||
     raw.includes(`[CQ:at,qq=${selfId}]`);
-  if (type === "group" && settings.requireMention && !mentioned) return null;
+  if (
+    type === "group" &&
+    settings.requireMention &&
+    !mentioned &&
+    !observeGroups
+  )
+    return null;
   const bodyText = (
     segments.length
       ? segments
@@ -585,7 +596,12 @@ export class QQService {
   receive(event, { observe = false } = {}) {
     if (this.closed || !this.state.account?.selfId) return;
     const { config } = this.settings();
-    const message = normalizeQQEvent(event, config, this.state.account.selfId);
+    const observeGroups = this.policy.config(config.characterId)[
+      "agency.observeGroups"
+    ];
+    const message = normalizeQQEvent(event, config, this.state.account.selfId, {
+      observeGroups,
+    });
     if (!message) return;
     message.attachments = message.attachments.slice(
       0,
@@ -622,9 +638,11 @@ export class QQService {
         .get(message.key)
     )
       return;
-    const decision = observe
-      ? { wake: false, reason: "HISTORY_OBSERVED" }
-      : this.policy.incoming(message, thread.character_id, thread.session_id);
+    const decision =
+      observe ||
+      (message.type === "group" && config.requireMention && !message.mentioned)
+        ? { wake: false, reason: "HISTORY_OBSERVED" }
+        : this.policy.incoming(message, thread.character_id, thread.session_id);
     this.store.db
       .prepare(
         "INSERT OR IGNORE INTO qq_inbox(event_key,thread_key,payload,created,status,error) VALUES(?,?,?,?,?,?)",

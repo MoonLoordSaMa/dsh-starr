@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { StarrStore } from "../src/starrcore/store.mjs";
-import { apply } from "../src/host/plugin.mjs";
+import { apply, toolSpecifications } from "../src/host/plugin.mjs";
 
 test("starr 工具只注册到已绑定会话，普通会话与全局均不暴露；卸载移除", async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "starr-host-")),
@@ -74,11 +74,14 @@ test("starr 工具只注册到已绑定会话，普通会话与全局均不暴�
     events.get("dispose")?.();
     fs.rmSync(root, { recursive: true, force: true });
   });
-  assert.equal(registered.size, 26);
+  assert.equal(registered.size, toolSpecifications.length);
   for (const name of [
     "starr_memory_archive",
     "starr_voice_list",
     "starr_link_parse",
+    "starr_browser_read",
+    "starr_goal_list",
+    "starr_goal_update",
   ])
     assert.ok(registered.has(name));
   assert.equal(globalTools.size, 0);
@@ -108,12 +111,12 @@ test("starr 工具只注册到已绑定会话，普通会话与全局均不暴�
   assert.equal(found.length, 1);
   assert.equal(typeof registered.get("starr_config_read").execute, "function");
   events.get("agent/created")({ agent: trusted });
-  assert.equal(registered.size, 26);
+  assert.equal(registered.size, toolSpecifications.length);
   events.get("agent/disposed")({ agent: trusted });
   assert.equal(registered.size, 0);
   assert.throws(() => write.execute({}, exec), /绑定已停止/);
   events.get("agent/created")({ agent: trusted });
-  assert.equal(registered.size, 26);
+  assert.equal(registered.size, toolSpecifications.length);
   events.get("dispose")();
   assert.equal(registered.size, 0);
   assert.equal(globalTools.size, 0);

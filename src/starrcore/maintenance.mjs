@@ -34,8 +34,28 @@ export class MemoryMaintenance {
     const db = this.db(characterId),
       row = db.prepare("SELECT * FROM records WHERE id=?").get(id);
     if (!row) throw fail("记忆不存在", 404);
+    if (sessionId && row.kind === "diary")
+      throw fail("日记受保护，角色不能归档或恢复日记", 403);
+    const access =
+      sessionId && this.store.conversations.memoryAccess(sessionId);
+    const scope =
+      sessionId &&
+      db
+        .prepare(
+          "SELECT visibility,session_id FROM record_visibility WHERE record_id=?",
+        )
+        .get(id);
+    const canRestore =
+      restore &&
+      access &&
+      (scope?.visibility === "shared" ||
+        scope?.session_id === access.scopeSessionId ||
+        (access.legacy &&
+          (!scope ||
+            (scope.visibility === "unclassified" && !scope.session_id))));
     if (
       sessionId &&
+      !canRestore &&
       !this.store.conversations.visibleMemories(sessionId, { id, limit: 1 })[0]
     )
       throw fail("当前会话不可操作这段记忆", 404);

@@ -4,6 +4,7 @@ const { version } = JSON.parse(
   fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 );
 const titles = {
+  browser: "Tabbit网页浏览与画面理解",
   agency: "主动范围、预算与暂停",
   bridge: "B站到 QQ 分享",
   "bili-actions": "B站公开内容管理",

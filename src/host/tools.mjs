@@ -12,12 +12,23 @@ export function createTools(store, trustedContext) {
   const characterId = trustedContext.characterId;
   store.character(characterId);
   const sessionId = trustedContext.sessionId;
+  const memorySessionId =
+    sessionId && store.conversations.memoryAccess(sessionId).scopeSessionId;
   if (
     sessionId &&
     store.conversations.get(sessionId).character_id !== characterId
   )
     throw fail("会话与角色不匹配", 403);
   return {
+    starr_browser_read: (input) => {
+      if (!sessionId) throw fail("缺少可信会话", 403);
+      const browser = mediaServices(store).browser;
+      if (!browser) throw fail("浏览器服务尚未接入DSH", 409);
+      return browser.read(characterId, input, {
+        sessionId,
+        signal: trustedContext.signal,
+      });
+    },
     starr_song_search: (input) => {
       const runtime = mediaServices(store);
       const music =
@@ -110,7 +121,7 @@ export function createTools(store, trustedContext) {
       return new MemoryMaintenance(store).archive(
         characterId,
         input,
-        sessionId,
+        memorySessionId,
       );
     },
     starr_voice_list: () => {
@@ -220,7 +231,10 @@ export function createTools(store, trustedContext) {
             : "宿主工具调用",
         },
         session
-          ? { sessionId, visibility: input.visibility || "conversation" }
+          ? {
+              sessionId: memorySessionId,
+              visibility: input.visibility || "conversation",
+            }
           : undefined,
       );
       return result;
@@ -293,7 +307,42 @@ export function createTools(store, trustedContext) {
       }),
     starr_intention_evaluate: () => store.intentions(characterId),
     starr_goal_create: (input) =>
-      store.createGoal(characterId, input, { sessionId }),
+      store.createGoal(characterId, input, { sessionId: memorySessionId }),
+    starr_share_intention: ({ memoryId }) => {
+      if (!sessionId) throw fail("缺少可信会话", 403);
+      const memory = store.conversations.visibleMemories(sessionId, {
+        id: memoryId,
+        limit: 1,
+      })[0];
+      if (!memory || memory.visibility !== "shared")
+        throw fail(
+          "请先在已授权范围内保存为共享记忆，再形成给主人分享的意愿",
+          403,
+        );
+      const existing = store
+        .goals(characterId)
+        .find((goal) => goal.shareMemoryId === memoryId);
+      return (
+        existing ||
+        store.createGoal(
+          characterId,
+          {
+            title: `想给主人分享：${memory.title}`.slice(0, 150),
+            reason: `从已共享的真实经历形成分享意愿，记忆编号 ${memoryId}；是否发言由后续主动回合结合时机判断。`,
+            ongoing: true,
+          },
+          { sessionId: memorySessionId, shareMemoryId: memoryId },
+        )
+      );
+    },
+    starr_goal_list: () =>
+      store
+        .goals(characterId)
+        .filter((goal) => goal.originSession === memorySessionId),
+    starr_goal_update: (input) => {
+      if (!sessionId) throw fail("缺少可信会话", 403);
+      return store.advanceGoal(characterId, input, memorySessionId);
+    },
     starr_config_read: () => {
       const c = store.character(characterId);
       return {
@@ -301,7 +350,7 @@ export function createTools(store, trustedContext) {
         config: Object.fromEntries(
           Object.entries(c.config).filter(
             ([key]) =>
-              !/\.(secretEnv|baseUrl|bin|python|modelPath|voicesDir|serverScript|promptWav|repo|preModels)$/.test(
+              !/\.(secretEnv|baseUrl|bin|python|modelPath|voicesDir|serverScript|promptWav|repo|preModels|launcherPath)$/.test(
                 key,
               ),
           ),

@@ -214,6 +214,13 @@ export const navigation = [
     icon: Palette,
   },
   {
+    id: "browser",
+    label: "网页浏览与画面理解",
+    name: "览尽山河",
+    purpose: "Tabbit站点授权、网页阅读与视觉",
+    icon: Globe2,
+  },
+  {
     id: "settings",
     label: "全部设置",
     name: "万象星枢",
@@ -221,73 +228,71 @@ export const navigation = [
     icon: Settings2,
   },
 ];
+// 每项功能都能从所在工作区左栏直接到达，避免藏在配置总览中。
 export const workspaces = [
   {
-    id: "home",
-    name: "观星台",
-    entry: "overview",
-    pages: ["overview"],
-    primary: ["overview"],
-    caption: "她的近况、经历与下一步",
-  },
-  {
     id: "growth",
-    name: "她与星海",
+    name: "星海知己",
+    label: "角色、记忆与主动性",
     entry: "character",
     pages: [
+      "overview",
       "character",
       "memory",
       "memory-care",
       "memory-sync",
+      "chat-sharing",
       "state",
       "intentions",
     ],
-    primary: ["character", "memory", "state", "intentions"],
-    caption: "她是谁，记得什么，想做什么",
+    caption: "角色、人设、记忆、共享范围与自主活动",
   },
   {
     id: "chat",
-    name: "会话回廊",
+    name: "回廊共语",
+    label: "聊天与回复设置",
     entry: "conversation",
     pages: [
+      "host-chat",
+      "conversation",
       "qq-private",
       "qq-group",
       "qq",
-      "conversation",
       "chat-context",
       "chat-rules",
-      "chat-sharing",
+      "expressions",
+    ],
+    caption: "先连接QQ，再设置接收对象、回复与上下文",
+  },
+  {
+    id: "tools",
+    name: "漫游天地",
+    label: "浏览、视觉与声音",
+    entry: "browser",
+    pages: [
+      "browser",
       "bili",
       "bili-activities",
       "bili-publish",
       "bridge",
+      "vision",
       "media",
       "hearing",
-      "vision",
       "singing",
-      "expressions",
     ],
-    primary: ["conversation", "qq-private", "qq-group", "qq", "bili"],
-    caption: "QQ 与 B站的会话、回应与共享经历",
-  },
-  {
-    id: "host",
-    name: "灯下相逢",
-    entry: "host-chat",
-    pages: ["host-chat"],
-    primary: ["host-chat"],
-    caption: "在 DSH 宿主中与角色相逢，查看真实注入",
+    caption: "网页、B站、跨平台分享、视觉与声音",
   },
   {
     id: "manage",
     name: "星务札记",
+    label: "查找配置与维护",
     entry: "settings",
-    pages: ["settings", "maintenance", "permissions", "appearance"],
-    primary: ["settings", "permissions", "appearance", "maintenance"],
-    caption: "授权、外观与日常照料",
+    pages: ["settings", "permissions", "appearance", "maintenance"],
+    caption: "搜索全部配置、查看权限、备份与排错",
   },
-];
+].map((group) => ({ ...group, primary: group.pages }));
 export const poems: Record<string, [string, string, string]> = {
+  browser: ["读万卷书", "行万里路", "读书与远行"],
   "host-chat": ["相知无远近", "万里尚为邻", "张九龄《送韦城李少府》"],
   "qq-private": ["相逢意气为君饮", "系马高楼垂柳边", "王维《少年行四首·其一》"],
   "qq-group": ["海上生明月", "天涯共此时", "张九龄《望月怀远》"],
@@ -326,6 +331,7 @@ export const poems: Record<string, [string, string, string]> = {
   settings: ["问渠那得清如许", "为有源头活水来", "朱熹《观书有感·其一》"],
 };
 export function fieldRoute(page: string) {
+  if (page === "browser") return "browser";
   if (page === "qq") return "qq";
   if (page === "chat-social") return "qq";
   if (page === "appearance" || page === "permissions") return page;

@@ -81,6 +81,7 @@ import "./v019-journey.css";
 import "./foundation.css";
 import "./v019-glass.css";
 import "./v020.css";
+import "./v021.css";
 import { PageContinuation } from "./PageContinuation";
 import { CompanionOverview } from "./CompanionOverview";
 import { ObservatoryOverview } from "./ObservatoryOverview";
@@ -960,7 +961,7 @@ function App() {
       <div className="route-curtain" aria-hidden="true" />
       <div
         className={`app-shell ${menu ? "menu-open" : ""}`}
-        data-workspace={section.id}
+        data-workspace={page === "overview" ? "home" : section.id}
       >
         <button
           className="nav-shade"
@@ -1004,6 +1005,7 @@ function App() {
                 <React.Fragment key={n.id}>
                   <button
                     aria-current={page === n.id ? "page" : undefined}
+                    aria-label={`${n.label} · ${n.name}`}
                     className={page === n.id ? "active" : ""}
                     onClick={() => go(n.id)}
                   >
@@ -1052,12 +1054,13 @@ function App() {
                   onClick={() => go(group.entry)}
                 >
                   <span>{group.name}</span>
+                  <small>{group.label}</small>
                   <i />
                 </button>
               ))}
             </nav>
             <div className="breadcrumb">
-              {section.id !== "home" && (
+              {page !== "overview" && (
                 <button
                   className="icon-button mobile-menu"
                   aria-label="展开导航"
@@ -1066,6 +1069,12 @@ function App() {
                   <Menu size={20} />
                 </button>
               )}
+              <button
+                className="ghost function-finder"
+                onClick={() => go("settings")}
+              >
+                查找功能
+              </button>
               <button
                 className="ghost guide-reopen"
                 onClick={() => {
