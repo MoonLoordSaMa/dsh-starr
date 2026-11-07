@@ -1,4 +1,5 @@
 import { createTools } from "./tools.mjs";
+import { jsonResult } from "./json-result.mjs";
 import { fail } from "../starrcore/store.mjs";
 import { installChatContext } from "./chat-context.mjs";
 import { installUsageBudget } from "../conversation/budget.mjs";
@@ -71,11 +72,13 @@ export function installBoundSessions(ctx, store, bindings, definitions) {
                 if (exec.agent?.id !== agent.id)
                   throw fail("此 starr 工具不属于当前宿主会话", 403);
                 exec.signal?.throwIfAborted();
-                return createTools(store, {
-                  characterId,
-                  sessionId: agent.id,
-                  signal: exec.signal,
-                })[definition.name](args);
+                return jsonResult(
+                  createTools(store, {
+                    characterId,
+                    sessionId: agent.id,
+                    signal: exec.signal,
+                  })[definition.name](args),
+                );
               },
             }),
           );

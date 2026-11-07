@@ -75,13 +75,15 @@ export function MemoryJobs(props: PageProps) {
           {data.configurationError}
         </p>
       )}
-      <Disclosure title="日记与整理使用的模型">
+      <section>
+        <h3>日记与整理模型</h3>
         <ConfigForm {...props} pages={["memory-jobs"]} />
-      </Disclosure>
+      </section>
       {kinds.map((item) => (
-        <Disclosure key={item.value} title={item.label}>
+        <section key={item.value}>
+          <h3>{item.label}</h3>
           <ConfigForm {...props} pages={[`memory-job-${item.value}`]} />
-        </Disclosure>
+        </section>
       ))}
       <div className="form-footer">
         <Select
@@ -114,7 +116,7 @@ export function MemoryJobs(props: PageProps) {
         </button>
       </div>
       <Disclosure title="最近的任务记录">
-        {data?.recent.map((row) => (
+        {data?.recent.slice(0, 5).map((row) => (
           <div className="job-error" key={row.id}>
             <strong>
               {kinds.find((item) => item.value === row.kind)?.label} ·{" "}

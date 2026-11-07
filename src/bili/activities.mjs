@@ -283,25 +283,7 @@ export class BiliActivities {
           signal,
         );
     }
-    for (const kind of Object.keys(dynamicKinds)) {
-      if (!c["bili.dynamics.enabled"] || !c[`bili.dynamics.${kind}.enabled`])
-        continue;
-      const at = c[`bili.dynamics.${kind}.at`],
-        difference =
-          Number(parts.hour) * 60 +
-          Number(parts.minute) -
-          Number(at.slice(0, 2)) * 60 -
-          Number(at.slice(3));
-      if (difference < 0 || difference > 60) continue;
-      if (
-        !this.store.db
-          .prepare(
-            "SELECT id FROM bili_activities WHERE character_id=? AND kind=? AND slot=?",
-          )
-          .get(characterId, kind, date)
-      )
-        await this.run(characterId, kind, date, client, account, signal);
-    }
+    // 固定栏目已退役；公开创作由自主回合按真实目的决定。
   }
   async run(characterId, kind, slot, client, account, signal) {
     signal = AbortSignal.any([signal, AbortSignal.timeout(180000)]);

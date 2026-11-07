@@ -348,14 +348,13 @@ test("QQ原生图片通道将GIF关键帧投给视觉模型，不把原始GIF当
   assert.ok(image.startsWith("data:image/png"));
   assert.match(blocks[0].text, /动图关键帧/);
 });
-test("浏览器只允许配置域名，分页回执读取真实结果，未授权与异常不假报成功", async (t) => {
+test("浏览器不限制域名并保留协议验证，分页回执读取真实结果，未授权与异常不假报成功", async (t) => {
   const f = fixture(t);
-  f.patch({ "browser.enabled": true, "browser.domains": "example.com" });
-  assert.throws(
-    () => allowedURL("https://example.com.evil.test/", "example.com"),
-    /未获/,
-  );
-  assert.throws(() => allowedURL("file:///etc/passwd", "example.com"), /未获/);
+  f.patch({ "browser.enabled": true });
+  assert.equal(allowedURL('https://example.com.evil.test/'),'https://example.com.evil.test/');
+  assert.equal(allowedURL('http://127.0.0.1:17922/'),'http://127.0.0.1:17922/');
+  assert.throws(()=>allowedURL('file:///etc/passwd'),/HTTP/);
+  assert.throws(()=>allowedURL('https://user:pass@example.com/'),/凭据/);
   const calls = [],
     raw = JSON.stringify({
       url: "https://example.com/",
@@ -506,7 +505,6 @@ test("有明确群来源的连接目的无需绑定主人，群授权仍独立�
     {
       title: "和群友继续交流",
       reason: "群内约定",
-      drive: "connection",
       ongoing: true,
     },
     { sessionId: f.group().session_id },
@@ -524,7 +522,6 @@ test("截图字节读入后先释放浏览任务，视觉空答复不标记为�
   f.patch({
     "browser.enabled": true,
     "browser.visual": true,
-    "browser.domains": "example.com",
   });
   const screenshot = path.join(f.root, "screenshot.png");
   fs.writeFileSync(screenshot, Buffer.from("synthetic-image"));

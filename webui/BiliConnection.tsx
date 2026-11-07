@@ -88,6 +88,25 @@ export function BiliConnection(
     <div className="settings-stack">
       {(!props.view || props.view === "connection") && (
         <>
+          <Panel title="模型与互动对象">
+            <ConfigForm {...props} pages={["bili"]} />
+            <section className="config-section">
+              <h3>私信收件</h3>
+              <ConfigForm {...props} pages={["bili-dm"]} />
+            </section>
+            <section className="config-section">
+              <h3>评论与提及</h3>
+              <ConfigForm {...props} pages={["bili-comment"]} />
+            </section>
+            <section className="config-section">
+              <h3>直播间与弹幕</h3>
+              <ConfigForm {...props} pages={["bili-live"]} />
+            </section>
+            <section className="config-section">
+              <h3>监听、回复与额度</h3>
+              <ConfigForm {...props} pages={["bili-limits"]} />
+            </section>
+          </Panel>
           <Panel
             title="B站接入状态"
             aside={
@@ -100,7 +119,7 @@ export function BiliConnection(
             }
           >
             <p>
-              QQ、B站和网页共用角色人格、状态与已授权共享的记忆。私信按用户分开，评论按楼层分开，直播按房间分开；每段接续都能在“会话”里查看
+              QQ、B站和网页共用角色人格、状态与已授权共享的记忆。私信按用户分开，评论按楼层分开，直播按房间分开；后台分别保存接续
             </p>
             {error && <p className="inline-error">{error}</p>}
             {data?.runtime.account && (
@@ -139,11 +158,13 @@ export function BiliConnection(
             {result && <p role="status">{result}</p>}
           </Panel>
           <Panel title="B站扫码登录与连接">
-            <BiliLogin
-              characterId={props.character.id}
-              enabled={!!data?.loginReady}
-              onSaved={props.refresh}
-            />
+            <Disclosure title="扫码登录或更换账号">
+              <BiliLogin
+                characterId={props.character.id}
+                enabled={!!data?.loginReady}
+                onSaved={props.refresh}
+              />
+            </Disclosure>
             <Disclosure title="手动凭据与环境变量（高级）">
               <p>
                 在 Windows 上通过当前用户的系统加密保存。只需要 SESSDATA 与
@@ -203,21 +224,6 @@ export function BiliConnection(
               </div>
             </Disclosure>
           </Panel>
-          <Panel title="模型与互动对象">
-            <ConfigForm {...props} pages={["bili"]} />
-            <Disclosure title="私信收件">
-              <ConfigForm {...props} pages={["bili-dm"]} />
-            </Disclosure>
-            <Disclosure title="评论与提及">
-              <ConfigForm {...props} pages={["bili-comment"]} />
-            </Disclosure>
-            <Disclosure title="直播间与弹幕">
-              <ConfigForm {...props} pages={["bili-live"]} />
-            </Disclosure>
-            <Disclosure title="监听、回复与额度">
-              <ConfigForm {...props} pages={["bili-limits"]} />
-            </Disclosure>
-          </Panel>
         </>
       )}
       {(!props.view || props.view !== "connection") && (
@@ -231,34 +237,22 @@ export function BiliConnection(
           </p>
           {props.view !== "publish" && (
             <>
-              <Disclosure title="作息与浏览额度">
+              <section className="config-section">
+                <h3>作息与浏览额度</h3>
                 <ConfigForm {...props} pages={["bili-watch"]} />
-              </Disclosure>
-              <Disclosure title="她的兴趣与偏好">
+              </section>
+              <section className="config-section">
+                <h3>她的兴趣与偏好</h3>
                 <ConfigForm {...props} pages={["bili-preferences"]} />
-              </Disclosure>
-              <Disclosure title="视频分享对象与额度">
+              </section>
+              <section className="config-section">
+                <h3>视频分享对象与额度</h3>
                 <ConfigForm {...props} pages={["bili-share"]} />
-              </Disclosure>
+              </section>
             </>
           )}
-          {props.view !== "activities" && (
-            <Disclosure title="定时动态" initialOpen>
-              <ConfigForm {...props} pages={["bili-dynamics"]} />
-              {[
-                { key: "best", label: "晨间精选" },
-                { key: "game", label: "午间游戏" },
-                { key: "anime", label: "午后二次元" },
-                { key: "gaming", label: "晚间随记" },
-              ].map((item) => (
-                <Disclosure key={item.key} title={item.label}>
-                  <ConfigForm {...props} pages={[`bili-dynamic-${item.key}`]} />
-                </Disclosure>
-              ))}
-            </Disclosure>
-          )}
-          <Disclosure title="最近的浏览与动态记录">
-            {data?.activities?.map((item) => (
+          <Disclosure title="最近活动" initialOpen>
+            {data?.activities?.slice(0, 5).map((item) => (
               <div className="job-error" key={item.id}>
                 <strong>
                   {activityNames[item.kind] || "B站活动"} · {item.slot} ·{" "}
@@ -282,8 +276,8 @@ export function BiliConnection(
             </Badge>
           ))}
         </div>
-        <Disclosure title="查看最近记录">
-          {data?.recent.map((row) => (
+        <Disclosure title="最近收件" initialOpen>
+          {data?.recent.slice(0, 5).map((row) => (
             <div className="job-error" key={row.id}>
               <strong>{statusNames[row.status] || row.status}</strong>
               <p>{row.error || "已保留真实处理记录"}</p>

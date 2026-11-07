@@ -1,5 +1,6 @@
 import { StarrStore, fail } from "../starrcore/store.mjs";
 import { createTools } from "./tools.mjs";
+import { jsonResult } from "./json-result.mjs";
 import { toolSpecifications } from "./plugin.mjs";
 import { Onboarding } from "../onboarding/service.mjs";
 import { installChatContext } from "./chat-context.mjs";
@@ -125,11 +126,13 @@ export function apply(ctx, config) {
           execute: (args, exec) => {
             exec.signal?.throwIfAborted();
             const character = characterFor(exec.agent?.id);
-            return createTools(store, {
-              characterId: character.id,
-              sessionId: exec.agent.id,
-              signal: exec.signal,
-            })[spec.name](args);
+            return jsonResult(
+              createTools(store, {
+                characterId: character.id,
+                sessionId: exec.agent.id,
+                signal: exec.signal,
+              })[spec.name](args),
+            );
           },
         }),
       );

@@ -80,7 +80,7 @@ export function ObservatoryOverview(
               onClick={() => go("host-chat")}
             >
               <MessageCircle size={16} />
-              打开角色会话
+              聊天设置
             </button>
           </div>
         </header>
@@ -151,8 +151,8 @@ export function ObservatoryOverview(
           <p>张若虚《春江花月夜》</p>
           <div className="journey-footnote">
             <span>星轨之外，也有人间回声</span>
-            <button onClick={() => go("conversation")}>
-              查看会话记录 <ArrowUpRight size={15} />
+            <button onClick={() => go("chat-rules")}>
+              回复与会话设置 <ArrowUpRight size={15} />
             </button>
           </div>
         </article>

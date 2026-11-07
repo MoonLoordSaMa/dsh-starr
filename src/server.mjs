@@ -136,7 +136,7 @@ export function createServer({
           installation: store.installation(),
           characters: store.listCharacters(),
           onboarding: onboarding.status(),
-          fields,
+          fields: fields.filter((field) => field.page !== "retired"),
           recommended: {
             memoryRoot: path.join(store.dataRoot, "memory"),
             backupRoot: path.join(store.dataRoot, "backups"),

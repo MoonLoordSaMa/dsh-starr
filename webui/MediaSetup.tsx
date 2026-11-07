@@ -372,59 +372,6 @@ export function MediaSetup({ kind, ...props }: PageProps & { kind: string }) {
           </Disclosure>
         </>
       )}
-      {kind === "vision" && (
-        <Disclosure title="视频关键帧测试">
-          <p>
-            屏幕与摄像头需要在高级配置独立开启。每次采集3秒并停止；视频只分析前30秒内的关键帧，不代表看完整片
-          </p>
-          <div className="form-footer">
-            {["screen", "camera"].map((source) => (
-              <button
-                className="ghost"
-                key={source}
-                disabled={busy}
-                onClick={() =>
-                  run(async () => {
-                    const result = await api<{ answer: string }>(
-                      `${root}/capture`,
-                      {
-                        method: "POST",
-                        body: json({
-                          source,
-                          seconds: 3,
-                          prompt: "描述画面中实际可见的内容与变化",
-                        }),
-                      },
-                    );
-                    setAnswer(result.answer);
-                  })
-                }
-              >
-                {source === "screen" ? "看看屏幕" : "看看摄像头"}
-              </button>
-            ))}
-          </div>
-          <label className="field">
-            B站视频BV号
-            <input value={bvid} onChange={(e) => setBvid(e.target.value)} />
-          </label>
-          <button
-            className="ghost"
-            disabled={busy || !/^BV[A-Za-z0-9]{10}$/.test(bvid)}
-            onClick={() =>
-              run(async () => {
-                const result = await api<{ answer: string }>(
-                  `${root}/bili-watch`,
-                  { method: "POST", body: json({ bvid, seconds: 30 }) },
-                );
-                setAnswer(result.answer);
-              })
-            }
-          >
-            分析视频关键帧
-          </button>
-        </Disclosure>
-      )}
       {error && (
         <p role="alert" className="inline-error">
           {error}

@@ -69,7 +69,7 @@ test("不同经历改变相应身体与心理，休息可缓解过载而不抹�
   assert.ok(meal.hunger < base.hunger && meal.thirst === base.thirst);
   assert.ok(drink.thirst < base.thirst && drink.hunger === base.hunger);
 });
-test("身体匮乏提升休憩目的，孤独与低社交并存时不强制靠近", () => {
+test("身体与心理状态仅供参考，不生成预设目的或否决自主目的", () => {
   const state = publicState(
     normalizeState({
       energy: 8,
@@ -82,18 +82,11 @@ test("身体匮乏提升休憩目的，孤独与低社交并存时不强制靠�
     time,
   );
   const evaluated = evaluateIntentions(state, quietConfig, [], time);
-  assert.equal(evaluated.candidates[0].id, "rest");
-  assert.equal(evaluated.candidates[0].status, "ready");
-  assert.match(
-    evaluated.candidates.find((d) => d.id === "connection").blockers.join(" "),
-    /不愿社交/,
-  );
-  assert.ok(
-    evaluated.candidates
-      .filter((d) => d.external)
-      .every((d) => d.status === "waiting"),
-  );
-  assert.equal(evaluated.execution, "proposal-only");
+  assert.deepEqual(evaluated.candidates, []);
+  assert.equal(evaluated.execution, 'bot-managed');
+  const goal = {id:'chosen',title:'自己决定的事',status:'waiting',due:null,drive:'connection'};
+  assert.deepEqual(evaluateIntentions(state,quietConfig,[goal],time).goals[0].blockers,[]);
+
 });
 test("关闭主动性、跨午夜安静时段、冷却与未来约定均可解释地等待", () => {
   const night = Date.parse("2026-11-03T16:15:00Z");
@@ -125,10 +118,7 @@ test("关闭主动性、跨午夜安静时段、冷却与未来约定均可解�
   const result = evaluateIntentions(s, quietConfig, goals, night);
   assert.equal(result.quiet, true);
   assert.equal(result.cooldown, true);
-  assert.match(
-    result.candidates.find((d) => d.id === "connection").blockers.join(" "),
-    /安静时段.*冷却/,
-  );
+  assert.deepEqual(result.candidates,[]);
   assert.match(
     result.goals.find((g) => g.id === "future").blockers.join(" "),
     /时间还没到/,
@@ -139,7 +129,7 @@ test("关闭主动性、跨午夜安静时段、冷却与未来约定均可解�
       { ...quietConfig, "agency.enabled": false },
       [],
       night,
-    ).candidates.every((d) => d.status === "waiting"),
+    ).enabled === false,
   );
 });
 test("长时离线演化有上限，时钟倒退不反向累积，所有维度仍有限且有界", () => {

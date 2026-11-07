@@ -70,41 +70,22 @@ export function OrganismPage(props: PageProps & { view?: string }) {
   );
   const preview = useMemo(() => ({ ...draft, organism }), [draft, organism]);
   const visibleEmotions = organism.emotions.filter((e) => e.intensity > 0);
-  const createFromDrive = async (drive: Drive) => {
-    setBusy(true);
-    try {
-      await api(`/api/characters/${character.id}/goals`, {
-        method: "POST",
-        body: json({
-          title: drive.title,
-          reason: drive.reason,
-          drive: drive.id,
-        }),
-      });
-      refresh();
-      notify("愿望已留下，等一个合适的时机");
-      setTab("goals");
-    } catch (e) {
-      notify((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
   return (
     <div className="organism-page">
-      <Tabs
-        value={tab}
-        onChange={(s) => {
-          setTab(s);
-          setError("");
-        }}
-        items={[
-          { id: "now", name: "心潮与体感" },
-          { id: "goals", name: "愿望与目的" },
-          { id: "history", name: "经历的回声" },
-          { id: "habits", name: "节律与边界" },
-        ]}
-      />
+      {!props.view && (
+        <Tabs
+          value={tab}
+          onChange={(s) => {
+            setTab(s);
+            setError("");
+          }}
+          items={[
+            { id: "now", name: "心理与生理" },
+            { id: "goals", name: "自主目的" },
+            { id: "history", name: "状态历史" },
+          ]}
+        />
+      )}
       <div className="organism-view" key={tab}>
         {tab === "now" ? (
           <>
@@ -477,142 +458,42 @@ export function OrganismPage(props: PageProps & { view?: string }) {
           </>
         ) : tab === "goals" ? (
           <>
-            <Panel
-              title="需求与主动候选"
-              aside={
-                <Badge>{intentions?.enabled ? "正在评估" : "仅观察需求"}</Badge>
-              }
-            >
-              <p className="section-intro">
-                需求不是命令。可以想靠近，也可以先休息；目的会同时考虑精力、时机与边界
-              </p>
-              {intentionsError && (
-                <p className="inline-error" role="alert">
-                  {intentionsError}
-                </p>
-              )}
-              <div className="drive-list">
-                {(intentions?.candidates ?? organism.drives).map((d, i) => (
-                  <div
-                    className={`drive-row ${i === 0 ? "drive-leading" : ""}`}
-                    key={d.id}
-                  >
-                    <div className="drive-pressure">
-                      <strong>{d.pressure}</strong>
-                      <span>{d.name}</span>
-                    </div>
-                    <div className="drive-content">
-                      <h3>{d.title}</h3>
-                      <p>{d.reason}</p>
-                      {"blockers" in d && (
-                        <small>
-                          {(
-                            d as Intentions["candidates"][number]
-                          ).blockers.join(" · ") ||
-                            "条件适合，可以交由角色考虑"}
-                        </small>
-                      )}
-                    </div>
-                    <button
-                      className="text-link"
-                      disabled={
-                        busy ||
-                        overview.goals.some(
-                          (g) => g.status === "waiting" && g.drive === d.id,
-                        )
-                      }
-                      onClick={() => createFromDrive(d)}
-                    >
-                      {overview.goals.some(
-                        (g) => g.status === "waiting" && g.drive === d.id,
-                      )
-                        ? "愿望已在酝酿"
-                        : "留下这个愿望"}
-                      <ArrowUpRight size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <p className="footnote">
-                这里只提出倾向；评估与创建目的均不代表已经执行。没有迫切愿望时，安静也是一种选择
-              </p>
-            </Panel>
-            <Panel
-              title="已保存的目的"
-              aside={
-                <button className="ghost" onClick={() => setGoalModal(true)}>
-                  <Plus size={14} />
-                  添加目的
-                </button>
-              }
-            >
-              {overview.goals.length ? (
-                overview.goals.map((g) => {
-                  const evaluation = intentions?.goals.find(
-                    (e) => e.id === g.id,
-                  );
-                  return (
-                    <div className="purpose-row" key={g.id}>
-                      <div>
-                        <h3>{g.title}</h3>
-                        <p>{g.reason}</p>
-                        {g.progress && (
-                          <p className="activity-progress">
-                            最近进展：{g.progress}
-                          </p>
-                        )}
-                        <small>
-                          {g.status === "completed"
-                            ? "已完成"
-                            : g.status === "cancelled"
-                              ? "已放下"
-                              : evaluation?.blockers.join(" · ") ||
-                                "等待合适的条件"}
-                          {g.due ? ` · 约定 ${date(g.due)}` : ""}
-                        </small>
-                      </div>
-                      {g.status === "waiting" && (
-                        <div className="row-actions">
-                          {["completed", "cancelled"].map((status) => (
-                            <button
-                              className={
-                                status === "completed" ? "ghost" : "text-link"
-                              }
-                              key={status}
-                              disabled={busy}
-                              onClick={async () => {
-                                setBusy(true);
-                                try {
-                                  await api(
-                                    `/api/characters/${character.id}/goals/${g.id}`,
-                                    { method: "PATCH", body: json({ status }) },
-                                  );
-                                  refresh();
-                                  notify(
-                                    status === "completed"
-                                      ? "约定已标记完成"
-                                      : "目的已取消",
-                                  );
-                                } catch (e) {
-                                  notify((e as Error).message);
-                                } finally {
-                                  setBusy(false);
-                                }
-                              }}
-                            >
-                              {status === "completed" && <Check size={14} />}
-                              {status === "completed" ? "完成" : "取消目的"}
-                            </button>
-                          ))}
+            <Panel title="她留下的目的">
+              {overview.goals.filter((g) => !g.drive).length ? (
+                overview.goals
+                  .filter((g) => !g.drive)
+                  .slice(0, 12)
+                  .map((g) => {
+                    const evaluation = intentions?.goals.find(
+                      (e) => e.id === g.id,
+                    );
+                    return (
+                      <div className="purpose-row" key={g.id}>
+                        <div>
+                          <h3>{g.title}</h3>
+                          <p>{g.reason}</p>
+                          {g.progress && (
+                            <p className="activity-progress">
+                              最近进展：{g.progress}
+                            </p>
+                          )}
+                          <small>
+                            {g.status === "completed"
+                              ? "已完成"
+                              : g.status === "cancelled"
+                                ? "已放下"
+                                : evaluation?.blockers.join(" · ") ||
+                                  "等待合适的条件"}
+                            {g.due ? ` · 约定 ${date(g.due)}` : ""}
+                          </small>
                         </div>
-                      )}
-                    </div>
-                  );
-                })
+                      </div>
+                    );
+                  })
               ) : (
                 <Empty
-                  title="还没有写下的约定"
-                  description="从上面的需求留下一份愿望，或记下一个具体的约定"
+                  title="暂无自主目的"
+                  description="她会在自主活动中自行决定、保存和接续想做的事"
                 />
               )}
             </Panel>

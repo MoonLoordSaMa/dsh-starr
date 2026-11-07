@@ -883,6 +883,27 @@ export class StarrStore {
       .all()
       .map(({ data, ...row }) => ({ ...row, ...parse(data) }));
   }
+  goalsForSession(sessionId) {
+    const session = this.conversations.get(sessionId);
+    const access = this.conversations.memoryAccess(sessionId);
+    return this.goals(session.character_id).filter((goal) => {
+      if (access.management || goal.originSession === access.scopeSessionId)
+        return true;
+      if (
+        this.agency?.autonomousOrigin(session.character_id, sessionId) &&
+        session.type === "web"
+      )
+        return (
+          !goal.originSession ||
+          this.agency.autonomousOrigin(session.character_id, goal.originSession)
+        );
+      return (
+        access.owner &&
+        (!goal.originSession ||
+          this.conversations.memoryAccess(goal.originSession).owner)
+      );
+    });
+  }
   createGoal(characterId, input, trusted = {}) {
     const db = this.memory(characterId),
       t = now(),
@@ -907,6 +928,13 @@ export class StarrStore {
     data.ongoing = input.ongoing === true;
     data.progress = "";
     data.step = 0;
+    data.priority = input.priority ?? 50;
+    if (
+      !Number.isInteger(data.priority) ||
+      data.priority < 0 ||
+      data.priority > 100
+    )
+      throw fail("目的优先级须为0至100的整数");
     if (trusted.sessionId) {
       const session = this.conversations.get(trusted.sessionId);
       if (session.character_id !== characterId)
@@ -932,7 +960,7 @@ export class StarrStore {
   }
   advanceGoal(
     characterId,
-    { id: goalId, step, progress, nextAt, status = "waiting" },
+    { id: goalId, step, progress, nextAt, priority, status = "waiting" },
     sessionId,
   ) {
     const db = this.memory(characterId);
@@ -948,10 +976,16 @@ export class StarrStore {
       throw fail("目的状态无效");
     if (nextAt && !Number.isFinite(Date.parse(nextAt)))
       throw fail("下次接续时间无效");
+    if (
+      priority !== undefined &&
+      (!Number.isInteger(priority) || priority < 0 || priority > 100)
+    )
+      throw fail("目的优先级须为0至100的整数");
     const data = {
       ...parse(row.data),
       progress: text(progress, "实际进展与下一步", 4000),
       step: step + 1,
+      priority: priority ?? goal.priority ?? 50,
     };
     const result = db
       .prepare(

@@ -1,4 +1,4 @@
-import { StarrChat } from "./StarrChat";
+import { ChatSettings as StarrChat } from "./ChatSettings";
 import { QQConnection } from "./QQConnection";
 import { BiliConnection } from "./BiliConnection";
 import { MediaPage } from "./pages";

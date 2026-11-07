@@ -555,7 +555,7 @@ export class Conversations {
           "当前目的",
           JSON.stringify(
             this.store
-              .goals(character.id)
+              .goalsForSession(sessionId)
               .filter((g) => g.status === "waiting")
               .slice(0, c["context.maxGoals"])
               .map((g) => ({ id: g.id, title: g.title, due: g.due })),

@@ -217,7 +217,7 @@ export const navigation = [
     id: "browser",
     label: "网页浏览与画面理解",
     name: "览尽山河",
-    purpose: "Tabbit站点授权、网页阅读与视觉",
+    purpose: "Tabbit网页阅读与画面理解",
     icon: Globe2,
   },
   {
@@ -227,70 +227,75 @@ export const navigation = [
     purpose: "功能与配置总览",
     icon: Settings2,
   },
-];
-// 每项功能都能从所在工作区左栏直接到达，避免藏在配置总览中。
+].filter(
+  (item) =>
+    ![
+      "conversation",
+      "host-chat",
+      "qq-private",
+      "qq-group",
+      "chat-context",
+    ].includes(item.id),
+);
+// 四类能力按配置归属组织，不代表执行顺序。
 export const workspaces = [
-  {
-    id: "growth",
-    name: "星海知己",
-    label: "角色、记忆与主动性",
-    entry: "character",
-    pages: [
-      "overview",
-      "character",
-      "memory",
-      "memory-care",
-      "memory-sync",
-      "chat-sharing",
-      "state",
-      "intentions",
-    ],
-    caption: "角色、人设、记忆、共享范围与自主活动",
-  },
   {
     id: "chat",
     name: "回廊共语",
-    label: "聊天与回复设置",
-    entry: "conversation",
-    pages: [
-      "host-chat",
-      "conversation",
-      "qq-private",
-      "qq-group",
-      "qq",
-      "chat-context",
-      "chat-rules",
-      "expressions",
-    ],
-    caption: "先连接QQ，再设置接收对象、回复与上下文",
+    label: "基础会话",
+    entry: "chat-rules",
+    pages: ["overview", "character", "chat-rules", "qq", "expressions"],
+    caption: "角色人设、回复设置与QQ连接",
   },
   {
-    id: "tools",
-    name: "漫游天地",
-    label: "浏览、视觉与声音",
-    entry: "browser",
+    id: "senses",
+    name: "心观万象",
+    label: "感官、心理与生理",
+    entry: "state",
+    pages: ["state", "vision", "hearing", "media", "singing"],
+    caption: "心理、生理、视觉、听觉与声音",
+  },
+  {
+    id: "agency",
+    name: "逐光而行",
+    label: "主动能力",
+    entry: "intentions",
     pages: [
+      "intentions",
       "browser",
       "bili",
       "bili-activities",
       "bili-publish",
       "bridge",
-      "vision",
-      "media",
-      "hearing",
-      "singing",
     ],
-    caption: "网页、B站、跨平台分享、视觉与声音",
+    caption: "自主目的、浏览、平台活动与分享",
   },
   {
-    id: "manage",
-    name: "星务札记",
-    label: "查找配置与维护",
-    entry: "settings",
-    pages: ["settings", "permissions", "appearance", "maintenance"],
-    caption: "搜索全部配置、查看权限、备份与排错",
+    id: "memory",
+    name: "星海拾忆",
+    label: "记忆",
+    entry: "memory",
+    pages: ["memory", "memory-care", "chat-sharing", "memory-sync"],
+    caption: "记忆、日记、共享与同步",
   },
 ].map((group) => ({ ...group, primary: group.pages }));
+export const commonPages = [
+  "settings",
+  "permissions",
+  "appearance",
+  "maintenance",
+];
+const retiredPages = new Set([
+  "conversation",
+  "host-chat",
+  "qq-private",
+  "qq-group",
+  "chat-context",
+]);
+export function resolvePage(page: string) {
+  if (page === "platforms" || retiredPages.has(page)) return "chat-rules";
+  return navigation.some((item) => item.id === page) ? page : "overview";
+}
 export const poems: Record<string, [string, string, string]> = {
   browser: ["读万卷书", "行万里路", "读书与远行"],
   "host-chat": ["相知无远近", "万里尚为邻", "张九龄《送韦城李少府》"],
@@ -342,11 +347,10 @@ export function fieldRoute(page: string) {
   )
     return "memory-care";
   if (page === "state" || page === "agency") return "intentions";
-  if (page === "chat-context") return "chat-context";
+  if (page === "chat-context") return "chat-rules";
   if (page === "chat-memory") return "chat-sharing";
   if (page.startsWith("chat")) return "chat-rules";
   if (page.startsWith("bridge")) return "bridge";
-  if (page.startsWith("chat")) return "chat-rules";
   if (page.startsWith("bili-dynamic") || page === "bili-actions")
     return "bili-publish";
   if (["bili-watch", "bili-preferences", "bili-share"].includes(page))

@@ -67,7 +67,7 @@ export function PlatformBridge(props: PageProps) {
         {!data?.recent.length && (
           <p>尚无跨平台任务。启用前请同时配置 QQ 允许名单、B站账号与分享目标</p>
         )}
-        {data?.recent.map((row) => (
+        {data?.recent.slice(0, 5).map((row) => (
           <div className="job-error" key={row.id}>
             <strong>
               {names[row.status] || row.status} · {row.target || "连接检查"}

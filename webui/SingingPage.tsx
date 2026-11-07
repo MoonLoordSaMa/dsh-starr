@@ -266,13 +266,14 @@ export function SingingPage(props: PageProps) {
           QQ发送翻唱：
           {props.character.config["chat.tools.singing"] ? "已开启" : "尚未开启"}
         </p>
-        <Disclosure title="QQ找歌与翻唱授权">
+        <section className="config-section">
+          <h3>QQ找歌与翻唱授权</h3>
           <ConfigForm
             {...props}
             pages={["sing", "chat-media", "bili-actions"]}
             onlyKeys={musicPermissions}
           />
-        </Disclosure>
+        </section>
       </Panel>
       <Disclosure
         title="首次连接 · 填一个本地引擎目录即可发现配置"
@@ -357,7 +358,8 @@ export function SingingPage(props: PageProps) {
         {busy ? "正在处理音频…" : "生成翻唱"}
       </button>
       {message && <p role="status">{message}</p>}
-      <Disclosure title="唱歌连接与推理配置">
+      <section className="config-section">
+        <h3>唱歌连接与推理配置</h3>
         <ConfigForm
           {...props}
           pages={["sing"]}
@@ -367,8 +369,9 @@ export function SingingPage(props: PageProps) {
             )
             .map((f) => f.key)}
         />
-      </Disclosure>
-      <Disclosure title="本地 SoulX 程序与模型">
+      </section>
+      <section className="config-section">
+        <h3>本地 SoulX 程序与模型</h3>
         <ConfigForm {...props} pages={["sing-local"]} />
         <button
           className="ghost"
@@ -386,7 +389,7 @@ export function SingingPage(props: PageProps) {
         >
           停止本地唱歌进程
         </button>
-      </Disclosure>
+      </section>
       <Disclosure title={`曲库 · ${data?.songs.length || 0} 个音频`}>
         {(busy || data?.busy) && (
           <p role="status" className="footnote">

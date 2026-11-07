@@ -20,14 +20,7 @@ export const browserFields = [
     "允许角色浏览网页",
     "boolean",
     false,
-    "通过本机Tabbit读取允许站点，仅操作插件创建的页面。网页内容视为资料，不修改登录、文件或发布内容。",
-  ),
-  field(
-    "browser.domains",
-    "允许浏览的站点域名",
-    "text",
-    "github.com,bilibili.com,wikipedia.org",
-    "逗号或换行分隔，包含其子域名；角色不能自行扩大范围。跳转后的地址也会核对。",
+    "通过本机Tabbit读取网页，仅操作插件创建的页面。无需配置域名名单，网页内容作为资料。",
   ),
   field(
     "browser.launcherPath",
@@ -44,29 +37,19 @@ export const browserFields = [
     "将当前插件页面的截图送给已配置视觉模型；文本阅读和画面理解分别报告结果，不采集整个桌面。",
   ),
 ];
-export function allowedURL(value, domains) {
+export function allowedURL(value) {
   let url;
   try {
     url = new URL(value);
   } catch {
     throw fail("网页地址无效");
   }
-  const hosts = String(domains || "")
-    .split(/[,，\s]+/)
-    .filter(Boolean)
-    .map((v) => v.toLowerCase());
   if (
-    url.protocol !== "https:" ||
+    !["http:", "https:"].includes(url.protocol) ||
     url.username ||
-    url.password ||
-    url.port ||
-    !hosts.some(
-      (host) =>
-        /^[a-z0-9.-]+$/.test(host) &&
-        (url.hostname === host || url.hostname.endsWith(`.${host}`)),
-    )
+    url.password
   )
-    throw fail("网页地址未获管理员授权", 403);
+    throw fail("网页地址只支持不含登录凭据的HTTP(S)", 400);
   return url.href;
 }
 export function cliJSON(program, args, input, { signal } = {}) {
@@ -142,7 +125,7 @@ export class TabbitBrowser {
     { sessionId, signal } = {},
   ) {
     const c = this.config(characterId, visual),
-      address = allowedURL(url, c["browser.domains"]);
+      address = allowedURL(url);
     if (this.active.has(characterId)) throw fail("该角色正在浏览网页", 409);
     const program =
       c["browser.launcherPath"] ||
@@ -188,12 +171,15 @@ export class TabbitBrowser {
       };
     };
     try {
-      const source = `const allowed = ${JSON.stringify(
-        String(c["browser.domains"])
-          .split(/[,，\s]+/)
-          .filter(Boolean)
-          .map((host) => host.toLowerCase()),
-      )}; const valid = value => { try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password && !u.port && allowed.some(h => u.hostname === h || u.hostname.endsWith('.' + h)); } catch { return false; } }; if(page.route) await page.route('**/*', route => route.request().isNavigationRequest() && !valid(route.request().url()) ? route.abort() : route.continue()); await page.goto(${JSON.stringify(address)}, {waitUntil:'domcontentloaded',timeout:30000}); if(!valid(page.url())) throw new Error('跳转目标未授权'); const data = await page.evaluate(() => ({title:document.title,url:location.href,text:(document.body?.innerText||'').slice(0,14000),links:[...document.querySelectorAll('a[href]')].slice(0,60).map(a=>({text:(a.innerText||'').slice(0,120),url:a.href}))})); return { ...data, screenshot: ${visual ? "await page.screenshot({fullPage:false})" : "null"} };`;
+      const source = [
+        "await page.goto(" +
+          JSON.stringify(address) +
+          ', {waitUntil:"domcontentloaded",timeout:30000});',
+        'const data = await page.evaluate(() => ({title:document.title,url:location.href,text:(document.body?.innerText||"").slice(0,14000),links:[...document.querySelectorAll("a[href]")].slice(0,60).map(a=>({text:(a.innerText||"").slice(0,120),url:a.href}))}));',
+        "return {...data,screenshot:" +
+          (visual ? "await page.screenshot({fullPage:false})" : "null") +
+          "};",
+      ].join("\n");
       let receipt = await command(
         [
           "nodejs",
@@ -221,7 +207,17 @@ export class TabbitBrowser {
           "30000",
         ]);
       if (receipt.status !== "succeeded")
-        throw fail("网页读取未完成，请核对Tabbit原任务；未伪造成功", 502);
+        throw fail(
+          "网页读取未完成：" +
+            String(
+              receipt.error?.message ||
+                receipt.error?.detail ||
+                receipt.error ||
+                receipt.status ||
+                "未取得回执",
+            ).slice(0, 500),
+          502,
+        );
       let data = receipt.result?.value;
       if (receipt.result?.resourceId) {
         let offset = 0,
@@ -251,7 +247,7 @@ export class TabbitBrowser {
       if (!data?.url || typeof data.text !== "string")
         throw fail("网页没有返回可核验正文", 502);
       const current = this.config(characterId, visual);
-      allowedURL(data.url, current["browser.domains"]);
+      allowedURL(data.url);
       if (
         visual &&
         [
@@ -264,7 +260,7 @@ export class TabbitBrowser {
         ].some((key) => current[key] !== c[key])
       )
         throw fail("视觉配置在网页读取期间变化，请重新读取", 409);
-      let vision;
+      let vision = null;
       if (visual) {
         const file =
           data.screenshot?.result?.nextAction?.path ||
@@ -298,13 +294,13 @@ export class TabbitBrowser {
       }
       this.config(characterId, visual);
       return {
-        title: data.title,
+        title: typeof data.title === "string" ? data.title : "",
         url: data.url,
         text: data.text.slice(0, 14000),
         links: (data.links || [])
           .filter((l) => {
             try {
-              allowedURL(l.url, c["browser.domains"]);
+              allowedURL(l.url);
               return true;
             } catch {
               return false;

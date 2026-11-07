@@ -19,6 +19,8 @@ export function createTools(store, trustedContext) {
     store.conversations.get(sessionId).character_id !== characterId
   )
     throw fail("会话与角色不匹配", 403);
+  const visibleGoals = () =>
+    sessionId ? store.goalsForSession(sessionId) : [];
   return {
     starr_browser_read: (input) => {
       if (!sessionId) throw fail("缺少可信会话", 403);
@@ -305,9 +307,20 @@ export function createTools(store, trustedContext) {
         ...input,
         evidence: `${trustedContext.sessionId ? `DSH 会话 ${trustedContext.sessionId}` : "宿主工具调用"}：${input.evidence ?? ""}`,
       }),
-    starr_intention_evaluate: () => store.intentions(characterId),
+    starr_intention_evaluate: () => {
+      const evaluation = store.intentions(characterId);
+      const visible = new Set(visibleGoals().map((goal) => goal.id));
+      return {
+        ...evaluation,
+        goals: evaluation.goals.filter((goal) => visible.has(goal.id)),
+      };
+    },
     starr_goal_create: (input) =>
-      store.createGoal(characterId, input, { sessionId: memorySessionId }),
+      store.createGoal(
+        characterId,
+        { ...input, ongoing: input.ongoing !== false },
+        { sessionId: memorySessionId },
+      ),
     starr_share_intention: ({ memoryId }) => {
       if (!sessionId) throw fail("缺少可信会话", 403);
       const memory = store.conversations.visibleMemories(sessionId, {
@@ -335,13 +348,11 @@ export function createTools(store, trustedContext) {
         )
       );
     },
-    starr_goal_list: () =>
-      store
-        .goals(characterId)
-        .filter((goal) => goal.originSession === memorySessionId),
+    starr_goal_list: visibleGoals,
     starr_goal_update: (input) => {
-      if (!sessionId) throw fail("缺少可信会话", 403);
-      return store.advanceGoal(characterId, input, memorySessionId);
+      const goal = visibleGoals().find((goal) => goal.id === input.id);
+      if (!goal) throw fail("只能推进当前会话可见的目的", 403);
+      return store.advanceGoal(characterId, input, goal.originSession);
     },
     starr_config_read: () => {
       const c = store.character(characterId);

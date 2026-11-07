@@ -566,59 +566,7 @@ export function deriveOrganism(input) {
       help: "需要降低活动、休养的倾向",
     },
   ].map((m) => ({ ...m, value: Math.round(clamp(m.value)) }));
-  const pressures = {
-    rest: [
-      Math.max(s.sleepiness, s.fatigue, 100 - s.energy),
-      `精力 ${Math.round(s.energy)}，疲劳 ${Math.round(s.fatigue)}，睡意 ${Math.round(s.sleepiness)}`,
-    ],
-    nourishment: [
-      Math.max(s.hunger, s.thirst),
-      `饥饿 ${Math.round(s.hunger)}，口渴 ${Math.round(s.thirst)}`,
-    ],
-    safety: [
-      (100 - s.security) * 0.7 + s.tension * 0.3,
-      `安全感 ${Math.round(s.security)}，紧张 ${Math.round(s.tension)}`,
-    ],
-    connection: [
-      s.loneliness * 0.6 + s.social * 0.25 + (a.affection ?? 0) * 0.15,
-      `孤独 ${Math.round(s.loneliness)}，社交意愿 ${Math.round(s.social)}`,
-    ],
-    exploration: [
-      s.curiosity * 0.7 + s.energy * 0.2 - s.stimulation * 0.15,
-      `好奇 ${Math.round(s.curiosity)}，刺激负荷 ${Math.round(s.stimulation)}`,
-    ],
-    expression: [
-      Math.max(
-        ...emotions.filter((e) => e.id !== "tiredness").map((e) => e.intensity),
-      ) *
-        0.65 +
-        s.arousal * 0.2,
-      `最强感受是${emotions[0].name}，强度 ${emotions[0].intensity}`,
-    ],
-    achievement: [
-      s.confidence * 0.5 + s.energy * 0.3 - s.frustration * 0.16,
-      `信心 ${Math.round(s.confidence)}，精力 ${Math.round(s.energy)}`,
-    ],
-    solitude: [
-      s.stimulation * 0.6 + (100 - s.social) * 0.23 + s.fatigue * 0.17,
-      `刺激负荷 ${Math.round(s.stimulation)}，社交意愿 ${Math.round(s.social)}`,
-    ],
-    order: [
-      s.frustration * 0.45 + s.stimulation * 0.35 + s.tension * 0.2,
-      `受挫 ${Math.round(s.frustration)}，负荷 ${Math.round(s.stimulation)}`,
-    ],
-    play: [
-      (100 - s.stimulation) * 0.35 + s.joy * 0.25 + s.energy * 0.2,
-      `精力 ${Math.round(s.energy)}，愉悦 ${Math.round(s.joy)}`,
-    ],
-  };
-  const drives = driveDefinitions
-    .map((d) => ({
-      ...d,
-      pressure: Math.round(clamp(pressures[d.id][0])),
-      reason: pressures[d.id][1],
-    }))
-    .sort((x, y) => y.pressure - x.pressure);
+  const drives = []; // 旧字段兼容；不再计算预设欲望或目的。
   const leading = emotions.filter((e) => e.intensity >= 28).slice(0, 3);
   const mixed =
     leading.some((e) => e.valence > 0) && leading.some((e) => e.valence < 0);
@@ -688,66 +636,29 @@ export function evaluateIntentions(state, config, goals, time = Date.now()) {
     .reduce((max, g) => Math.max(max, Date.parse(g.updated) || 0), 0);
   const cooldown =
     time - last < Number(config["agency.cooldownMinutes"] ?? 30) * 60000;
-  const candidates = state.organism.drives
-    .map((d) => {
-      const blockers = [];
-      if (!enabled) blockers.push("主动目的评估尚未开启");
-      if (d.pressure < 45) blockers.push("需求还不急，可以安静地等待");
-      if (
-        state.energy < 25 &&
-        !["rest", "nourishment", "safety", "solitude"].includes(d.id)
-      )
-        blockers.push("精力不足，先照顾自己");
-      if (d.id === "connection" && state.social < 30)
-        blockers.push("此刻不愿社交，孤独也不必勉强开口");
-      if (d.external && quiet) blockers.push("安静时段，先不打扰");
-      if (d.external && cooldown) blockers.push("仍在主动行动冷却中");
-      if (
-        d.external &&
-        !["owner", "browse", "social"].includes(String(config["agency.level"]))
-      )
-        blockers.push("仅观察模式，没有开放外部主动范围");
-      if (
-        d.id === "exploration" &&
-        !["browse", "social"].includes(String(config["agency.level"]))
-      )
-        blockers.push("需要浏览级主动权限");
-      const score = Math.round(
-        clamp(d.pressure + (d.id === "rest" && state.energy < 25 ? 15 : 0)),
-      );
-      return {
-        ...d,
-        score,
-        blockers,
-        status: blockers.length ? "waiting" : "ready",
-      };
-    })
-    .sort((a, b) => b.score - a.score);
+  // 状态供角色理解，插件不从情绪或生理分数生成目的。
   return {
     enabled,
     quiet,
     cooldown,
     evaluatedAt: new Date(time).toISOString(),
-    candidates,
+    candidates: [],
     goals: goals.map((g) => {
-      const candidate = candidates.find((d) => d.id === g.drive);
-      const blockers =
-        g.status !== "waiting"
-          ? [g.status === "completed" ? "已经完成" : "已经取消"]
-          : [
-              ...(candidate?.blockers.filter(
-                (reason) =>
-                  !g.ongoing || reason !== "需求还不急，可以安静地等待",
-              ) ?? (!enabled ? ["主动目的评估尚未开启"] : [])),
-            ];
-      if (g.due && Date.parse(g.due) > time) blockers.push("约定的时间还没到");
+      const blockers = [];
+      if (g.status !== "waiting")
+        blockers.push(g.status === "completed" ? "已经完成" : "已经取消");
+      else {
+        if (!enabled) blockers.push("自主活动尚未开启");
+        if (g.due && Date.parse(g.due) > time)
+          blockers.push("约定的时间还没到");
+      }
       return {
         id: g.id,
-        score: candidate?.score ?? 0,
+        score: 0,
         blockers,
         status: blockers.length ? "waiting" : "ready",
       };
     }),
-    execution: "proposal-only",
+    execution: "bot-managed",
   };
 }

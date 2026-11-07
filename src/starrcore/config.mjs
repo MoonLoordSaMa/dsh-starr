@@ -74,7 +74,7 @@ export const fields = [
   ],
   [
     "agency.enabled",
-    "允许评估主动目的",
+    "开启自主活动",
     "boolean",
     false,
     "state",
@@ -82,11 +82,11 @@ export const fields = [
   ],
   [
     "agency.cooldownMinutes",
-    "主动行动冷却",
+    "主动外发最短间隔（分钟）",
     "number",
     30,
     "state",
-    "两次可行动目的之间至少间隔多久；不会按间隔强制发言。",
+    "仅约束外发；内部阅读、反思、记忆和目的管理可继续。",
     { min: 5, max: 1440 },
   ],
   [
@@ -240,7 +240,7 @@ export const fields = [
   label,
   type,
   default: value,
-  page,
+  page: key.startsWith("bili.dynamics.") ? "retired" : page,
   help,
   ...extra,
   ...([

@@ -2,68 +2,17 @@ import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUpRight, Search } from "lucide-react";
 import { Panel, Badge, Disclosure, TextLink } from "./components";
 import { ConfigForm, CharacterPage, MediaPage, MaintenancePage } from "./pages";
-import { StarrChat } from "./StarrChat";
+import { ChatSettings as StarrChat } from "./ChatSettings";
 import { BiliConnection } from "./BiliConnection";
 import { MemoryJobs } from "./MemoryJobs";
 import { LegacyConfiguration } from "./LegacyConfiguration";
 import { OrganismPage } from "./OrganismPage";
-import { navigation, workspaces, poems, fieldRoute } from "./navigation";
+import { navigation, workspaces, commonPages, fieldRoute } from "./navigation";
 import type { PageProps } from "./main";
 import { MemoryWorkshop } from "./MemoryWorkshop";
 import { PlatformBridge } from "./PlatformBridge";
 import { InteractionPage } from "./InteractionPage";
 import { Today } from "./Today";
-
-export function PagePrelude({ page }: { page: string }) {
-  const poem = poems[page];
-  const entry = navigation.find((item) => item.id === page);
-  if (!poem) return null;
-  return (
-    <section className="page-prelude" aria-label={`${entry?.name}·诗序`}>
-      <div className="prelude-index" aria-hidden="true">
-        {String(navigation.findIndex((item) => item.id === page) + 1).padStart(
-          2,
-          "0",
-        )}
-      </div>
-      <div className="prelude-verse">
-        <h2>
-          <span>{poem[0]}</span>
-          <span>{poem[1]}</span>
-        </h2>
-        <p>
-          <span>{poem[2]}</span>
-          <i aria-hidden="true" />
-          <strong>{entry?.label}</strong>
-        </p>
-      </div>
-      <button
-        className="prelude-continue"
-        onClick={(event) => {
-          const main = event.currentTarget.closest("main");
-          const prelude =
-            event.currentTarget.closest<HTMLElement>(".page-prelude");
-          if (main && prelude)
-            main.scrollTo({
-              top:
-                main.scrollTop +
-                prelude.getBoundingClientRect().bottom -
-                main.getBoundingClientRect().top -
-                24,
-              behavior:
-                document.documentElement.dataset.motion === "reduced" ||
-                matchMedia("(prefers-reduced-motion: reduce)").matches
-                  ? "instant"
-                  : "smooth",
-            });
-        }}
-      >
-        <span>查看功能设置</span>
-        <ArrowDown size={14} />
-      </button>
-    </section>
-  );
-}
 
 const relations: Record<string, [string, string][]> = {
   character: [
@@ -134,6 +83,7 @@ export function FunctionIndex(props: PageProps) {
   const results = useMemo(
     () =>
       props.bootstrap.fields
+        .filter((field) => field.page !== "retired")
         .filter((field) =>
           `${field.label} ${field.label} ${field.help} ${field.key}`
             .toLowerCase()
@@ -224,16 +174,16 @@ export function FunctionIndex(props: PageProps) {
           </div>
         )}
       </Panel>
-      <Panel title="运行目录">
-        <div className="detail-facts">
-          <span>
-            记忆库<code>{props.bootstrap.installation?.memoryRoot}</code>
-          </span>
-          <span>
-            备份库<code>{props.bootstrap.installation?.backupRoot}</code>
-          </span>
+      <Panel title="通用设置">
+        <div className="quick-routes">
+          {commonPages
+            .filter((id) => id !== "settings")
+            .map((id) => (
+              <button className="ghost" key={id} onClick={() => props.go(id)}>
+                {navigation.find((item) => item.id === id)?.label}
+              </button>
+            ))}
         </div>
-        <TextLink onClick={() => props.go("maintenance")}>备份与诊断</TextLink>
       </Panel>
     </div>
   );
@@ -241,18 +191,13 @@ export function FunctionIndex(props: PageProps) {
 
 export function WorkspacePage(props: PageProps & { page: string }) {
   const { page } = props;
-  if (
-    ["host-chat", "qq-private", "qq-group", "qq", "bili", "media"].includes(
-      page,
-    )
-  )
-    return <InteractionPage {...props} page={page} />;
+  if (page === "qq") return <InteractionPage {...props} page={page} />;
   if (page === "character") return <CharacterPage {...props} />;
   if (page === "browser")
     return (
       <Panel title="网页浏览与画面理解">
         <p>
-          角色可以从允许的网站阅读资料、沿页面链接继续探索，并按需分析当前网页截图。使用本机
+          角色可以阅读网页、沿链接继续探索，并按需分析当前页面截图。使用本机
           Tabbit 稳定启动器；画面理解沿用视觉页的模型设置。
         </p>
         <ConfigForm {...props} pages={["browser"]} />
@@ -316,21 +261,19 @@ export function WorkspacePage(props: PageProps & { page: string }) {
     );
   if (page === "intentions")
     return (
-      <>
+      <div className="settings-stack">
+        <Panel title="自主行为设置">
+          <ConfigForm {...props} pages={["state", "agency"]} />
+        </Panel>
         <Today {...props} />
         <OrganismPage {...props} view="goals" />
-        <Panel title="主动行为与节律">
-          <Disclosure title="主动频率、群聊参与与预算设置" initialOpen>
-            <ConfigForm {...props} pages={["state", "agency"]} />
-          </Disclosure>
-        </Panel>
-      </>
+      </div>
     );
   if (page === "memory-care")
     return (
       <div className="settings-stack">
         <Panel title="记忆保存设置">
-          <ConfigForm {...props} pages={["memory", "chat-memory"]} />
+          <ConfigForm {...props} pages={["memory"]} />
         </Panel>
         <MemoryJobs {...props} />
         <MemoryWorkshop {...props} />
@@ -351,10 +294,7 @@ export function WorkspacePage(props: PageProps & { page: string }) {
   if (page === "permissions")
     return (
       <Panel title="角色权限设置">
-        <ConfigForm
-          {...props}
-          pages={["permissions", "chat-tools", "chat-media"]}
-        />
+        <ConfigForm {...props} pages={["permissions"]} />
         <Disclosure title="角色可自行调整的日常习惯">
           <ul>
             {props.bootstrap.fields

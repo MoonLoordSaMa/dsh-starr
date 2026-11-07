@@ -3,6 +3,7 @@ import { RefreshCw, Save, MessagesSquare } from "lucide-react";
 import { api, json, date, type CheckResult } from "./types";
 import { Panel, Badge, Select, Disclosure } from "./components";
 import type { PageProps } from "./main";
+import { ConfigForm } from "./pages";
 import "./qq.css";
 
 type Settings = {
@@ -75,7 +76,8 @@ const reasons: Record<string, string> = {
   AGENT_BUSY: "对应的 DSH 会话正在处理其他消息，稍后重试",
 };
 
-export function QQConnection({ character, bootstrap, notify }: PageProps) {
+export function QQConnection(props: PageProps) {
+  const { character, bootstrap, notify } = props;
   const [status, setStatus] = useState<Status | null>(null);
   const [draft, setDraft] = useState<Settings | null>(null);
   const [draftRevision, setDraftRevision] = useState<number | null>(null);
@@ -404,7 +406,10 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
             </p>
           )}
         </Panel>
-        <Panel title="QQ 消息处理记录">
+        <Panel title="群成员、戳一戳与互动设置">
+          <ConfigForm {...props} pages={["chat-social"]} />
+        </Panel>
+        <Panel title="最近消息处理">
           <div className="protocol-facts">
             {["pending", "processing", "done", "failed", "uncertain"].map(
               (key) => (
@@ -415,7 +420,7 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
             )}
           </div>
           <div className="qq-recent">
-            {status.recent.map((row) => (
+            {status.recent.slice(0, 5).map((row) => (
               <div className="platform-row" key={row.seq}>
                 <div>
                   <strong>
@@ -449,28 +454,6 @@ export function QQConnection({ character, bootstrap, notify }: PageProps) {
               重试失败消息
             </button>
           </div>
-        </Panel>
-      </div>
-      <div className="rail">
-        <Panel title="QQ 回复对象与授权">
-          <p>
-            只有允许名单中的私聊和群聊会进入角色会话。每个角色、每个对话分别保存上下文；更换角色会开启对应角色的新会话
-          </p>
-          <p>
-            模型回复需要调用插件发送工具，并取得 SnowLuma
-            返回的消息编号。错误、超时和结果不明会保留状态，便于排查
-          </p>
-        </Panel>
-        <Panel title="连接检查的边界">
-          <p>
-            协议与登录通过表示 SnowLuma
-            已在线。模型能否生成回复、平台是否成功接收，都以实际消息回执为准
-          </p>
-          <p>
-            {status.runtime.lastReceivedAt
-              ? `最近收到消息：${date(status.runtime.lastReceivedAt)}`
-              : "还没有收到允许范围内的新消息"}
-          </p>
         </Panel>
       </div>
     </div>

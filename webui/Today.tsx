@@ -134,132 +134,41 @@ export function Today(props: PageProps & { compact?: boolean }) {
           </div>
           {!compact && (
             <>
-              <Select
-                label="主动范围 · 仅管理员可改"
-                value={String(character.config["agency.level"] || "observe")}
-                onChange={(value) => {
-                  if (
-                    value !== "observe" &&
-                    !confirm(
-                      "开启所选主动范围？仍受次数、安静时段和平台独立授权约束；公开发言可能影响账号，请先使用主人私聊范围观察",
-                    )
-                  )
-                    return;
-                  save({ "agency.level": value });
-                }}
-                options={[
-                  { value: "observe", label: "L0 · 只观察" },
-                  { value: "owner", label: "L1 · 主人的QQ私聊" },
-                  { value: "browse", label: "L2 · 加上已授权的公开资料浏览" },
-                  {
-                    value: "social",
-                    label: "L3 · 加上逐项授权的群聊与B站社交",
-                  },
-                ]}
-              />
-              <div className="form-footer">
+              <p>
+                当前阻塞：
+                {data.agency.blockers.join("；") || "无，可由角色自行判断"}
+              </p>
+              <div className="button-row">
                 <button
                   className="ghost"
                   disabled={busy}
-                  onClick={() =>
-                    save({
-                      "agency.opportunityMinutes": 20,
-                      "agency.cooldownMinutes": 10,
-                      "agency.dailyDecisions": 48,
-                      "agency.dailyActions": 8,
-                      "agency.maxTokens": 120000,
-                    })
-                  }
+                  onClick={() => save({ "agency.paused": !data.agency.paused })}
                 >
-                  采用活跃探索频率
-                </button>
-                <button
-                  className="ghost"
-                  disabled={busy}
-                  onClick={() =>
-                    save({
-                      "agency.enabled": !character.config["agency.enabled"],
-                    })
-                  }
-                >
-                  {character.config["agency.enabled"]
-                    ? "关闭目的执行"
-                    : "开启目的执行"}
-                </button>
-                {data.agency.paused && (
-                  <button
-                    className="ghost"
-                    disabled={busy}
-                    onClick={() => save({ "agency.paused": false })}
-                  >
-                    恢复后台主动活动
-                  </button>
-                )}
-                <button
-                  className="ghost"
-                  disabled={busy}
-                  onClick={() =>
-                    run(async () => {
-                      setPreview(await api(`${root}/agency/preview`));
-                    })
-                  }
-                >
-                  预演下一次机会
+                  {data.agency.paused ? "恢复自主活动" : "暂停自主活动"}
                 </button>
                 <button
                   className="ghost"
                   disabled={busy}
                   onClick={() =>
                     run(async () => {
-                      await api(`${root}/agency/reset`, {
+                      await api(root + "/agency/reset", {
                         method: "POST",
                         body: json({}),
                       });
-                      notify("已确认失败记录；不清除额度，也不重试未知外发");
+                      notify("已确认故障记录，未知外发不会重试");
                     })
                   }
                 >
                   确认故障已处理
                 </button>
               </div>
-              <p className="footnote">
-                管理命令、凭据、屏幕和摄像头不进入后台主动范围。权限与预算不会随范围选择自动打开，角色也不能替自己放权
-              </p>
-              <p>
-                目的执行预算：已评估 {data.agency.counters.decisions}/
-                {data.limits.decisions} 轮，已尝试外发{" "}
-                {data.agency.counters.actions}/{data.limits.actions} 次，已用{" "}
-                {data.agency.counters.tokens}/{data.limits.tokens} 个令牌
-              </p>
-              {data.agency.blockers.length ? (
-                <p>现在安静的原因：{data.agency.blockers.join("；")}</p>
-              ) : (
-                <p>当前条件允许评估，仍可选择安静</p>
-              )}
-              {preview && (
-                <div className="job-error" role="status">
-                  <strong>
-                    预演：{preview.goal?.title || "暂时没有需要行动的目的"}
-                  </strong>
-                  <p>
-                    {preview.target}；
-                    {preview.blockers.length
-                      ? preview.blockers.join("；")
-                      : "条件允许，下个调度周期再评估"}
-                  </p>
-                  <small>预演只读，不调用模型或发送消息</small>
-                </div>
-              )}
             </>
           )}
-          <Disclosure
-            title={`今日时间线 · ${data.events.length} 项`}
-            initialOpen={!compact}
-          >
+          <Disclosure title="最近活动" initialOpen>
             {!data.events.length && (
               <p>今天还没有后台行动与新记忆；安静也会留在主动评估记录里</p>
             )}
-            {data.events.slice(0, compact ? 8 : 80).map((event) => (
+            {data.events.slice(0, compact ? 3 : 5).map((event) => (
               <div className="job-error" key={`${event.kind}:${event.id}`}>
                 <small>
                   {date(new Date(event.time).toISOString())} · {event.kind}

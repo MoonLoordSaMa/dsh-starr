@@ -35,6 +35,9 @@ export class Agency {
     store.db.exec(
       "CREATE TABLE IF NOT EXISTS agency_scopes(session_id TEXT PRIMARY KEY,origin_session_id TEXT NOT NULL,character_id TEXT NOT NULL)",
     );
+    store.db.exec(
+      "CREATE TABLE IF NOT EXISTS agency_wake(character_id TEXT PRIMARY KEY,next_at INTEGER NOT NULL)",
+    );
     store.agency = this;
   }
   rows(characterId) {
@@ -69,12 +72,14 @@ export class Agency {
       reasons.push("当前仅观察，没有开启主动执行");
     if (c["agency.paused"]) reasons.push("后台主动活动已暂停");
     if (!this.driver) reasons.push("主动执行器尚未连接DSH宿主");
-    if (quietNow(c, now)) reasons.push("现在是安静时段");
+    if (!ignoreOwner && quietNow(c, now)) reasons.push("现在是安静时段");
     const all = this.rows(characterId),
       other = all.filter((r) => r.id !== runId);
     if (
-      other[0] &&
-      now - other[0].created < c["agency.cooldownMinutes"] * 60000
+      !ignoreOwner &&
+      other.find((r) => r.actions > 0) &&
+      now - other.find((r) => r.actions > 0).created <
+        c["agency.cooldownMinutes"] * 60000
     )
       reasons.push("主动行动仍在冷却");
     const reset =
@@ -97,7 +102,11 @@ export class Agency {
       reasons.push("近24小时主动评估预算已用完");
     if (counters.tokens >= c["agency.maxTokens"])
       reasons.push("近24小时主动模型令牌预算已用完");
-    if (counters.missingUsage)
+    if (
+      c["chat.budget.enabled"] &&
+      c["chat.budget.requireUsage"] &&
+      counters.missingUsage
+    )
       reasons.push("宿主未报告部分主动请求用量，暂停新请求，避免未知消耗");
     try {
       this.budget.check(characterId);
@@ -116,25 +125,26 @@ export class Agency {
       if (rows[0] && now - rows[0].created < c["agency.recentMinutes"] * 60000)
         reasons.push("刚刚还在互动，先留一点空白");
       if (
-        rows.some(
-          (r) =>
-            now - r.created < c["agency.busyHours"] * 3600000 &&
-            /(?:我(?:现在|在)?(?:很)?忙|在忙|忙着|在开会|在上课|在工作|先忙|别打扰|不要打扰|勿扰|要睡了|去睡了|睡觉了|晚安)/.test(
-              JSON.parse(r.payload).text,
-            ),
+        rows[0] &&
+        now - rows[0].created < c["agency.busyHours"] * 3600000 &&
+        /(?:别打扰|不要打扰|勿扰|先别发|暂时别找我)/.test(
+          JSON.parse(rows[0].payload).text,
         )
       )
-        reasons.push("主人最近说忙或准备休息，暂不主动打扰");
+        reasons.push("主人最近明确要求勿扰，暂不主动打扰");
     }
     return [...new Set(reasons)];
   }
   plan(characterId) {
     const evaluation = this.store.intentions(characterId, this.clock()),
-      goals = this.store.goals(characterId),
+      goals = this.store
+        .goals(characterId)
+        .sort((a, b) => (b.priority ?? 50) - (a.priority ?? 50)),
       c = this.store.character(characterId).config;
     const active = goals.find(
       (g) =>
         g.status === "waiting" &&
+        !g.drive &&
         (!g.originSession ||
           this.autonomousOrigin(characterId, g.originSession) ||
           this.groupOrigin(characterId, g.originSession) ||
@@ -154,56 +164,30 @@ export class Agency {
               )
               .get(characterId, g.id)),
     );
-    const evaluated = (goalId) =>
-      this.store.db
-        .prepare("SELECT 1 FROM agency_runs WHERE id=?")
-        .get(digest(`${characterId}:${goalId}`));
-    const automaticId = (drive) =>
-      `auto:${drive}:${Math.floor(this.clock() / 86400000)}`;
-    const candidate = evaluation.candidates.find(
-      (g) =>
-        g.score >= 60 &&
-        (!g.external ||
-          (g.id === "connection"
-            ? agencyRank(c["agency.level"]) >= 1
-            : agencyRank(c["agency.level"]) >= 2)) &&
-        !g.blockers.length &&
-        !evaluated(automaticId(g.id)),
-    );
     const interval = Number(c["agency.opportunityMinutes"]) * 60000;
     const lastRun = this.rows(characterId)[0];
+    const chosenWake = this.store.db
+      .prepare("SELECT next_at FROM agency_wake WHERE character_id=?")
+      .get(characterId)?.next_at;
     const routine =
-      interval > 0 && (!lastRun || this.clock() - lastRun.created >= interval)
+      interval > 0 &&
+      (chosenWake
+        ? this.clock() >= chosenWake
+        : !lastRun || this.clock() - lastRun.created >= interval)
         ? {
             id: `routine:${Math.floor(this.clock() / interval)}`,
-            title: "看看最近有没有值得做的事",
+            title: "自主判断下一步",
             reason:
-              "日常主动机会：回顾真实近况与约定，按当前状态选择交流、探索、整理或反思；情绪平淡或低落并不取消行动。",
+              "定期唤醒机会。结合真实状态、可见记忆、已有目的和工具，自行选择做什么、优先级与下一次接续时间；也可安静。",
             action: "consider",
             external: false,
             automatic: true,
           }
         : null;
-    const goal =
-      active ||
-      (candidate
-        ? {
-            id: automaticId(candidate.id),
-            title: candidate.title,
-            reason: candidate.reason,
-            action: candidate.action,
-            drive: candidate.id,
-            external: candidate.external,
-            automatic: true,
-          }
-        : this.groupOpportunity(characterId) || routine);
+    const goal = active || this.groupOpportunity(characterId) || routine;
     const groupGoal =
       goal?.originSession && this.groupOrigin(characterId, goal.originSession);
-    const blockers = this.blockers(characterId, {
-      ignoreOwner:
-        !!groupGoal ||
-        (goal?.action !== "reach_out" && c["agency.level"] !== "owner"),
-    });
+    const blockers = this.blockers(characterId, { ignoreOwner: true });
     if (goal?.action === "explore" && agencyRank(c["agency.level"]) < 2)
       blockers.push("此目的需要浏览级主动权限");
     if (goal?.action === "reach_out" && !groupGoal) {
@@ -427,8 +411,7 @@ export class Agency {
     const reasons = this.blockers(characterId, {
       ignoreBudget: true,
       runId,
-      ignoreOwner:
-        run && this.store.conversations.get(run.session_id).type !== "private",
+      ignoreOwner: true,
     });
     if (reasons.length) throw fail(reasons.join("；"), 403);
     const row = this.store.db
@@ -460,6 +443,8 @@ export class Agency {
       row = this.store.db
         .prepare("SELECT * FROM agency_runs WHERE id=?")
         .get(runId);
+    if (kind === "action" && quietNow(c, this.clock()))
+      throw fail("现在是安静时段，内部活动可继续，暂不外发", 403);
     if (kind === "request" && row.requests >= c["agency.maxRequests"])
       throw fail("本轮主动模型请求预算已用完", 429);
     if (kind === "tool" && row.tools >= c["agency.maxTools"])
@@ -486,11 +471,7 @@ export class Agency {
       throw fail("主动执行器忙碌或由另一宿主管理");
     const plan = this.plan(characterId);
     if (plan.blockers.length) throw fail(plan.blockers.join("；"), 403);
-    const goal = plan.goal.automatic
-      ? this.store.createGoal(characterId, plan.goal, {
-          sessionId: plan.goal.originSession,
-        })
-      : plan.goal;
+    const goal = plan.goal;
     const sessionId = `session-starr-agency-${plan.id.slice(0, 32)}`,
       c = this.store.character(characterId).config;
     let binding = null;
@@ -553,30 +534,45 @@ export class Agency {
     ]);
     let finished = false;
     let decision;
+    let managedGoal = goal;
     const applyDecision = (value, { social, effect } = {}) => {
+      if (goal.automatic && value?.nextAt)
+        this.store.db
+          .prepare(
+            "INSERT INTO agency_wake VALUES(?,?) ON CONFLICT(character_id) DO UPDATE SET next_at=excluded.next_at",
+          )
+          .run(characterId, Date.parse(value.nextAt));
+      else if (goal.automatic && value)
+        this.store.db
+          .prepare("DELETE FROM agency_wake WHERE character_id=?")
+          .run(characterId);
       const current = this.store
         .goals(characterId)
-        .find((g) => g.id === goal.id);
+        .find((g) => g.id === managedGoal?.id);
       if (
         !current ||
         current.status !== "waiting" ||
-        (current.step || 0) !== (goal.step || 0)
+        (current.step || 0) !== (managedGoal.step || 0)
       )
         return;
-      if (goal.ongoing && typeof value?.completed === "boolean") {
+      if (typeof value?.completed === "boolean") {
         try {
           this.store.advanceGoal(characterId, {
-            id: goal.id,
-            step: goal.step || 0,
-            status: value.completed ? "completed" : "waiting",
+            id: managedGoal.id,
+            step: managedGoal.step || 0,
+            status:
+              value.goalStatus || (value.completed ? "completed" : "waiting"),
             progress: value.progress || value.reason,
-            nextAt: value.completed
-              ? undefined
-              : value.nextAt ||
-                new Date(
-                  this.clock() +
-                    Math.max(30, c["agency.opportunityMinutes"]) * 60000,
-                ).toISOString(),
+            nextAt:
+              value.goalStatus === "completed" ||
+              value.goalStatus === "cancelled" ||
+              (!value.goalStatus && value.completed)
+                ? undefined
+                : value.nextAt ||
+                  new Date(
+                    this.clock() +
+                      Math.max(5, c["agency.opportunityMinutes"]) * 60000,
+                  ).toISOString(),
           });
         } catch (error) {
           if (error.status !== 409) throw error;
@@ -586,7 +582,7 @@ export class Agency {
         ["accepted", "sent"].includes(social?.status) ||
         effect
       )
-        this.store.updateGoal(characterId, goal.id, "completed");
+        this.store.updateGoal(characterId, managedGoal.id, "completed");
     };
     const finish = async ({
       text = "",
@@ -594,10 +590,24 @@ export class Agency {
       completed = true,
       progress,
       nextAt,
+      goalId,
+      goalStatus,
     }) => {
       if (finished) throw fail("本轮已经结束，不可重复提交");
       this.check(characterId, plan.id);
       signal.throwIfAborted();
+      if (goalId === null) managedGoal = null;
+      else if (goalId !== undefined) {
+        managedGoal = this.store
+          .goalsForSession(sessionId)
+          .find((item) => item.id === goalId);
+        if (!managedGoal) throw fail("目的不属于当前可见范围", 403);
+      }
+      if (
+        goalStatus !== undefined &&
+        !["waiting", "completed", "cancelled"].includes(goalStatus)
+      )
+        throw fail("目的状态无效");
       if (
         typeof reason !== "string" ||
         !reason.trim() ||
@@ -624,6 +634,7 @@ export class Agency {
           completed,
           progress,
           nextAt,
+          goalStatus,
         });
       }
       const owner = binding?.group
@@ -711,6 +722,7 @@ export class Agency {
         completed,
         progress,
         nextAt,
+        goalStatus,
       };
       this.store.db
         .prepare("UPDATE agency_runs SET result=? WHERE id=?")

@@ -216,4 +216,4 @@ Windows 可通过网页录入媒体密钥和 QQ 令牌，并用当前 Windows �
 
 本仓库原创代码采用 [MIT 许可证](LICENSE)。第三方代码、库与模型保留各自许可，详见[第三方依赖](docs/THIRD-PARTY.md)与[设计依据](docs/DESIGN.md)。
 
-感谢 React、Three.js、GSAP、Lucide、ThreeUI，以及 [dsh-see-now](https://github.com/SAOS-3624/dsh-see-now) 等项目提供的工具、设计参考和基础能力。GSAP 使用其标准许可，See Now 核心保留 Apache-2.0 许可与声明；模型权重不包含在插件发行包中。
+感谢 React、Three.js、GSAP、Lucide、ThreeUI、[SurfCore](https://github.com/Mieksido/surfcore)，以及 [dsh-see-now](https://github.com/SAOS-3624/dsh-see-now) 等项目提供的工具、设计参考和基础能力。SurfCore 的原作者与 MIT 许可声明见 [SurfCore 参考与署名](docs/SURFCORE-REFERENCE.md)；GSAP 使用其标准许可，See Now 核心保留 Apache-2.0 许可与声明；模型权重不包含在插件发行包中。

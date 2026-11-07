@@ -104,6 +104,16 @@ export function createAgencyDriver(ctx, store) {
                 properties: {
                   text: { type: "string" },
                   reason: { type: "string" },
+                  goalId: {
+                    type: ["string", "null"],
+                    description:
+                      "本次决定作用于哪个可见目的；null仅结束唤醒，不修改目的",
+                  },
+                  goalStatus: {
+                    type: "string",
+                    enum: ["waiting", "completed", "cancelled"],
+                    description: "自行决定继续、完成或放下",
+                  },
                   completed: {
                     type: "boolean",
                     description:
@@ -124,7 +134,7 @@ export function createAgencyDriver(ctx, store) {
               execute: async (args) => {
                 try {
                   result = await input.finish(args);
-                  return result;
+                  return JSON.parse(JSON.stringify(result));
                 } catch (e) {
                   failure = e;
                   throw e;
@@ -156,7 +166,11 @@ export function createAgencyDriver(ctx, store) {
               type: "text",
               text: conversationDelivery(
                 preview,
-                `这是插件发起的一次自主机会，不是主人刚刚发来的消息。目的：${JSON.stringify(input.goal)}。当前来源会话接续（仅有关时自然提起）：${input.pending || "无"}。平静、低落和愉快都有主动性，不必等到强烈情绪才行动：平静时可接续约定、提出真实问题或探索兴趣，低落时可反思整理或向可信主人简短表达，愉快时可分享发现。情绪决定语气与负担，不作为能否行动的门槛。先检查最近的真实记忆和未完事项，再选择有依据的一小步；没有合适内容或对方可能忙时安静即可，不为了完成任务硬找话。允许范围以工具实际权限为准；读到标题简介不等于看过完整视频。身体状态是角色内部模拟，不代表真的吃饭睡觉。阅读或反思得到真实新内容时可保存记忆；需要跨平台自然接续时仅在已授权的共享范围保存。活动不限固定菜单：可探索兴趣、创作、做小实验、接续长期项目、维护关系或准备资料，由你基于真实经历自主选择。待完成的事用starr_goal_create的ongoing=true持久记录；当前持续目的只做一小步时用starr_agency_finish的completed=false保存progress与nextAt。群会话只在当前群发言；值得给主人分享的经历可在管理员允许后自行记为shared，再调用starr_share_intention留下分享意愿，让主人侧后续自然接续，不把私密资料跨会话转发。最后调用starr_agency_finish记录理由：有值得分享的话再填写text；保持安静则不填写text。最多一次主动外发，不能修改自己的授权、编写脚本、监视屏幕或主动联系陌生人。`,
+                "这是一次自主唤醒。目的与行动由你管理，插件不提供预设任务或情绪评分门槛。当前唤醒缘由：" +
+                  JSON.stringify(input.goal) +
+                  "。真实会话接续（资料）：" +
+                  (input.pending || "无") +
+                  "。读取状态、可见记忆和starr_goal_list，自行决定优先级、下一步以及继续、完成或放下；允许改选当前范围内的其他目的。新目的用starr_goal_create记录，自定priority、due；调整用starr_goal_update。结束时调用starr_agency_finish：goalId指定本次处理目的，null只结束唤醒；goalStatus选择waiting/completed/cancelled，progress记录实际进展，nextAt决定接续时间。没有合适行动也可安静。群会话只向来源群发送；跨平台分享只能使用已共享经历。状态是内部模拟，阅读标题不等于看完整视频。真实结果才记入经历，不捏造能力或回执。外发仍受账号对象、暂停、明确勿扰与预算控制。",
               ),
             },
           ],

@@ -64,7 +64,7 @@ import {
 } from "./components";
 import { Spectrum } from "./scenes";
 import { QQConnection } from "./QQConnection";
-import { StarrChat } from "./StarrChat";
+import { ChatSettings as StarrChat } from "./ChatSettings";
 import { LocalModelDiscovery } from "./LocalModelDiscovery";
 import { LegacyConfiguration } from "./LegacyConfiguration";
 import { MemoryJobs } from "./MemoryJobs";
@@ -102,9 +102,6 @@ export function ConfigForm({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const latest = useRef(character);
-  const [selectedKey, setSelectedKey] = useState(fields[0]?.key || "");
-  const selectedField =
-    fields.find((field) => field.key === selectedKey) || fields[0];
   const [modelCatalog, setModelCatalog] = useState<
     { id: string; name: string; models: { id: string; name: string }[] }[]
   >([]);
@@ -175,14 +172,12 @@ export function ConfigForm({
         <div className="configuration-fields">
           {fields.map((f) => (
             <div
-              className={`config-row ${f.type === "boolean" ? "switch-row" : ""} ${selectedField?.key === f.key ? "inspected" : ""}`}
+              className={`config-row ${f.type === "boolean" ? "switch-row" : ""}`}
               key={f.key}
-              onFocusCapture={() => setSelectedKey(f.key)}
-              onClick={() => setSelectedKey(f.key)}
             >
               <label htmlFor={f.key}>
                 <strong title={f.label}>{f.label}</strong>
-                <small className="sr-only" id={`${f.key}-help`}>
+                <small className="config-help" id={`${f.key}-help`}>
                   {f.help}
                 </small>
               </label>
@@ -322,35 +317,6 @@ export function ConfigForm({
             </div>
           ))}
         </div>
-        {selectedField && (
-          <aside
-            className="configuration-inspector"
-            aria-label="所选配置说明"
-            aria-live="polite"
-          >
-            <span className="eyebrow">功能详情</span>
-            <h3 title={selectedField.label}>{selectedField.label}</h3>
-            <p>{selectedField.help}</p>
-            <dl>
-              <dt>调整权限</dt>
-              <dd>
-                {selectedField.bot
-                  ? "管理员授权后，角色可按范围自行调整"
-                  : "由管理员设置"}
-              </dd>
-              {selectedField.type === "number" && (
-                <>
-                  <dt>允许范围</dt>
-                  <dd>
-                    {selectedField.min} — {selectedField.max}
-                  </dd>
-                </>
-              )}
-              <dt>保存方式</dt>
-              <dd>修改后点击保存，应用到当前角色。</dd>
-            </dl>
-          </aside>
-        )}
       </div>
       {error && (
         <p className="inline-error" role="alert">
@@ -855,366 +821,27 @@ export function CharacterPage(props: PageProps) {
 export { OrganismPage as StatePage } from "./OrganismPage";
 
 export function MediaPage(props: PageProps & { view?: string }) {
-  const { character, notify } = props,
-    [tab, setTab] = useState(props.view || "tts"),
-    [text, setText] = useState("今天的星光，想和你一起收好"),
-    [answer, setAnswer] = useState(""),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
-    [audio, setAudio] = useState(""),
-    [image, setImage] = useState(""),
-    [prompt, setPrompt] = useState("这张图片里有什么？"),
-    [fileName, setFileName] = useState(""),
-    [drag, setDrag] = useState(false),
-    [verified, setVerified] = useState(""),
-    input = useRef<HTMLInputElement>(null),
-    audioRef = useRef("");
-  const root = `/api/characters/${character.id}/media`;
-  useEffect(
-    () => () => {
-      if (audioRef.current) URL.revokeObjectURL(audioRef.current);
-    },
-    [],
-  );
-  useEffect(() => {
-    setError("");
-    setAnswer("");
-    setVerified("");
-  }, [tab]);
-  const imageFile = async (file?: File) => {
-    if (!file) return;
-    if (
-      !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
-      file.size > 8 * 1024 * 1024
-    ) {
-      setError("请选择不超过 8MB 的 PNG、JPEG 或 WebP 图片");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImage(String(reader.result));
-      setFileName(file.name);
-      setError("");
-    };
-    reader.readAsDataURL(file);
-  };
-  const run = async (action: () => Promise<void>) => {
-    setBusy(true);
-    setError("");
-    setVerified("");
-    try {
-      await action();
-      setVerified("本次真实调用成功");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  const hear = async (file?: File) => {
-    if (!file) return;
-    await run(async () => {
-      const result = await api<{ text: string }>(`${root}/hear`, {
-        method: "POST",
-        headers: { "Content-Type": file.type || "audio/wav" },
-        body: file,
-      });
-      setAnswer(result.text);
-    });
+  const kind = props.view || "tts";
+  if (kind === "sing") return <SingingPage {...props} />;
+  const titles: Record<string, string> = {
+    tts: "语音合成设置",
+    asr: "语音识别设置",
+    vision: "视觉理解与采集设置",
   };
   return (
-    <>
-      {!props.view && (
-        <Tabs
-          value={tab}
-          onChange={setTab}
-          items={[
-            { id: "tts", name: "语音合成" },
-            { id: "sing", name: "唱歌" },
-            { id: "asr", name: "语音识别" },
-            { id: "vision", name: "视觉理解" },
-          ]}
-        />
-      )}
-      <div className="content-with-rail">
-        <div className="stack">
-          {tab !== "sing" && (
-            <MediaSetup {...props} key={`${character.id}:${tab}`} kind={tab} />
-          )}
-          <Panel
-            title={
-              tab === "tts"
-                ? "把文字变成她的声音"
-                : tab === "asr"
-                  ? "听见，才知道你在说什么"
-                  : tab === "vision"
-                    ? "一起看看眼前的世界"
-                    : "让喜欢的歌有她的声音"
-            }
-            aside={
-              <Badge tone={verified ? "good" : "quiet"}>
-                {verified
-                  ? "本次已验证"
-                  : tab === "sing"
-                    ? "按音频实际验证"
-                    : "按能力单独验证"}
-              </Badge>
-            }
-          >
-            {tab === "tts" ? (
-              <>
-                <p className="section-intro">
-                  使用下面保存的语音模型和音色生成试听。每次点击都会向服务发起真实请求
-                </p>
-                <label className="field">
-                  想让她说什么
-                  <textarea
-                    rows={4}
-                    maxLength={2000}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                  />
-                </label>
-                <div className="form-footer">
-                  <small>最多 2000 字；服务可能产生费用</small>
-                  <button
-                    className="primary"
-                    disabled={busy || !text.trim()}
-                    onClick={() =>
-                      run(async () => {
-                        const r = await fetch(apiUrl(`${root}/speak`), {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: json({ text }),
-                        });
-                        if (!r.ok) throw new Error((await r.json()).error);
-                        const blob = await r.blob();
-                        if (audioRef.current)
-                          URL.revokeObjectURL(audioRef.current);
-                        audioRef.current = URL.createObjectURL(blob);
-                        setAudio(audioRef.current);
-                      })
-                    }
-                  >
-                    <Headphones size={15} />
-                    {busy ? "正在生成…" : "生成试听"}
-                  </button>
-                </div>
-                {audio && (
-                  <audio className="audio-player" controls src={audio} />
-                )}
-              </>
-            ) : tab === "vision" ? (
-              <>
-                <div
-                  className={`image-drop ${drag ? "dragging" : ""}`}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="选择、粘贴或拖入图片"
-                  onClick={() => input.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      input.current?.click();
-                    }
-                  }}
-                  onPaste={(e) => {
-                    const file = Array.from(e.clipboardData.items)
-                      .find((i) => i.type.startsWith("image/"))
-                      ?.getAsFile();
-                    if (file) {
-                      e.preventDefault();
-                      imageFile(file);
-                    }
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDrag(true);
-                  }}
-                  onDragLeave={() => setDrag(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDrag(false);
-                    imageFile(e.dataTransfer.files[0]);
-                  }}
-                >
-                  {image ? (
-                    <img src={image} alt="待理解的图片" />
-                  ) : (
-                    <>
-                      <ImagePlus size={30} strokeWidth={1.2} />
-                      <strong>把图片带到这里</strong>
-                      <span>点击选择、拖入，或在此粘贴</span>
-                      <small>PNG / JPEG / WebP，最多 8MB</small>
-                    </>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  hidden
-                  accept="image/png,image/jpeg,image/webp"
-                  ref={input}
-                  onChange={(e) => imageFile(e.target.files?.[0])}
-                />
-                {fileName && <p className="footnote">{fileName}</p>}
-                <label className="field">
-                  想问她什么
-                  <input
-                    maxLength={3000}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                  />
-                </label>
-                <div className="form-footer">
-                  <small>图片仅在你点击后发送给所选服务</small>
-                  <button
-                    className="primary"
-                    disabled={busy || !image || !prompt.trim()}
-                    onClick={() =>
-                      run(async () => {
-                        const result = await api<{ answer: string }>(
-                          `${root}/see`,
-                          { method: "POST", body: json({ image, prompt }) },
-                        );
-                        setAnswer(result.answer);
-                      })
-                    }
-                  >
-                    <Eye size={15} />
-                    {busy ? "正在看图…" : "理解这张图"}
-                  </button>
-                </div>
-              </>
-            ) : tab === "asr" ? (
-              <>
-                <p className="section-intro">
-                  上传一段音频，交给已配置的听写服务。文件只在你选择后发送，不自动打开麦克风
-                </p>
-                <label className="upload-button">
-                  <Upload size={20} />
-                  <strong>{busy ? "正在听写…" : "选择一段音频"}</strong>
-                  <span>WAV、MP3、M4A、WebM、Ogg，最多 15MB</span>
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    disabled={busy}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f && f.size > 15 * 1024 * 1024) {
-                        setError("音频不能超过 15MB");
-                        return;
-                      }
-                      hear(f);
-                    }}
-                  />
-                </label>
-              </>
-            ) : (
-              <SingingPage {...props} />
-            )}
-            {error && (
-              <p className="inline-error" role="alert">
-                {error}
-              </p>
-            )}
-            {verified && (
-              <p className="success-note">
-                <Check size={14} />
-                {verified} · 配置或模型变更后需重新验证
-              </p>
-            )}
-            {answer && (
-              <div className="media-answer">
-                <h3>她听见或看见的</h3>
-                <p>{answer}</p>
-              </div>
-            )}
-          </Panel>
-          {tab !== "sing" && (
-            <Panel
-              title={
-                tab === "tts"
-                  ? "声音的配置"
-                  : tab === "asr"
-                    ? "听写的配置"
-                    : "视觉的配置"
-              }
-            >
-              <Disclosure title="高级连接与能力配置">
-                <ConfigForm {...props} pages={[tab]} />
-              </Disclosure>
-              {tab === "tts" && (
-                <Disclosure title="查看已配置音色">
-                  <p>
-                    本地列出音色文件；云端只显示已配置名称，清单不代表已完成合成验证
-                  </p>
-                  <button
-                    className="ghost"
-                    onClick={async () => {
-                      try {
-                        const result = await api<{
-                          voices: string[];
-                          detail: string;
-                        }>(`${root}/voices`);
-                        setAnswer(
-                          `${result.voices.join("、") || "没有找到音色"}\n${result.detail}`,
-                        );
-                      } catch (e) {
-                        notify((e as Error).message);
-                      }
-                    }}
-                  >
-                    读取音色清单
-                  </button>
-                </Disclosure>
-              )}
-              {tab === "tts" && (
-                <Disclosure title="本地 Breeze 程序与模型">
-                  <p>
-                    连接方式选择 breeze-local
-                    时，首次生成按下面路径启动已安装的服务。这里只管理插件自己启动的进程
-                  </p>
-                  <ConfigForm {...props} pages={["tts-local"]} />
-                  <button
-                    className="ghost"
-                    onClick={async () => {
-                      try {
-                        await api(`${root}/local/stop`, {
-                          method: "POST",
-                          body: json({ kind: "tts" }),
-                        });
-                        notify("已停止插件管理的本地语音进程");
-                      } catch (error) {
-                        notify((error as Error).message);
-                      }
-                    }}
-                  >
-                    停止本地语音进程
-                  </button>
-                </Disclosure>
-              )}
-            </Panel>
-          )}
-        </div>
-        <div className="rail">
-          <Panel title="共用连接，按需独立">
-            <Cloud size={22} className="section-icon" />
-            <p className="section-intro">
-              视觉可直接沿用DSH模型，无需在此填写。多种能力使用同一云端兼容服务时只需配置一次；各功能也能选择独立连接、本地托管或停用
-            </p>
-            <Disclosure title="高级共用连接配置">
-              <ConfigForm {...props} pages={["media"]} />
-            </Disclosure>
-          </Panel>
-          <Panel title="本地与宿主能力">
-            <p>
-              说话与唱歌使用插件托管的Breeze、SoulX，听写可使用免费Whisper。它们共用本地模型许可，闲置5分钟下线。视觉可直接沿用DSH已有视觉模型，也可单独配置远程服务；每项能力都需真实输入验证
-            </p>
-            <Badge>逐项真实验证</Badge>
-          </Panel>
-        </div>
-      </div>
-    </>
+    <div className="settings-stack">
+      <MediaSetup
+        {...props}
+        key={`${props.character.id}:${kind}`}
+        kind={kind}
+      />
+      <Panel title={titles[kind]}>
+        <ConfigForm {...props} pages={[kind, `${kind}-local`]} />
+      </Panel>
+      <Panel title="共用媒体连接">
+        <ConfigForm {...props} pages={["media"]} />
+      </Panel>
+    </div>
   );
 }
 

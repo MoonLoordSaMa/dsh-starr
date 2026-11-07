@@ -82,11 +82,12 @@ import "./foundation.css";
 import "./v019-glass.css";
 import "./v020.css";
 import "./v021.css";
+import "./v021-fix.css";
 import { PageContinuation } from "./PageContinuation";
 import { CompanionOverview } from "./CompanionOverview";
 import { ObservatoryOverview } from "./ObservatoryOverview";
-import { navigation, workspaces } from "./navigation";
-import { PagePrelude, RelatedRoutes, WorkspacePage } from "./WorkspacePages";
+import { resolvePage, navigation, workspaces } from "./navigation";
+import { RelatedRoutes, WorkspacePage } from "./WorkspacePages";
 import { Today } from "./Today";
 
 export const StarMap = lazy(() => import("./StarMap"));
@@ -784,19 +785,7 @@ function App() {
     [bootError, setBootError] = useState(""),
     [id, setId] = useState(localStorage.getItem("starr-character") ?? ""),
     [version, setVersion] = useState(0),
-    [page, setPage] = useState(() =>
-      navigation.some(
-        (n) =>
-          n.id ===
-          (location.hash === "#platforms"
-            ? "conversation"
-            : location.hash.slice(1)),
-      )
-        ? location.hash === "#platforms"
-          ? "conversation"
-          : location.hash.slice(1)
-        : "overview",
-    ),
+    [page, setPage] = useState(() => resolvePage(location.hash.slice(1))),
     [menu, setMenu] = useState(false),
     [compact, setCompact] = useState(
       () => matchMedia("(max-width: 980px)").matches,
@@ -845,11 +834,8 @@ function App() {
   }, [menu, compact]);
   useEffect(() => {
     const handler = () => {
-      const next =
-        location.hash === "#platforms"
-          ? "conversation"
-          : location.hash.slice(1);
-      setPage(navigation.some((n) => n.id === next) ? next : "overview");
+      const next = resolvePage(location.hash.slice(1));
+      setPage(next);
       main.current?.scrollTo({ top: 0, behavior: "instant" });
       if (next === "onboarding") {
         setBootstrap(null);
@@ -882,6 +868,7 @@ function App() {
     load();
   }, [load]);
   const go = (next: string) => {
+    next = resolvePage(next);
     setMenu(false);
     main.current?.scrollTo({ top: 0, behavior: "instant" });
     if (page !== next) {
@@ -1112,9 +1099,7 @@ function App() {
               <span>{nav.label}</span>
             </div>
             <div className="topbar-right">
-              <span className="preview-label">
-                {bootstrap.version} · 独立初版
-              </span>
+              <span className="preview-label">{bootstrap.version}</span>
               <span className="saved-indicator">
                 <CheckCheck size={14} />
                 本地持久化
@@ -1146,7 +1131,6 @@ function App() {
               </div>
             )}
 
-            {activeProps && page !== "overview" && <PagePrelude page={page} />}
             <div className="page-title">
               <div>
                 <h1>
