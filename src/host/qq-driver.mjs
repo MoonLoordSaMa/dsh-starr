@@ -1,6 +1,7 @@
 import { fileWorkspace, migrateFileWorkspace } from "./native-files.mjs";
 import crypto from "node:crypto";
 import { modelFailure } from "./model-failure.mjs";
+import { jsonResult } from "./json-result.mjs";
 import { fail } from "../starrcore/store.mjs";
 import { UsageBudget } from "../conversation/budget.mjs";
 import { conversationDelivery } from "./chat-delivery.mjs";
@@ -480,9 +481,9 @@ export function createQQDriver(ctx, store, { platform = "qq" } = {}) {
                 return Promise.resolve(value).then((result) => {
                   if (result?.status === "sent" || result?.messageId)
                     context().replied = true;
-                  return result;
+                  return jsonResult(result);
                 });
-              return value;
+              return jsonResult(value);
             },
           }),
         );

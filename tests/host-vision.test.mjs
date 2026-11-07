@@ -105,6 +105,7 @@ test("宿主视觉无需HTTP地址或另配密钥，真实字节先保存为附�
     attachment: { id: "durable-image", mediaType: "image/png" },
   });
   assert.equal(f.calls[0].provider, "default");
+  assert.equal(f.calls[0].maxTokens, 4096);
   assert.deepEqual(f.calls[0].tools, []);
   await assert.rejects(
     () => f.vision.imageBlock({ image: "data:image/png;base64,YQ=" }),
@@ -186,6 +187,7 @@ test("错误、中止、截断、缺少结束与空回答均不能伪装成视�
     "error",
     "aborted",
     "length",
+    "max-tokens",
     "tool-calls",
     "missing",
     "empty",
@@ -205,6 +207,30 @@ test("错误、中止、截断、缺少结束与空回答均不能伪装成视�
     await assert.rejects(
       () => f.vision.see(f.id, { image, prompt: "看图" }),
       /失败|完整/,
+    );
+  }
+});
+
+test("真实宿主的max-tokens结束原因明确报告输出不足，保留配置上限且不返回半截答案", async (t) => {
+  for (const kind of ["max-tokens", "length"]) {
+    const f = fixture(t, {
+      llm: {
+        async *stream(request) {
+          assert.equal(request.maxTokens, 1000);
+          yield { type: "text-delta", text: "尚未写完的分析" };
+          yield { type: "finish", reason: { kind } };
+        },
+      },
+    });
+    f.configure({ "vision.maxTokens": 1000 });
+    await assert.rejects(
+      () => f.vision.see(f.id, { image, prompt: "逐格分析视频" }),
+      (error) => {
+        assert.equal(error.code, "MODEL_OUTPUT_LIMIT");
+        assert.match(error.message, /视觉输出令牌上限/);
+        assert.doesNotMatch(error.message, /不支持|拒绝|尚未写完/);
+        return true;
+      },
     );
   }
 });

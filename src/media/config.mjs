@@ -71,11 +71,11 @@ export const mediaFields = [
   ),
   field(
     "vision.maxTokens",
-    "图片回答长度上限",
+    "视觉输出令牌上限",
     "number",
-    1000,
+    4096,
     "vision",
-    "限制图片模型输出令牌数。",
+    "限制图片分析的输出令牌数；部分推理模型也会在此额度内消耗思考令牌。视频关键帧或复杂截图建议至少4096，达到上限会明确提示未完成。",
     { min: 100, max: 8000, integer: true },
   ),
   field(

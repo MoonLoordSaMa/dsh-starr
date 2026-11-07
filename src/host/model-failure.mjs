@@ -45,6 +45,12 @@ export function modelFailure(error) {
       code: "MODEL_CONTEXT",
       detail: "模型上下文超过容量，请在DSH整理该会话历史或调整注入预算",
     };
+  if (match(/MAX[_-]TOKENS|OUTPUT[_-](?:LIMIT|LENGTH)/i))
+    return {
+      code: "MODEL_OUTPUT_LIMIT",
+      detail:
+        "模型达到输出令牌上限，回答尚未完成，请调高对应功能的输出上限后重试",
+    };
   if (match(/NO_ADAPTER|MODEL_NOT_FOUND|UNKNOWN_MODEL|HTTP_404/i))
     return {
       code: "MODEL_UNAVAILABLE",
@@ -65,7 +71,7 @@ export function modelFailure(error) {
   if (match(/INVALID_REQUEST|INVALID_ARGS|UNSUPPORTED|HTTP_4\d\d/i))
     return {
       code: "MODEL_REQUEST",
-      detail: "模型拒绝了请求格式或当前能力，请检查所选模型是否支持工具或图片",
+      detail: "模型服务拒绝了本次请求，请检查DSH模型日志中的具体原因与请求参数",
     };
   return {
     code: "MODEL_FAILED",

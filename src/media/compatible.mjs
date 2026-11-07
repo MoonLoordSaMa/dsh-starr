@@ -157,7 +157,7 @@ export async function see(
       headers: { ...c.headers, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: config["vision.model"],
-        max_tokens: config["vision.maxTokens"] || 1000,
+        max_tokens: config["vision.maxTokens"] || 4096,
         messages: [
           {
             role: "user",
@@ -172,6 +172,14 @@ export async function see(
   );
   const result = await r.json(),
     answer = result.choices?.[0]?.message?.content;
+  if (result.choices?.[0]?.finish_reason === "length")
+    throw Object.assign(
+      fail(
+        "图片分析达到输出令牌上限，请在视觉页调高“视觉输出令牌上限”后重试",
+        502,
+      ),
+      { code: "MODEL_OUTPUT_LIMIT" },
+    );
   if (typeof answer !== "string")
     throw fail("服务没有返回可显示的图片理解文本", 502);
   return {

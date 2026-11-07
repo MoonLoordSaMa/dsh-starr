@@ -1130,9 +1130,24 @@ test("宿主适配使用 Agent 接口，回复工具固定会话，再次调用�
           hooks.get("agent/error")({ error: failure });
           return;
         }
-        await tools
+        const read = await tools.get("starr_qq_read").execute({}, { agent });
+        assert.deepEqual(read, JSON.parse(JSON.stringify(args.input)));
+        assert.equal(Object.hasOwn(read.messages[0], "replyTo"), false);
+        const history = await tools
+          .get("starr_qq_history")
+          .execute({}, { agent });
+        assert.deepEqual(history, [{ messageId: "old", text: "旧消息" }]);
+        await assert.rejects(
+          () =>
+            tools
+              .get("starr_qq_history")
+              .execute({ messageId: "missing" }, { agent }),
+          /历史读取失败/,
+        );
+        const receipt = await tools
           .get("starr_qq_reply")
           .execute({ text: "实际工具调用" }, { agent });
+        assert.deepEqual(receipt, { messageId: "1" });
       },
       cancel() {},
     };
@@ -1172,11 +1187,15 @@ test("宿主适配使用 Agent 接口，回复工具固定会话，再次调用�
     },
     input: {
       batchId: "batch",
-      messages: [{ userId: "200001", text: "测试输入" }],
+      messages: [{ userId: "200001", text: "测试输入", replyTo: undefined }],
+    },
+    history: async ({ messageId }) => {
+      if (messageId === "missing") throw new Error("历史读取失败");
+      return [{ messageId: "old", text: "旧消息", image: undefined }];
     },
     reply: async () => {
       replyCount++;
-      return { messageId: "1" };
+      return { messageId: "1", detail: undefined };
     },
     signal: new AbortController().signal,
   };
@@ -1184,6 +1203,7 @@ test("宿主适配使用 Agent 接口，回复工具固定会话，再次调用�
   await driver.run(args);
   assert.equal(created, 1);
   assert.equal(replyCount, 2);
+  assert.equal(Object.hasOwn(args.input.messages[0], "replyTo"), true);
   assert.ok(messages[0].content[0].text.includes("测试输入"));
   assert.deepEqual(messages[0].content[1], {
     type: "image",
@@ -1252,6 +1272,16 @@ test("B站复用宿主驱动时不暴露 QQ 引用、@ 或回复后等待能力"
             followup: (message) => messages.push(message),
             async whenIdle() {
               const reply = tools.get("starr_bili_reply");
+              const read = await tools
+                .get("starr_bili_read")
+                .execute({}, { agent });
+              assert.deepEqual(read.messages, [
+                { userId: "200001", text: "你好" },
+              ]);
+              assert.deepEqual(
+                await tools.get("starr_bili_history").execute({}, { agent }),
+                [{ text: "旧私信" }],
+              );
               assert.deepEqual(Object.keys(reply.parameters.properties), [
                 "text",
               ]);
@@ -1289,8 +1319,9 @@ test("B站复用宿主驱动时不暴露 QQ 引用、@ 或回复后等待能力"
     settings: { provider: "test", model: "test" },
     input: {
       batchId: "bili-batch",
-      messages: [{ userId: "200001", text: "你好" }],
+      messages: [{ userId: "200001", text: "你好", replyTo: undefined }],
     },
+    history: () => [{ text: "旧私信", attachments: undefined }],
     reply: async () => ({ messageId: "1" }),
     signal: new AbortController().signal,
   });

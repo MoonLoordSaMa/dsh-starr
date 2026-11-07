@@ -164,7 +164,7 @@ export function createHostVision(
         for await (const chunk of llm.stream({
           ...selected,
           signal,
-          maxTokens: c["vision.maxTokens"] || 1000,
+          maxTokens: c["vision.maxTokens"] || 4096,
           messages: [
             {
               id: crypto.randomUUID(),
@@ -186,11 +186,16 @@ export function createHostVision(
                   code:
                     chunk.reason?.kind === "aborted"
                       ? "ABORTED"
-                      : "INVALID_REQUEST",
+                      : ["max-tokens", "length"].includes(chunk.reason?.kind)
+                        ? "MAX_TOKENS"
+                        : "INVALID_REQUEST",
                 },
               );
               throw Object.assign(
-                fail(`DSH视觉调用失败：${failure.detail}`, 502),
+                fail(
+                  `DSH视觉调用失败：${failure.code === "MODEL_OUTPUT_LIMIT" ? "图片分析达到输出令牌上限，请在视觉页调高“视觉输出令牌上限”后重试" : failure.detail}`,
+                  502,
+                ),
                 { code: failure.code },
               );
             }

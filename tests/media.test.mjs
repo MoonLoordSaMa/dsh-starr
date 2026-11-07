@@ -38,6 +38,43 @@ test("各模型可独立选择本地服务，云端密钥不串用，停用实�
   }
 });
 
+test("兼容视觉服务达到输出上限时拒绝半截回答，并使用实际配置的令牌额度", async (t) => {
+  const server = http.createServer(async (req, res) => {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    assert.equal(JSON.parse(Buffer.concat(chunks)).max_tokens, 1234);
+    res.setHeader("Content-Type", "application/json");
+    res.end(
+      JSON.stringify({
+        choices: [
+          { message: { content: "不完整的画面描述" }, finish_reason: "length" },
+        ],
+      }),
+    );
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  await assert.rejects(
+    () =>
+      see(
+        {
+          ...defaults(),
+          "vision.connection": "custom",
+          "vision.baseUrl": `http://127.0.0.1:${server.address().port}/v1`,
+          "vision.model": "synthetic",
+          "vision.maxTokens": 1234,
+        },
+        { image: "data:image/png;base64,aGVsbG8=", prompt: "看见什么" },
+      ),
+    (error) => {
+      assert.equal(error.code, "MODEL_OUTPUT_LIMIT");
+      assert.match(error.message, /视觉输出令牌上限/);
+      assert.doesNotMatch(error.message, /不完整的画面描述/);
+      return true;
+    },
+  );
+});
+
 test("兼容媒体驱动按能力分别请求；不把错误响应当作成功", async (t) => {
   const calls = [],
     server = http.createServer(async (req, res) => {
